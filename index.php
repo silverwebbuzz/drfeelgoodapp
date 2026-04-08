@@ -1,12 +1,9 @@
 <?php
 /**
- * Dr. Feelgood - Root Entry Point
+ * Dr. Feelgood - Main Entry Point
  *
- * This file serves as the entry point for the application.
- * It forwards all requests to the public/index.php file.
- *
- * VPS Path: /home/silverwebbuzz_in/public_html/drfeelgoods.in/app/
- * Domain: https://app.drfeelgoods.in/
+ * This file is the entry point for the application.
+ * Place this file in the root directory: /home/silverwebbuzz_in/public_html/drfeelgoods.in/app/index.php
  */
 
 // Start session
@@ -50,23 +47,9 @@ use App\Controllers\PatientController;
 // Check session timeout
 AuthController::checkSessionTimeout();
 
-// Get request path from URL
-// Handle both direct requests and .htaccess rewrites
+// Get request path from REQUEST_URI
 $request_uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
-
-// Remove /app if it exists (for compatibility)
-if (strpos($request_uri, '/app/') === 0) {
-    $route = substr($request_uri, 5); // Remove '/app/'
-} else {
-    $route = $request_uri;
-}
-
-$route = trim($route, '/');
-
-// Also check if path parameter was passed from .htaccess
-if (empty($route) && isset($_GET['path'])) {
-    $route = trim($_GET['path'], '/');
-}
+$route = trim(str_replace('/app', '', $request_uri), '/');
 
 // Set default route
 if (empty($route)) {
