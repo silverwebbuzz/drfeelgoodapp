@@ -37,12 +37,22 @@ spl_autoload_register(function($class) {
 });
 
 // Initialize database connection
-$database = new Database();
-$db = $database->connect();
+try {
+    $database = new Database();
+    $db = $database->connect();
 
-if (!$db) {
+    if (!$db) {
+        http_response_code(500);
+        header('Content-Type: application/json');
+        echo json_encode(['error' => 'Database connection failed']);
+        exit;
+    }
+} catch (\Exception $e) {
+    error_log("Database connection error: " . $e->getMessage());
     http_response_code(500);
-    die('Database connection failed');
+    header('Content-Type: application/json');
+    echo json_encode(['error' => 'Database error: ' . $e->getMessage()]);
+    exit;
 }
 
 // Import controllers
@@ -63,6 +73,9 @@ if (strpos($request_uri, '/app/') === 0) {
 }
 
 $route = trim($route, '/');
+
+// Log route for debugging
+error_log("Route extracted: '{$route}' from REQUEST_URI: '{$request_uri}' Method: {$_SERVER['REQUEST_METHOD']}");
 
 // Set default route
 if (empty($route)) {
@@ -137,6 +150,7 @@ switch ($route) {
         break;
 
     default:
+        error_log("404 - Route not found: '{$route}'");
         http_response_code(404);
         require __DIR__ . '/views/error/404.php';
         break;
