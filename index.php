@@ -76,6 +76,9 @@ $route = trim($route, '/');
 
 // Log route for debugging
 error_log("Route extracted: '{$route}' from REQUEST_URI: '{$request_uri}' Method: {$_SERVER['REQUEST_METHOD']}");
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    error_log("POST data received: " . json_encode($_POST));
+}
 
 // Set default route
 if (empty($route)) {
@@ -87,11 +90,14 @@ switch ($route) {
     // Authentication routes
     case 'login':
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $username = $_POST['username'] ?? '';
+            $password = $_POST['password'] ?? '';
+
+            error_log("Login attempt - Username: '{$username}', Password length: " . strlen($password));
+
             $authController = new AuthController($db);
-            $response = $authController->login(
-                $_POST['username'] ?? '',
-                $_POST['password'] ?? ''
-            );
+            $response = $authController->login($username, $password);
+
             header('Content-Type: application/json');
             echo json_encode($response);
             exit;
