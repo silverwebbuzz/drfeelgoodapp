@@ -1,0 +1,29 @@
+# Enable mod_rewrite
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # Set the base directory
+    RewriteBase /app/
+
+    # Remove the www from the URL
+    # RewriteCond %{HTTP_HOST} ^www\.(.*)$ [NC]
+    # RewriteRule ^(.*)$ http://%1/$1 [R=301,L]
+
+    # Don't rewrite files or directories
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+
+    # Rewrite everything to index.php
+    RewriteRule ^(.*)$ index.php [QSA,L]
+</IfModule>
+
+# Set file permissions
+<FilesMatch "\.php$">
+    Allow from all
+</FilesMatch>
+
+# Disable directory browsing
+Options -Indexes
+
+# Set proper MIME types
+AddType application/x-httpd-php .php
