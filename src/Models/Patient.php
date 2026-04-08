@@ -30,6 +30,8 @@ class Patient extends BaseModel {
      * Get patient with progress reports
      */
     public function getWithReports($id, $limit = 50) {
+        $limit = (int)$limit;
+
         $sql = "SELECT
                     p.*,
                     pr.id as report_id,
@@ -40,9 +42,9 @@ class Patient extends BaseModel {
                 LEFT JOIN progress_report pr ON p.id = pr.p_id
                 WHERE p.id = ?
                 ORDER BY pr.date DESC
-                LIMIT ?";
+                LIMIT {$limit}";
 
-        $stmt = $this->query($sql, [$id, $limit]);
+        $stmt = $this->query($sql, [$id]);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
@@ -69,13 +71,15 @@ class Patient extends BaseModel {
      */
     public function getPaginated($page = 1, $limit = 10) {
         $offset = ($page - 1) * $limit;
+        $limit = (int)$limit;
+        $offset = (int)$offset;
 
         $sql = "SELECT id, patient_id, fname, lname, contact_no, dob, gender, chief
                 FROM {$this->table}
                 ORDER BY fname, lname
-                LIMIT ? OFFSET ?";
+                LIMIT {$limit} OFFSET {$offset}";
 
-        $stmt = $this->query($sql, [$limit, $offset]);
+        $stmt = $this->query($sql);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
@@ -120,15 +124,17 @@ class Patient extends BaseModel {
     }
 
     /**
-     * Get recent patients (last 10)
+     * Get recent patients (last N)
      */
     public function getRecent($limit = 10) {
+        $limit = (int)$limit;
+
         $sql = "SELECT id, patient_id, fname, lname, contact_no, dob, gender, chief
                 FROM {$this->table}
                 ORDER BY dor DESC
-                LIMIT ?";
+                LIMIT {$limit}";
 
-        $stmt = $this->query($sql, [$limit]);
+        $stmt = $this->query($sql);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 }

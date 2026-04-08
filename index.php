@@ -147,17 +147,17 @@ switch ($route) {
         require __DIR__ . '/views/patient/detail.php';
         break;
 
-    case 'patient/create':
-        AuthController::requireLogin();
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $patientController = new PatientController($db);
-            $response = $patientController->create($_POST);
-            header('Content-Type: application/json');
-            echo json_encode($response);
-            exit;
-        }
-        require __DIR__ . '/views/patient/create.php';
-        break;
+    // case 'patient/create':
+    //     AuthController::requireLogin();
+    //     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    //         $patientController = new PatientController($db);
+    //         $response = $patientController->create($_POST);
+    //         header('Content-Type: application/json');
+    //         echo json_encode($response);
+    //         exit;
+    //     }
+    //     require __DIR__ . '/views/patient/create.php';
+    //     break;
 
     case 'api/patient/search':
         AuthController::requireLogin();
