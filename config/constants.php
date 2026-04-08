@@ -3,6 +3,9 @@
  * Application Constants
  */
 
+// Debug Mode - Set to true during development, false in production
+define('DEBUG_MODE', true);
+
 // Application Settings
 define('SITE_NAME', 'Dr. Feelgood');
 define('SITE_URL', 'https://app.drfeelgoods.in/app/');

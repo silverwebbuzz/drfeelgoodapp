@@ -6,16 +6,24 @@
  * Place this file in the root directory: /home/silverwebbuzz_in/public_html/drfeelgoods.in/app/index.php
  */
 
-// Enable error reporting for debugging
+// Enable error reporting
 error_reporting(E_ALL);
-ini_set('display_errors', 0); // Don't display errors to user
-ini_set('log_errors', 1); // Log errors instead
+
+// Load configuration first to check DEBUG_MODE
+require_once __DIR__ . '/config/constants.php';
+
+// Configure error handling based on debug mode
+if (defined('DEBUG_MODE') && DEBUG_MODE) {
+    ini_set('display_errors', 1); // Display errors to user in debug mode
+} else {
+    ini_set('display_errors', 0); // Don't display errors to user in production
+}
+ini_set('log_errors', 1); // Always log errors
 
 // Start session
 session_start();
 
-// Load configuration
-require_once __DIR__ . '/config/constants.php';
+// Load database configuration
 require_once __DIR__ . '/config/database.php';
 
 // Autoloader for classes
