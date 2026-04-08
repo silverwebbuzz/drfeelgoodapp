@@ -95,12 +95,22 @@ switch ($route) {
 
             error_log("Login attempt - Username: '{$username}', Password length: " . strlen($password));
 
-            $authController = new AuthController($db);
-            $response = $authController->login($username, $password);
+            try {
+                $authController = new AuthController($db);
+                $response = $authController->login($username, $password);
 
-            header('Content-Type: application/json');
-            echo json_encode($response);
-            exit;
+                header('Content-Type: application/json');
+                $json = json_encode($response);
+                error_log("Login response JSON: " . $json);
+                echo $json;
+                exit;
+            } catch (\Exception $e) {
+                error_log("Login error: " . $e->getMessage());
+                header('Content-Type: application/json');
+                http_response_code(500);
+                echo json_encode(['success' => false, 'message' => 'Login error: ' . $e->getMessage()]);
+                exit;
+            }
         }
         require __DIR__ . '/views/auth/login.php';
         break;
