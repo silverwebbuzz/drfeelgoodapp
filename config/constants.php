@@ -35,5 +35,3 @@ define('SERVER_ERROR', 500);
 define('ROLE_DOCTOR', 'doctor');
 define('ROLE_ADMIN', 'admin');
 define('ROLE_STAFF', 'staff');
-
-?>

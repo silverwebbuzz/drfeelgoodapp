@@ -21,10 +21,10 @@ class Database {
             $this->conn = new PDO($dsn, $this->user, $this->password);
             $this->conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
         } catch (PDOException $e) {
-            echo 'Connection Error: ' . $e->getMessage();
+            error_log('PDO Connection Error: ' . $e->getMessage());
+            return null;
         }
 
         return $this->conn;
     }
 }
-?>

@@ -125,4 +125,3 @@ class AuthController {
         $_SESSION['login_time'] = time();
     }
 }
-?>

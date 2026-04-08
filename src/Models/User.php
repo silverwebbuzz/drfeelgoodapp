@@ -110,4 +110,3 @@ class User extends BaseModel {
         return trim("{$user['fname']} {$user['mname']} {$user['lname']}");
     }
 }
-?>
