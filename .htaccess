@@ -1,0 +1,59 @@
+# Dr. Feelgood - Root .htaccess
+# Redirects all requests to public/index.php
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # Set the base directory (adjust if needed based on VPS deployment path)
+    # If deployed at /drfeelgoods.in/ then use RewriteBase /
+    # If deployed at /drfeelgoods.in/app/ then use RewriteBase /app/
+    RewriteBase /
+
+    # Don't rewrite actual files or directories
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteCond %{REQUEST_FILENAME} !-l
+
+    # Rewrite everything to public/index.php
+    RewriteRule ^(.*)$ public/index.php?path=$1 [QSA,L]
+</IfModule>
+
+# Disable directory indexing
+<IfModule mod_autoindex.c>
+    Options -Indexes
+</IfModule>
+
+# Set proper MIME types for common files
+<IfModule mod_mime.c>
+    AddType text/html .html
+    AddType text/css .css
+    AddType application/javascript .js
+    AddType application/json .json
+</IfModule>
+
+# Prevent access to sensitive files
+<FilesMatch "^\.">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Order allow,deny
+        Deny from all
+    </IfModule>
+</FilesMatch>
+
+# Prevent access to config files
+<FilesMatch "\.(env|sql|sqlite|db)$">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Order allow,deny
+        Deny from all
+    </IfModule>
+</FilesMatch>
+
+# Allow access to public folder directly
+<IfModule mod_rewrite.c>
+    RewriteRule ^public/ - [L]
+</IfModule>
