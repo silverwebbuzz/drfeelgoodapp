@@ -8,22 +8,19 @@
     RewriteEngine On
     RewriteBase /
 
-    # Don't rewrite actual files or directories
+    # Exclude real files and directories
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteCond %{REQUEST_FILENAME} !-d
-    RewriteCond %{REQUEST_FILENAME} !-l
 
-    # Rewrite everything to root index.php
-    RewriteRule ^(.*)$ index.php?path=$1 [QSA,L]
+    # Exclude debug.php (allow direct access for testing)
+    RewriteCond %{REQUEST_FILENAME} !debug.php
+
+    # Rewrite all requests to index.php, preserving query string
+    RewriteRule ^(.*)$ index.php [QSA,L]
 </IfModule>
 
 # Disable directory browsing
 Options -Indexes
-
-# Allow access to public folder
-<FilesMatch "\.(php|html|css|js|jpg|jpeg|png|gif|ico)$">
-    Allow from all
-</FilesMatch>
 
 # Disable directory indexing
 <IfModule mod_autoindex.c>

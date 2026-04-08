@@ -50,11 +50,23 @@ use App\Controllers\PatientController;
 // Check session timeout
 AuthController::checkSessionTimeout();
 
-// Get request path
+// Get request path from URL
+// Handle both direct requests and .htaccess rewrites
 $request_uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
-$base_path = '/app';
-$route = str_replace($base_path, '', $request_uri);
+
+// Remove /app if it exists (for compatibility)
+if (strpos($request_uri, '/app/') === 0) {
+    $route = substr($request_uri, 5); // Remove '/app/'
+} else {
+    $route = $request_uri;
+}
+
 $route = trim($route, '/');
+
+// Also check if path parameter was passed from .htaccess
+if (empty($route) && isset($_GET['path'])) {
+    $route = trim($_GET['path'], '/');
+}
 
 // Set default route
 if (empty($route)) {
