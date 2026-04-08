@@ -1,9 +1,12 @@
 # Enable mod_rewrite for public folder
+# VPS Path: /home/silverwebbuzz_in/public_html/drfeelgoods.in/app/public/
+# URL: https://app.drfeelgoods.in/
+
 <IfModule mod_rewrite.c>
     RewriteEngine On
 
-    # Set the base directory
-    RewriteBase /
+    # Set the base directory to /app/ (matches VPS deployment)
+    RewriteBase /app/
 
     # Don't rewrite actual files or directories
     RewriteCond %{REQUEST_FILENAME} !-f
