@@ -6,6 +6,11 @@
  * Place this file in the root directory: /home/silverwebbuzz_in/public_html/drfeelgoods.in/app/index.php
  */
 
+// Enable error reporting for debugging
+error_reporting(E_ALL);
+ini_set('display_errors', 0); // Don't display errors to user
+ini_set('log_errors', 1); // Log errors instead
+
 // Start session
 session_start();
 
@@ -49,7 +54,15 @@ AuthController::checkSessionTimeout();
 
 // Get request path from REQUEST_URI
 $request_uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
-$route = trim(str_replace('/app', '', $request_uri), '/');
+
+// Extract route - remove /app if it exists, otherwise use as-is
+if (strpos($request_uri, '/app/') === 0) {
+    $route = substr($request_uri, 5); // Remove '/app/'
+} else {
+    $route = $request_uri;
+}
+
+$route = trim($route, '/');
 
 // Set default route
 if (empty($route)) {
