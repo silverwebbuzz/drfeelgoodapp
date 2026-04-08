@@ -1,23 +1,29 @@
 # Dr. Feelgood - Root .htaccess
-# Redirects all requests to public/index.php
 #
 # VPS Path: /home/silverwebbuzz_in/public_html/drfeelgoods.in/app/
 # URL: https://app.drfeelgoods.in/
+# Entry Point: index.php (at root)
 
 <IfModule mod_rewrite.c>
     RewriteEngine On
-
-    # Set the base directory to /app/ (matches VPS deployment path)
-    RewriteBase /app/
+    RewriteBase /
 
     # Don't rewrite actual files or directories
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteCond %{REQUEST_FILENAME} !-d
     RewriteCond %{REQUEST_FILENAME} !-l
 
-    # Rewrite everything to public/index.php
-    RewriteRule ^(.*)$ public/index.php?path=$1 [QSA,L]
+    # Rewrite everything to root index.php
+    RewriteRule ^(.*)$ index.php?path=$1 [QSA,L]
 </IfModule>
+
+# Disable directory browsing
+Options -Indexes
+
+# Allow access to public folder
+<FilesMatch "\.(php|html|css|js|jpg|jpeg|png|gif|ico)$">
+    Allow from all
+</FilesMatch>
 
 # Disable directory indexing
 <IfModule mod_autoindex.c>
