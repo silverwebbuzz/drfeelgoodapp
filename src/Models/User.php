@@ -29,6 +29,7 @@ class User extends BaseModel {
 
     /**
      * Validate login credentials
+     * Supports both plain text (legacy) and hashed passwords
      */
     public function validateLogin($username, $password) {
         $user = $this->getByUsername($username);
@@ -37,8 +38,15 @@ class User extends BaseModel {
             return false;
         }
 
-        // Check password - try both plain text and hashed
-        if ($password === $user['password'] || password_verify($password, $user['password'])) {
+        // Check password - plain text first (legacy system), then try hash
+        if ($password === $user['password']) {
+            // Plain text match (legacy old system)
+            unset($user['password']); // Don't return password
+            return $user;
+        }
+
+        // Try password_verify for hashed passwords
+        if (password_verify($password, $user['password'])) {
             unset($user['password']); // Don't return password
             return $user;
         }
