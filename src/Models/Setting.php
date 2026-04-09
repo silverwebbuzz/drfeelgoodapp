@@ -38,7 +38,7 @@ class Setting extends BaseModel {
      * Returns array of 'HH:MM' strings
      */
     public function generateSlots($date) {
-        $dayOfWeek = date('N', strtotime($date)); // 1=Mon, 7=Sun
+        $dayOfWeek = (int)date('N', strtotime($date)); // 1=Mon, 7=Sun — cast to int for strict compare
         $duration  = (int)$this->get('slot_duration_min', 30);
         $slots = [];
 
