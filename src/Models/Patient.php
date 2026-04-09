@@ -137,6 +137,22 @@ class Patient extends BaseModel {
         // Don't allow updating critical fields
         unset($data['id'], $data['patient_id']);
 
+        // Convert empty date fields to NULL so MySQL doesn't get ''
+        $dateFields = ['dob', 'dor'];
+        foreach ($dateFields as $field) {
+            if (array_key_exists($field, $data) && trim($data[$field]) === '') {
+                $data[$field] = null;
+            }
+        }
+
+        // Convert empty numeric fields to NULL
+        $numericFields = ['age'];
+        foreach ($numericFields as $field) {
+            if (array_key_exists($field, $data) && trim((string)$data[$field]) === '') {
+                $data[$field] = null;
+            }
+        }
+
         $this->update($id, $data);
         return true;
     }
