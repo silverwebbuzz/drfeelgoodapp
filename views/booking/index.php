@@ -9,81 +9,93 @@
     <style>
         * { box-sizing:border-box; }
         body { background:#f0f4f8; font-family:'Segoe UI',system-ui,sans-serif; font-size:13px; margin:0; padding:16px 0 40px; }
-        .booking-card { max-width:540px; margin:0 auto; background:#fff; border-radius:14px; box-shadow:0 4px 24px rgba(0,0,0,.10); overflow:hidden; }
-        .booking-header { background:linear-gradient(135deg,#2563eb,#1d4ed8); color:#fff; padding:20px 24px; }
+
+        .booking-card { max-width:520px; margin:0 auto; background:#fff; border-radius:14px; box-shadow:0 4px 24px rgba(0,0,0,.10); overflow:hidden; }
+        .booking-header { background:linear-gradient(135deg,#2563eb,#1d4ed8); color:#fff; padding:18px 22px 16px; }
         .booking-header h1 { font-size:18px; font-weight:700; margin:0 0 2px; }
-        .booking-header p  { margin:0; opacity:.85; font-size:12px; }
-        .booking-body { padding:20px 24px; }
+        .booking-header p  { margin:0; opacity:.8; font-size:12px; }
+        .booking-body { padding:18px 22px 22px; }
 
-        /* Progress bar */
-        .progress-wrap { display:flex; align-items:center; gap:0; margin-bottom:20px; }
-        .progress-step { display:flex; flex-direction:column; align-items:center; flex:1; position:relative; }
-        .progress-step:not(:last-child)::after { content:''; position:absolute; top:12px; left:50%; width:100%; height:2px; background:#e5e7eb; z-index:0; }
-        .progress-step.done::after { background:#2563eb; }
-        .ps-circle { width:24px; height:24px; border-radius:50%; border:2px solid #e5e7eb; background:#fff; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; color:#9ca3af; z-index:1; position:relative; }
-        .progress-step.done .ps-circle { background:#2563eb; border-color:#2563eb; color:#fff; }
-        .progress-step.active .ps-circle { border-color:#2563eb; color:#2563eb; }
-        .ps-label { font-size:10px; color:#9ca3af; margin-top:4px; }
-        .progress-step.done .ps-label,
-        .progress-step.active .ps-label { color:#2563eb; font-weight:600; }
+        /* ── Progress ── */
+        .prog { display:flex; align-items:flex-start; margin-bottom:20px; }
+        .prog-step { flex:1; display:flex; flex-direction:column; align-items:center; position:relative; }
+        .prog-step:not(:last-child)::after {
+            content:''; position:absolute; top:11px; left:calc(50% + 12px);
+            right:calc(-50% + 12px); height:2px; background:#e5e7eb;
+        }
+        .prog-step.done::after  { background:#2563eb; }
+        .prog-circle { width:22px; height:22px; border-radius:50%; border:2px solid #e5e7eb; background:#fff;
+                       display:flex; align-items:center; justify-content:center; font-size:10px; font-weight:700;
+                       color:#9ca3af; position:relative; z-index:1; }
+        .prog-step.done   .prog-circle { background:#2563eb; border-color:#2563eb; color:#fff; }
+        .prog-step.active .prog-circle { border-color:#2563eb; color:#2563eb; }
+        .prog-label { font-size:10px; color:#9ca3af; margin-top:3px; text-align:center; }
+        .prog-step.done .prog-label,
+        .prog-step.active .prog-label { color:#2563eb; font-weight:600; }
 
-        /* Steps */
+        /* ── Steps ── */
         .step { display:none; }
         .step.active { display:block; }
-        .step-title { font-size:15px; font-weight:700; margin:0 0 14px; color:#111; }
+        .step-title { font-size:14px; font-weight:700; margin:0 0 12px; color:#111; }
 
-        /* Date selector */
-        .date-scroll { display:flex; gap:8px; overflow-x:auto; padding-bottom:6px; scroll-snap-type:x mandatory; -webkit-overflow-scrolling:touch; }
-        .date-scroll::-webkit-scrollbar { height:4px; }
-        .date-scroll::-webkit-scrollbar-thumb { background:#d1d5db; border-radius:2px; }
-        .date-card { min-width:62px; border:2px solid #e5e7eb; border-radius:10px; padding:8px 4px; text-align:center; cursor:pointer; scroll-snap-align:start; transition:.15s; flex-shrink:0; }
-        .date-card:hover { border-color:#93c5fd; background:#eff6ff; }
-        .date-card.selected { border-color:#2563eb; background:#eff6ff; }
-        .date-card .dc-day  { font-size:10px; color:#6b7280; text-transform:uppercase; font-weight:600; }
-        .date-card .dc-num  { font-size:20px; font-weight:800; color:#111; line-height:1.1; }
-        .date-card .dc-mon  { font-size:10px; color:#6b7280; }
-        .date-card.selected .dc-day,
-        .date-card.selected .dc-num,
-        .date-card.selected .dc-mon { color:#2563eb; }
+        /* ── Date strip ── */
+        .date-strip { display:flex; gap:7px; overflow-x:auto; padding-bottom:4px;
+                      scroll-snap-type:x mandatory; -webkit-overflow-scrolling:touch; margin-bottom:16px; }
+        .date-strip::-webkit-scrollbar { height:3px; }
+        .date-strip::-webkit-scrollbar-thumb { background:#d1d5db; border-radius:2px; }
+        .dc { min-width:56px; border:2px solid #e5e7eb; border-radius:10px; padding:7px 3px;
+              text-align:center; cursor:pointer; scroll-snap-align:start; transition:.15s; flex-shrink:0; }
+        .dc:hover { border-color:#93c5fd; background:#eff6ff; }
+        .dc.sel { border-color:#2563eb; background:#eff6ff; }
+        .dc .d-day { font-size:9px; color:#6b7280; text-transform:uppercase; font-weight:700; letter-spacing:.3px; }
+        .dc .d-num { font-size:20px; font-weight:800; color:#111; line-height:1.1; }
+        .dc .d-mon { font-size:9px; color:#6b7280; }
+        .dc.sel .d-day, .dc.sel .d-num, .dc.sel .d-mon { color:#1d4ed8; }
 
-        /* Slot grid */
-        .slot-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
-        .slot-btn { padding:9px 4px; border:2px solid #e5e7eb; border-radius:8px; text-align:center; cursor:pointer; font-size:12px; font-weight:600; transition:.15s; background:#fff; color:#111; }
-        .slot-btn:hover { border-color:#93c5fd; background:#eff6ff; }
-        .slot-btn.selected { border-color:#2563eb; background:#eff6ff; color:#2563eb; }
-        .session-label { font-size:10px; font-weight:700; color:#9ca3af; text-transform:uppercase; letter-spacing:.5px; margin:14px 0 6px; }
+        /* ── Slot area ── */
+        .slot-area { min-height:60px; }
+        .slot-loading { text-align:center; padding:20px 0; color:#9ca3af; font-size:12px; }
+        .slot-empty   { text-align:center; padding:20px 0; color:#9ca3af; font-size:12px; }
+        .session-lbl { font-size:10px; font-weight:700; color:#9ca3af; text-transform:uppercase;
+                       letter-spacing:.5px; margin:10px 0 6px; display:flex; align-items:center; gap:5px; }
+        .slot-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:7px; }
+        .sb { padding:8px 4px; border:2px solid #e5e7eb; border-radius:8px; text-align:center;
+              cursor:pointer; font-size:11px; font-weight:600; transition:.15s; background:#fff; color:#374151; }
+        .sb:hover { border-color:#93c5fd; background:#eff6ff; }
+        .sb.sel { border-color:#2563eb; background:#2563eb; color:#fff; }
 
-        /* Forms */
-        .form-label { font-size:12px; font-weight:600; color:#374151; margin-bottom:4px; display:block; }
-        .form-control { font-size:13px; padding:8px 11px; border:2px solid #e5e7eb; border-radius:8px; width:100%; outline:none; transition:.15s; }
+        /* ── Forms ── */
+        .form-label { font-size:12px; font-weight:600; color:#374151; margin-bottom:3px; display:block; }
+        .form-control { font-size:13px; padding:8px 11px; border:2px solid #e5e7eb; border-radius:8px;
+                        width:100%; outline:none; transition:.15s; }
         .form-control:focus { border-color:#2563eb; }
-        .mb-3 { margin-bottom:12px; }
+        .mb-3 { margin-bottom:11px; }
+        .found-box { background:#f0fdf4; border:2px solid #bbf7d0; border-radius:8px;
+                     padding:9px 12px; font-size:12px; margin-bottom:10px; color:#15803d; }
 
-        /* Buttons */
-        .btn-main { background:#2563eb; border:none; border-radius:8px; padding:11px 20px; font-size:13px; font-weight:700; color:#fff; cursor:pointer; width:100%; transition:.15s; }
+        /* ── Buttons ── */
+        .btn-main { background:#2563eb; border:none; border-radius:8px; padding:11px 20px;
+                    font-size:13px; font-weight:700; color:#fff; cursor:pointer; width:100%; transition:.15s; }
         .btn-main:hover { background:#1d4ed8; }
-        .btn-main:disabled { background:#93c5fd; cursor:not-allowed; }
-        .btn-back { background:#f3f4f6; border:none; border-radius:8px; padding:11px 18px; font-size:13px; color:#374151; cursor:pointer; }
-        .btn-row { display:flex; gap:8px; margin-top:16px; }
+        .btn-back { background:#f3f4f6; border:none; border-radius:8px; padding:11px 16px;
+                    font-size:13px; color:#374151; cursor:pointer; flex-shrink:0; }
+        .btn-row { display:flex; gap:8px; margin-top:14px; }
         .btn-row .btn-main { flex:1; }
+        .err-msg { color:#dc2626; font-size:12px; margin-top:6px; display:none; }
 
-        /* Phone lookup */
-        .found-box { background:#f0fdf4; border:2px solid #bbf7d0; border-radius:8px; padding:10px 14px; font-size:12px; margin-bottom:12px; }
-        .found-box strong { color:#15803d; }
+        /* ── Confirmation ── */
+        .conf-icon  { text-align:center; font-size:50px; color:#16a34a; margin-bottom:6px; }
+        .token-big  { text-align:center; font-size:72px; font-weight:900; color:#2563eb; line-height:1; }
+        .token-sub  { text-align:center; font-size:11px; color:#9ca3af; margin-bottom:14px; }
+        .conf-table { background:#f9fafb; border-radius:8px; overflow:hidden; margin-bottom:12px; }
+        .conf-row   { display:flex; justify-content:space-between; padding:8px 14px; border-bottom:1px solid #f3f4f6; font-size:12px; }
+        .conf-row:last-child { border:none; }
+        .conf-row span { color:#6b7280; }
+        .notice { background:#fef3c7; border-radius:6px; padding:9px 12px; font-size:11px; color:#92400e; margin-bottom:14px; }
 
-        /* Confirmation */
-        .confirm-icon { text-align:center; font-size:52px; color:#16a34a; margin-bottom:8px; }
-        .token-display { text-align:center; font-size:68px; font-weight:900; color:#2563eb; line-height:1; margin-bottom:4px; }
-        .token-sub { text-align:center; font-size:11px; color:#6b7280; margin-bottom:16px; }
-        .confirm-table { background:#f9fafb; border-radius:8px; overflow:hidden; margin-bottom:14px; }
-        .confirm-row { display:flex; justify-content:space-between; padding:8px 14px; border-bottom:1px solid #f3f4f6; font-size:12px; }
-        .confirm-row:last-child { border:none; }
-        .confirm-row span { color:#6b7280; }
-        .confirm-row strong { color:#111; }
-        .notice { background:#fef3c7; border-radius:6px; padding:10px 12px; font-size:11px; color:#92400e; margin-bottom:14px; }
-
-        #slotsLoading { text-align:center; padding:24px; color:#6b7280; font-size:12px; }
-        #noSlots { text-align:center; padding:24px; color:#9ca3af; font-size:12px; display:none; }
+        /* phone find btn */
+        .find-btn { background:#2563eb; color:#fff; border:none; border-radius:8px;
+                    padding:0 14px; font-size:12px; cursor:pointer; white-space:nowrap; flex-shrink:0; }
     </style>
 </head>
 <body>
@@ -95,82 +107,68 @@
     <div class="booking-body">
 
         <!-- Progress -->
-        <div class="progress-wrap">
-            <div class="progress-step done active" id="ps1">
-                <div class="ps-circle">1</div>
-                <div class="ps-label">Date</div>
+        <div class="prog">
+            <div class="prog-step active" id="ps1">
+                <div class="prog-circle">1</div>
+                <div class="prog-label">Date &amp; Slot</div>
             </div>
-            <div class="progress-step" id="ps2">
-                <div class="ps-circle">2</div>
-                <div class="ps-label">Slot</div>
+            <div class="prog-step" id="ps2">
+                <div class="prog-circle">2</div>
+                <div class="prog-label">Your Details</div>
             </div>
-            <div class="progress-step" id="ps3">
-                <div class="ps-circle">3</div>
-                <div class="ps-label">Details</div>
-            </div>
-            <div class="progress-step" id="ps4">
-                <div class="ps-circle">4</div>
-                <div class="ps-label">Done</div>
+            <div class="prog-step" id="ps3">
+                <div class="prog-circle">3</div>
+                <div class="prog-label">Confirmed</div>
             </div>
         </div>
 
-        <!-- STEP 1: Date -->
+        <!-- ── STEP 1: Date + Slot ── -->
         <div class="step active" id="step1">
-            <div class="step-title">Select Appointment Date</div>
-            <div class="date-scroll" id="dateScroll"></div>
-            <div id="step1Err" style="color:#dc2626;font-size:12px;margin-top:10px;display:none;"></div>
-            <div class="btn-row" style="margin-top:16px;">
+            <div class="step-title">Select Date &amp; Time Slot</div>
+
+            <!-- Date strip -->
+            <div class="date-strip" id="dateStrip"></div>
+
+            <!-- Slots load here -->
+            <div class="slot-area" id="slotArea">
+                <div class="slot-loading" id="slotLoading">
+                    <i class="fas fa-spinner fa-spin"></i> Loading slots…
+                </div>
+            </div>
+
+            <div class="err-msg" id="err1"></div>
+            <div class="btn-row">
                 <button class="btn-main" onclick="step1Next()">Next &rarr;</button>
             </div>
         </div>
 
-        <!-- STEP 2: Slot -->
+        <!-- ── STEP 2: Phone + Details ── -->
         <div class="step" id="step2">
-            <div class="step-title">Choose a Time Slot</div>
-            <div style="font-size:12px;color:#6b7280;margin-bottom:12px;">
-                <i class="fas fa-calendar-day"></i> <span id="displayDate2"></span>
-            </div>
-            <div id="slotsLoading"><i class="fas fa-spinner fa-spin"></i> Loading slots...</div>
-            <div id="noSlots">No available slots for this date.</div>
-            <div id="slotsContainer"></div>
-            <div id="step2Err" style="color:#dc2626;font-size:12px;margin-top:8px;display:none;"></div>
-            <div class="btn-row">
-                <button class="btn-back" onclick="goStep(1)">← Back</button>
-                <button class="btn-main" onclick="step2Next()">Next &rarr;</button>
-            </div>
-        </div>
-
-        <!-- STEP 3: Phone + Patient details -->
-        <div class="step" id="step3">
             <div class="step-title">Your Details</div>
 
-            <!-- Phone lookup -->
             <div class="mb-3">
-                <label class="form-label">Mobile Number <span style="color:#dc2626;">*</span></label>
-                <div style="display:flex;gap:8px;">
-                    <input type="tel" id="phoneInput" class="form-control" placeholder="10-digit mobile" maxlength="15" style="flex:1;">
-                    <button onclick="lookupPhone()" style="background:#2563eb;color:#fff;border:none;border-radius:8px;padding:0 14px;font-size:12px;cursor:pointer;white-space:nowrap;">
-                        <i class="fas fa-search"></i> Find
-                    </button>
+                <label class="form-label">Mobile Number <span style="color:#dc2626">*</span></label>
+                <div style="display:flex;gap:7px;">
+                    <input type="tel" id="phoneInput" class="form-control" placeholder="10-digit number" maxlength="15" style="flex:1;">
+                    <button class="find-btn" onclick="lookupPhone()"><i class="fas fa-search"></i> Find</button>
                 </div>
-                <div style="font-size:11px;color:#9ca3af;margin-top:4px;">We'll check if you're already registered.</div>
+                <div style="font-size:11px;color:#9ca3af;margin-top:3px;">We'll check if you're already registered.</div>
             </div>
 
-            <div id="foundBox" class="found-box" style="display:none;">
+            <div class="found-box" id="foundBox" style="display:none;">
                 <i class="fas fa-user-check"></i> Found: <strong id="foundName"></strong>
-                <div style="font-size:11px;color:#16a34a;margin-top:2px;">Your details are pre-filled below.</div>
+                <div style="font-size:11px;margin-top:2px;">Your details are pre-filled below.</div>
             </div>
+            <input type="hidden" id="hiddenPid">
 
-            <input type="hidden" id="hiddenPatientId">
-
-            <div id="nameField" class="mb-3">
-                <label class="form-label">Full Name <span style="color:#dc2626;">*</span></label>
+            <div class="mb-3" id="nameField">
+                <label class="form-label">Full Name <span style="color:#dc2626">*</span></label>
                 <input type="text" id="patientName" class="form-control" placeholder="First Last">
             </div>
 
             <div class="mb-3">
-                <label class="form-label">Reason for Visit</label>
-                <input type="text" id="chiefComplaint" class="form-control" placeholder="e.g. Fever, Back pain (optional)">
+                <label class="form-label">Reason for Visit <span style="font-weight:400;color:#9ca3af;">(optional)</span></label>
+                <input type="text" id="chiefComplaint" class="form-control" placeholder="e.g. Fever, Back pain">
             </div>
 
             <div class="mb-3">
@@ -181,26 +179,27 @@
                 </select>
             </div>
 
-            <div id="step3Err" style="color:#dc2626;font-size:12px;margin-bottom:8px;display:none;"></div>
+            <div class="err-msg" id="err2"></div>
             <div class="btn-row">
-                <button class="btn-back" onclick="goStep(2)">← Back</button>
-                <button class="btn-main" onclick="step3Next()">Confirm Booking &rarr;</button>
+                <button class="btn-back" onclick="goStep(1)">← Back</button>
+                <button class="btn-main" onclick="step2Next()">Confirm Booking &rarr;</button>
             </div>
         </div>
 
-        <!-- STEP 4: Confirmation -->
-        <div class="step" id="step4">
-            <div class="confirm-icon"><i class="fas fa-check-circle"></i></div>
-            <div class="token-display" id="confirmToken"></div>
+        <!-- ── STEP 3: Confirmation ── -->
+        <div class="step" id="step3">
+            <div class="conf-icon"><i class="fas fa-check-circle"></i></div>
+            <div class="token-big" id="confToken"></div>
             <div class="token-sub">Your Queue Token Number</div>
-            <div class="confirm-table">
-                <div class="confirm-row"><span>Patient</span><strong id="confName"></strong></div>
-                <div class="confirm-row"><span>Date</span><strong id="confDate"></strong></div>
-                <div class="confirm-row"><span>Time Slot</span><strong id="confTime"></strong></div>
-                <div class="confirm-row"><span>Appointment ID</span><strong id="confId"></strong></div>
+            <div class="conf-table">
+                <div class="conf-row"><span>Patient</span><strong id="confName"></strong></div>
+                <div class="conf-row"><span>Date</span><strong id="confDate"></strong></div>
+                <div class="conf-row"><span>Time Slot</span><strong id="confTime"></strong></div>
+                <div class="conf-row"><span>Appointment ID</span><strong id="confId"></strong></div>
             </div>
             <div class="notice">
-                <i class="fas fa-info-circle"></i> Please arrive 10 minutes before your slot and show this token number at reception.
+                <i class="fas fa-info-circle"></i>
+                Please arrive 10 minutes before your slot and show this token number at reception.
             </div>
             <button class="btn-main" onclick="location.reload()">Book Another Appointment</button>
         </div>
@@ -209,7 +208,7 @@
 </div>
 
 <script>
-// ── IST helpers ──────────────────────────────────────────────────────────────
+// ── IST helpers ───────────────────────────────────────────────────────────────
 function getIST() {
     const now = new Date();
     return new Date(now.getTime() + now.getTimezoneOffset() * 60000 + 5.5 * 3600000);
@@ -227,8 +226,8 @@ function to12(t) {
     const [h,m] = t.split(':').map(Number);
     return (h%12||12) + ':' + pad(m) + ' ' + (h<12?'AM':'PM');
 }
-function fmtDateLong(ymd) {
-    const [y,mo,d] = ymd.split('-');
+function fmtLong(ymd) {
+    const [y,mo,d] = ymd.split('-').map(Number);
     const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
     const days   = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
     const dt = new Date(y, mo-1, d);
@@ -236,191 +235,216 @@ function fmtDateLong(ymd) {
 }
 
 // ── State ────────────────────────────────────────────────────────────────────
-let state = { date:'', slotTime:'', phone:'', patientId:'', patientName:'', chiefComplaint:'', isFollowup:'0' };
+const S = { date:'', slot:'', phone:'', pid:'', name:'', complaint:'', followup:'0' };
 
 // ── Progress ─────────────────────────────────────────────────────────────────
 function goStep(n) {
     document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
     document.getElementById('step'+n).classList.add('active');
-    for (let i=1; i<=4; i++) {
+    [1,2,3].forEach(i => {
         const ps = document.getElementById('ps'+i);
         ps.classList.toggle('done',   i < n);
         ps.classList.toggle('active', i === n);
-    }
+    });
     window.scrollTo(0,0);
 }
 
-// ── STEP 1: Build date cards (today + 13 days = 14 total) ────────────────────
-(function buildDates() {
-    const scroll = document.getElementById('dateScroll');
-    const today  = todayIST();
-    const dayNames = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
-    const monNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+// ── STEP 1: Build date strip + auto-load today's slots ────────────────────────
+const DAY_NAMES = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+const MON_NAMES = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
+(function buildDates() {
+    const strip = document.getElementById('dateStrip');
     for (let i = 0; i < 14; i++) {
-        const ist = getIST();
+        const ist  = getIST();
         ist.setDate(ist.getDate() + i);
-        const ymd  = ist.getFullYear()+'-'+pad(ist.getMonth()+1)+'-'+pad(ist.getDate());
+        const ymd  = ist.getFullYear() + '-' + pad(ist.getMonth()+1) + '-' + pad(ist.getDate());
         const card = document.createElement('div');
-        card.className = 'date-card' + (i===0?' selected':'');
-        card.dataset.date = ymd;
-        card.innerHTML = `<div class="dc-day">${dayNames[ist.getDay()]}</div>
-                          <div class="dc-num">${ist.getDate()}</div>
-                          <div class="dc-mon">${monNames[ist.getMonth()]}</div>`;
-        card.addEventListener('click', () => {
-            document.querySelectorAll('.date-card').forEach(c => c.classList.remove('selected'));
-            card.classList.add('selected');
-            state.date = ymd;
-        });
-        scroll.appendChild(card);
+        card.className  = 'dc' + (i === 0 ? ' sel' : '');
+        card.dataset.ymd = ymd;
+        card.innerHTML  = `<div class="d-day">${DAY_NAMES[ist.getDay()]}</div>
+                           <div class="d-num">${ist.getDate()}</div>
+                           <div class="d-mon">${MON_NAMES[ist.getMonth()]}</div>`;
+        card.addEventListener('click', () => selectDate(card, ymd));
+        strip.appendChild(card);
     }
-    // Pre-select today
-    state.date = today;
+    // Auto-select today and load its slots
+    S.date = todayIST();
+    loadSlots(S.date);
 })();
 
-function step1Next() {
-    const err = document.getElementById('step1Err');
-    if (!state.date) { err.textContent='Please select a date.'; err.style.display='block'; return; }
-    err.style.display='none';
-    document.getElementById('displayDate2').textContent = fmtDateLong(state.date);
-    loadSlots(state.date);
-    goStep(2);
+function selectDate(card, ymd) {
+    document.querySelectorAll('.dc').forEach(c => c.classList.remove('sel'));
+    card.classList.add('sel');
+    S.date = ymd;
+    S.slot = ''; // reset slot selection
+    loadSlots(ymd);
 }
 
-// ── STEP 2: Slot picker ───────────────────────────────────────────────────────
+// ── Slot loader ───────────────────────────────────────────────────────────────
+let currentFetch = null;
 function loadSlots(date) {
-    const container = document.getElementById('slotsContainer');
-    const loading   = document.getElementById('slotsLoading');
-    const noSlots   = document.getElementById('noSlots');
-    container.innerHTML = '';
-    loading.style.display = 'block';
-    noSlots.style.display = 'none';
-    state.slotTime = '';
+    const area = document.getElementById('slotArea');
+    area.innerHTML = '<div class="slot-loading"><i class="fas fa-spinner fa-spin"></i> Loading slots…</div>';
 
-    fetch('/api/slots?date=' + encodeURIComponent(date))
+    if (currentFetch) currentFetch.abort();
+    const ctrl = new AbortController();
+    currentFetch = ctrl;
+
+    fetch('/api/slots?date=' + encodeURIComponent(date), { signal: ctrl.signal })
     .then(r => r.json())
     .then(data => {
-        loading.style.display = 'none';
-        if (!data.success) { noSlots.style.display='block'; return; }
-
-        const isToday  = (date === todayIST());
-        const nowTime  = nowTimeIST();
-
-        // Only show available (not full) and future slots
-        const slots = data.slots.filter(s => {
-            if (!s.available) return false;
-            if (isToday && s.time <= nowTime) return false;
-            return true;
-        });
-
-        if (!slots.length) { noSlots.style.display='block'; return; }
-
-        const morning = slots.filter(s => s.time < '13:00');
-        const evening = slots.filter(s => s.time >= '13:00');
-        let html = '';
-        if (morning.length) {
-            html += '<div class="session-label"><i class="fas fa-sun"></i> Morning</div><div class="slot-grid">';
-            morning.forEach(s => { html += `<div class="slot-btn" data-time="${s.time}" onclick="selectSlot(this,'${s.time}')">${to12(s.time)}</div>`; });
-            html += '</div>';
-        }
-        if (evening.length) {
-            html += '<div class="session-label"><i class="fas fa-moon"></i> Evening</div><div class="slot-grid">';
-            evening.forEach(s => { html += `<div class="slot-btn" data-time="${s.time}" onclick="selectSlot(this,'${s.time}')">${to12(s.time)}</div>`; });
-            html += '</div>';
-        }
-        container.innerHTML = html;
+        currentFetch = null;
+        renderSlots(data, date);
     })
-    .catch(() => { loading.style.display='none'; noSlots.style.display='block'; });
+    .catch(e => {
+        if (e.name === 'AbortError') return;
+        currentFetch = null;
+        area.innerHTML = '<div class="slot-empty">Could not load slots. Please try again.</div>';
+    });
+}
+
+function renderSlots(data, date) {
+    const area    = document.getElementById('slotArea');
+    const isToday = (date === todayIST());
+    const nowTime = nowTimeIST();
+
+    if (!data.success || !data.slots.length) {
+        area.innerHTML = '<div class="slot-empty"><i class="fas fa-calendar-times"></i> No slots available for this date.</div>';
+        return;
+    }
+
+    // Filter: hide fully booked & past slots
+    const slots = data.slots.filter(s => {
+        if (!s.available) return false;
+        if (isToday && s.time <= nowTime) return false;
+        return true;
+    });
+
+    if (!slots.length) {
+        area.innerHTML = '<div class="slot-empty"><i class="fas fa-calendar-times"></i> No available slots for this date.</div>';
+        return;
+    }
+
+    const morning = slots.filter(s => s.time < '13:00');
+    const evening = slots.filter(s => s.time >= '13:00');
+    let html = '';
+
+    if (morning.length) {
+        html += `<div class="session-lbl"><i class="fas fa-sun" style="color:#f59e0b;"></i> Morning</div>
+                 <div class="slot-grid">`;
+        morning.forEach(s => {
+            html += `<div class="sb" data-time="${s.time}" onclick="selectSlot(this,'${s.time}')">${to12(s.time)}</div>`;
+        });
+        html += '</div>';
+    }
+    if (evening.length) {
+        html += `<div class="session-lbl"><i class="fas fa-moon" style="color:#6366f1;"></i> Evening</div>
+                 <div class="slot-grid">`;
+        evening.forEach(s => {
+            html += `<div class="sb" data-time="${s.time}" onclick="selectSlot(this,'${s.time}')">${to12(s.time)}</div>`;
+        });
+        html += '</div>';
+    }
+    area.innerHTML = html;
 }
 
 function selectSlot(el, time) {
-    document.querySelectorAll('.slot-btn').forEach(b => b.classList.remove('selected'));
-    el.classList.add('selected');
-    state.slotTime = time;
+    document.querySelectorAll('.sb').forEach(b => b.classList.remove('sel'));
+    el.classList.add('sel');
+    S.slot = time;
 }
 
-function step2Next() {
-    const err = document.getElementById('step2Err');
-    if (!state.slotTime) { err.textContent='Please select a time slot.'; err.style.display='block'; return; }
-    err.style.display='none';
-    goStep(3);
+function step1Next() {
+    const err = document.getElementById('err1');
+    if (!S.date) { showErr('err1','Please select a date.'); return; }
+    if (!S.slot) { showErr('err1','Please select a time slot.'); return; }
+    err.style.display = 'none';
+    goStep(2);
 }
 
-// ── STEP 3: Phone lookup + patient details ────────────────────────────────────
+// ── STEP 2: Phone lookup + details ────────────────────────────────────────────
+document.getElementById('phoneInput').addEventListener('keydown', e => {
+    if (e.key === 'Enter') { e.preventDefault(); lookupPhone(); }
+});
+
 function lookupPhone() {
     const phone = document.getElementById('phoneInput').value.trim();
-    const err   = document.getElementById('step3Err');
-    if (phone.length < 8) { err.textContent='Enter a valid phone number first.'; err.style.display='block'; return; }
-    err.style.display='none';
-    state.phone = phone;
+    if (phone.length < 8) { showErr('err2','Enter a valid phone number first.'); return; }
+    document.getElementById('err2').style.display = 'none';
+    S.phone = phone;
 
     fetch('/api/patient/lookup?phone=' + encodeURIComponent(phone))
     .then(r => r.json())
     .then(data => {
         if (data.success && data.found) {
-            const p = data.patient;
+            const p    = data.patient;
             const name = ((p.fname||'') + ' ' + (p.lname||'')).trim();
-            state.patientId   = p.id;
-            state.patientName = name;
+            S.pid  = p.id;
+            S.name = name;
+            document.getElementById('hiddenPid').value     = p.id;
+            document.getElementById('patientName').value   = name;
             document.getElementById('foundName').textContent = name;
             document.getElementById('foundBox').style.display = 'block';
-            document.getElementById('hiddenPatientId').value = p.id;
-            document.getElementById('patientName').value     = name;
-            document.getElementById('nameField').style.opacity = '0.6';
+            document.getElementById('nameField').style.opacity = '0.55';
         } else {
-            state.patientId = '';
+            S.pid = '';
+            document.getElementById('hiddenPid').value      = '';
             document.getElementById('foundBox').style.display = 'none';
-            document.getElementById('hiddenPatientId').value  = '';
             document.getElementById('nameField').style.opacity = '1';
         }
     });
 }
 
-// Also lookup on Enter key in phone field
-document.getElementById('phoneInput').addEventListener('keydown', e => {
-    if (e.key === 'Enter') { e.preventDefault(); lookupPhone(); }
-});
-
-function step3Next() {
+function step2Next() {
     const phone = document.getElementById('phoneInput').value.trim();
     const name  = document.getElementById('patientName').value.trim();
-    const err   = document.getElementById('step3Err');
-    if (phone.length < 8) { err.textContent='Please enter a valid mobile number.'; err.style.display='block'; return; }
-    if (!name)             { err.textContent='Please enter patient name.'; err.style.display='block'; return; }
-    err.style.display='none';
+    if (phone.length < 8) { showErr('err2','Please enter a valid mobile number.'); return; }
+    if (!name)             { showErr('err2','Please enter the patient name.'); return; }
+    document.getElementById('err2').style.display = 'none';
 
-    state.phone          = phone;
-    state.patientName    = name;
-    state.patientId      = document.getElementById('hiddenPatientId').value;
-    state.chiefComplaint = document.getElementById('chiefComplaint').value.trim();
-    state.isFollowup     = document.getElementById('isFollowup').value;
+    S.phone     = phone;
+    S.name      = name;
+    S.pid       = document.getElementById('hiddenPid').value;
+    S.complaint = document.getElementById('chiefComplaint').value.trim();
+    S.followup  = document.getElementById('isFollowup').value;
 
     const body = new URLSearchParams({
-        appt_date:        state.date,
-        slot_time:        state.slotTime,
-        patient_id:       state.patientId,
-        patient_name:     state.patientName,
-        patient_phone:    state.phone,
-        chief_complaint:  state.chiefComplaint,
-        is_followup:      state.isFollowup,
+        appt_date:       S.date,
+        slot_time:       S.slot,
+        patient_id:      S.pid,
+        patient_name:    S.name,
+        patient_phone:   S.phone,
+        chief_complaint: S.complaint,
+        is_followup:     S.followup,
     });
 
-    fetch('/api/booking', { method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'}, body })
+    fetch('/api/booking', {
+        method: 'POST',
+        headers: {'Content-Type':'application/x-www-form-urlencoded'},
+        body
+    })
     .then(r => r.json())
     .then(data => {
         if (data.success) {
-            document.getElementById('confirmToken').textContent = data.token;
-            document.getElementById('confName').textContent     = state.patientName;
-            document.getElementById('confDate').textContent     = fmtDateLong(data.appt_date);
-            document.getElementById('confTime').textContent     = to12(data.slot_time);
-            document.getElementById('confId').textContent       = '#' + data.id;
-            goStep(4);
+            document.getElementById('confToken').textContent = data.token;
+            document.getElementById('confName').textContent  = S.name;
+            document.getElementById('confDate').textContent  = fmtLong(data.appt_date);
+            document.getElementById('confTime').textContent  = to12(data.slot_time);
+            document.getElementById('confId').textContent    = '#' + data.id;
+            goStep(3);
         } else {
-            err.textContent = data.message || 'Booking failed. Please try again.';
-            err.style.display = 'block';
+            showErr('err2', data.message || 'Booking failed. Please try again.');
         }
     })
-    .catch(() => { err.textContent='Network error. Please try again.'; err.style.display='block'; });
+    .catch(() => showErr('err2','Network error. Please try again.'));
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+function showErr(id, msg) {
+    const el = document.getElementById(id);
+    el.textContent    = msg;
+    el.style.display  = 'block';
 }
 </script>
 </body>
