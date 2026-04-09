@@ -284,7 +284,6 @@ function selectDate(card, ymd) {
 }
 
 // ── Slot loader ───────────────────────────────────────────────────────────────
-let currentFetch = null;
 function loadSlots(date) {
     const area = document.getElementById('slotArea');
     area.innerHTML = '<div class="slot-loading"><i class="fas fa-spinner fa-spin"></i> Loading slots…</div>';
