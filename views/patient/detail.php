@@ -8,409 +8,403 @@ function fmt($value, $fallback = 'N/A') {
     if ($value === '' || $value === '0000-00-00' || $value === '1970-01-01') return $fallback;
     return $value;
 }
-
 function fmtDate($value) {
-    if ($value === null || $value === '' || $value === '0000-00-00' || strpos((string)$value, '0000') === 0 || $value === '1970-01-01') {
-        return 'N/A';
-    }
+    if ($value === null || $value === '' || $value === '0000-00-00' || strpos((string)$value, '0000') === 0 || $value === '1970-01-01') return 'N/A';
     $ts = strtotime($value);
     return $ts ? date('d M Y', $ts) : 'N/A';
 }
-
 function fmtGender($g) {
-    if ($g === 'M') return 'Male';
-    if ($g === 'F') return 'Female';
-    return 'N/A';
+    if ($g === 'M') return 'Male'; if ($g === 'F') return 'Female'; return 'N/A';
 }
-
-function fmtMaritalStatus($s) {
-    $map = ['S' => 'Single', 'M' => 'Married', 'D' => 'Divorced', 'W' => 'Widowed'];
-    return $map[$s] ?? 'N/A';
+function fmtMrg($s) {
+    return ['S'=>'Single','M'=>'Married','D'=>'Divorced','W'=>'Widowed'][$s] ?? 'N/A';
 }
-
-function fmtName($fname, $lname) {
-    $full = trim(trim($fname ?? '') . ' ' . trim($lname ?? ''));
-    return $full === '' ? 'N/A' : $full;
+function fmtVeg($v) {
+    return ['V'=>'Vegetarian','NV'=>'Non-Vegetarian','EV'=>'Eggetarian'][$v] ?? 'N/A';
+}
+function fmtName($f, $l) {
+    $full = trim(trim($f??'').' '.trim($l??''));
+    return $full==='' ? 'N/A' : $full;
 }
 ?>
 
 <?php if (isset($response) && $response['success']):
-    $patient = $response['patient'];
+    $p = $response['patient'];
     $reports = $response['progress_reports'] ?? [];
     $totalReports = $response['total_reports'] ?? count($reports);
-    $patientId = $patient['id'];
+    $pid = $p['id'];
 ?>
 
 <style>
-/* ── Patient Detail Page ── */
-.patient-header {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    padding: 16px 20px;
-    background: white;
-    border-radius: 8px;
-    box-shadow: var(--shadow-sm);
-    margin-bottom: 16px;
+/* ── Header ── */
+.pt-header {
+    display:flex; align-items:center; gap:16px;
+    padding:14px 20px; background:white; border-radius:8px;
+    box-shadow:var(--shadow-sm); margin-bottom:14px;
 }
-.patient-avatar {
-    width: 52px;
-    height: 52px;
-    border-radius: 50%;
-    background: var(--primary);
-    color: white;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.4rem;
-    font-weight: 700;
-    flex-shrink: 0;
+.pt-avatar {
+    width:50px; height:50px; border-radius:50%;
+    background:var(--primary); color:white;
+    display:flex; align-items:center; justify-content:center;
+    font-size:1.3rem; font-weight:700; flex-shrink:0;
 }
-.patient-header-info h2 {
-    margin: 0;
-    font-size: 1.3rem;
-    font-weight: 700;
-    color: var(--gray-900);
-}
-.patient-header-meta {
-    display: flex;
-    gap: 16px;
-    flex-wrap: wrap;
-    margin-top: 4px;
-}
-.patient-header-meta span {
-    font-size: 0.85rem;
-    color: var(--gray-600);
-}
-.patient-header-meta span i {
-    margin-right: 4px;
-    color: var(--gray-400);
-}
-.patient-header-actions {
-    margin-left: auto;
-    display: flex;
-    gap: 8px;
-    flex-shrink: 0;
-}
+.pt-header-info h2 { margin:0; font-size:1.25rem; font-weight:700; color:var(--gray-900); }
+.pt-meta { display:flex; gap:14px; flex-wrap:wrap; margin-top:3px; }
+.pt-meta span { font-size:0.83rem; color:var(--gray-600); }
+.pt-meta span i { margin-right:3px; color:var(--gray-400); }
+.pt-meta a { color:var(--primary); text-decoration:none; }
+.pt-header-actions { margin-left:auto; display:flex; gap:8px; flex-shrink:0; }
 
-/* ── Compact info grid ── */
+/* ── Info panel ── */
+.info-panel-header {
+    display:flex; align-items:center; justify-content:space-between;
+    cursor:pointer; user-select:none;
+}
 .info-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-    gap: 0;
+    display:grid;
+    grid-template-columns:repeat(auto-fill, minmax(170px,1fr));
+    gap:0;
 }
 .info-item {
-    padding: 10px 14px;
-    border-right: 1px solid var(--gray-100);
-    border-bottom: 1px solid var(--gray-100);
+    padding:9px 14px;
+    border-right:1px solid var(--gray-100);
+    border-bottom:1px solid var(--gray-100);
 }
-.info-item:last-child { border-right: none; }
 .info-label {
-    font-size: 0.72rem;
-    text-transform: uppercase;
-    letter-spacing: 0.4px;
-    color: var(--gray-500);
-    margin-bottom: 2px;
+    font-size:0.7rem; text-transform:uppercase;
+    letter-spacing:0.4px; color:var(--gray-400); margin-bottom:2px;
 }
-.info-value {
-    font-size: 0.92rem;
-    font-weight: 600;
-    color: var(--gray-800);
-}
-.info-value a { color: var(--primary); text-decoration: none; }
+.info-value { font-size:0.9rem; font-weight:600; color:var(--gray-800); }
+.info-value.normal { font-weight:400; }
 .info-full {
-    grid-column: 1 / -1;
-    padding: 10px 14px;
-    border-bottom: 1px solid var(--gray-100);
+    grid-column:1/-1; padding:9px 14px;
+    border-bottom:1px solid var(--gray-100);
 }
 
-/* ── Two-panel workspace ── */
+/* View / Edit toggle */
+.edit-btn-sm {
+    font-size:0.75rem; padding:3px 10px; border-radius:4px;
+    border:1px solid var(--gray-300); background:white;
+    color:var(--gray-600); cursor:pointer; transition:all 0.15s;
+}
+.edit-btn-sm:hover { border-color:var(--primary); color:var(--primary); }
+.edit-btn-sm.active { background:var(--primary); color:white; border-color:var(--primary); }
+
+/* Edit inputs inside info grid */
+.field-edit-input {
+    width:100%; font-size:0.9rem; font-weight:600; color:var(--gray-800);
+    border:1px solid var(--primary); border-radius:4px;
+    padding:3px 7px; font-family:inherit; background:#f0f7ff;
+    box-sizing:border-box;
+}
+.field-edit-input:focus { outline:none; box-shadow:0 0 0 2px rgba(37,99,235,0.15); }
+.field-edit-select { appearance:auto; cursor:pointer; }
+textarea.field-edit-input { resize:vertical; min-height:70px; font-weight:400; }
+.info-save-bar {
+    display:none; padding:10px 14px; background:#eff6ff;
+    border-top:1px solid var(--gray-200);
+    gap:8px; align-items:center;
+}
+.info-save-bar.visible { display:flex; }
+
+/* ── Workspace ── */
 .workspace {
-    display: grid;
-    grid-template-columns: 1fr 380px;
-    gap: 16px;
-    align-items: start;
+    display:grid; grid-template-columns:1fr 370px;
+    gap:14px; align-items:start;
 }
-@media (max-width: 1024px) {
-    .workspace { grid-template-columns: 1fr; }
-}
+@media(max-width:1024px){ .workspace{grid-template-columns:1fr;} }
 
-/* ── Add Report Form ── */
-.report-form-card .card-header {
-    background: var(--primary);
-    color: white;
+/* ── Add report form ── */
+.report-form-card .card-header { background:var(--primary); color:white; }
+.r-input {
+    width:100%; padding:9px 12px;
+    border:1px solid var(--gray-300); border-radius:6px;
+    font-size:0.93rem; font-family:inherit;
+    transition:border-color 0.2s; box-sizing:border-box;
 }
-.report-form-card .card-header i { margin-right: 6px; }
-.form-row-inline {
-    display: grid;
-    grid-template-columns: 1fr 140px;
-    gap: 12px;
-}
-.report-input {
-    width: 100%;
-    padding: 10px 12px;
-    border: 1px solid var(--gray-300);
-    border-radius: 6px;
-    font-size: 0.95rem;
-    font-family: inherit;
-    resize: vertical;
-    min-height: 80px;
-    transition: border-color 0.2s;
-}
-.report-input:focus {
-    outline: none;
-    border-color: var(--primary);
-    box-shadow: 0 0 0 3px rgba(37,99,235,0.1);
-}
-.amount-input {
-    min-height: unset;
-    height: 44px;
-    resize: none;
-}
-.date-input {
-    min-height: unset;
-    height: 44px;
-    resize: none;
-}
+.r-input:focus { outline:none; border-color:var(--primary); box-shadow:0 0 0 3px rgba(37,99,235,0.1); }
+textarea.r-input { resize:vertical; }
 .save-btn {
-    width: 100%;
-    padding: 12px;
-    font-size: 1rem;
-    font-weight: 600;
-    background: var(--primary);
-    color: white;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-    transition: background 0.2s;
-    margin-top: 4px;
+    width:100%; padding:11px; font-size:0.95rem; font-weight:600;
+    background:var(--primary); color:white; border:none;
+    border-radius:6px; cursor:pointer; transition:background 0.2s;
 }
-.save-btn:hover { background: var(--primary-dark, #1d4ed8); }
-.save-btn:disabled { opacity: 0.6; cursor: not-allowed; }
-.save-success {
-    background: var(--success, #16a34a);
-    color: white;
-    padding: 10px 14px;
-    border-radius: 6px;
-    font-size: 0.9rem;
-    display: none;
-    margin-top: 8px;
+.save-btn:hover { background:#1d4ed8; }
+.save-btn:disabled { opacity:0.6; cursor:not-allowed; }
+.save-ok {
+    display:none; background:#dcfce7; color:#166534;
+    padding:8px 12px; border-radius:6px; font-size:0.88rem; margin-top:8px;
 }
 
-/* ── History Panel ── */
-.history-panel {
-    position: sticky;
-    top: 16px;
+/* ── History ── */
+.history-panel { position:sticky; top:14px; }
+.history-list { max-height:calc(100vh - 270px); overflow-y:auto; }
+.h-item {
+    padding:11px 14px; border-bottom:1px solid var(--gray-100);
+    transition:background 0.15s; position:relative;
 }
-.history-list {
-    max-height: calc(100vh - 280px);
-    overflow-y: auto;
+.h-item:last-child { border-bottom:none; }
+.h-item:hover { background:var(--gray-50); }
+.h-item.new-entry { background:#eff6ff; border-left:3px solid var(--primary); }
+.h-date { font-size:0.78rem; font-weight:700; color:var(--primary); margin-bottom:3px; }
+.h-meds { font-size:0.88rem; color:var(--gray-800); font-weight:500; margin-bottom:2px; }
+.h-amt { font-size:0.8rem; color:var(--gray-500); }
+.h-num { float:right; font-size:0.72rem; color:var(--gray-400); }
+.h-edit-btn {
+    display:none; position:absolute; right:10px; bottom:10px;
+    font-size:0.72rem; padding:2px 8px; border-radius:3px;
+    border:1px solid var(--gray-300); background:white;
+    color:var(--gray-500); cursor:pointer;
 }
-.history-item {
-    padding: 12px 16px;
-    border-bottom: 1px solid var(--gray-100);
-    transition: background 0.15s;
+.h-item:hover .h-edit-btn { display:inline-block; }
+.h-edit-form {
+    display:none; margin-top:8px; padding-top:8px;
+    border-top:1px solid var(--gray-200);
 }
-.history-item:last-child { border-bottom: none; }
-.history-item:hover { background: var(--gray-50); }
-.history-item.latest {
-    background: #eff6ff;
-    border-left: 3px solid var(--primary);
+.h-edit-form.open { display:block; }
+.h-edit-row { display:grid; grid-template-columns:1fr 100px; gap:8px; margin-bottom:6px; }
+.h-edit-input {
+    width:100%; padding:5px 8px; font-size:0.85rem;
+    border:1px solid var(--primary); border-radius:4px;
+    font-family:inherit; box-sizing:border-box;
 }
-.history-date {
-    font-size: 0.8rem;
-    font-weight: 700;
-    color: var(--primary);
-    margin-bottom: 4px;
+.h-edit-actions { display:flex; gap:6px; }
+.h-save-btn {
+    padding:4px 12px; font-size:0.82rem; border:none;
+    border-radius:4px; background:var(--primary); color:white; cursor:pointer;
 }
-.history-meds {
-    font-size: 0.9rem;
-    color: var(--gray-800);
-    font-weight: 500;
-    margin-bottom: 2px;
-}
-.history-amt {
-    font-size: 0.82rem;
-    color: var(--gray-500);
-}
-.history-report-num {
-    float: right;
-    font-size: 0.75rem;
-    color: var(--gray-400);
-}
-
-/* ── Inline Edit ── */
-.editable-field {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    cursor: pointer;
-    border-radius: 4px;
-    padding: 1px 4px;
-    transition: background 0.15s;
-}
-.editable-field:hover { background: var(--gray-100); }
-.editable-field .edit-icon {
-    opacity: 0;
-    font-size: 0.7rem;
-    color: var(--gray-400);
-    transition: opacity 0.15s;
-}
-.editable-field:hover .edit-icon { opacity: 1; }
-.inline-edit-input {
-    font-size: 0.92rem;
-    font-weight: 600;
-    color: var(--gray-800);
-    border: 1px solid var(--primary);
-    border-radius: 4px;
-    padding: 2px 6px;
-    width: 100%;
-    font-family: inherit;
+.h-cancel-btn {
+    padding:4px 10px; font-size:0.82rem; border:1px solid var(--gray-300);
+    border-radius:4px; background:white; color:var(--gray-600); cursor:pointer;
 }
 </style>
 
-<!-- ── COMPACT PATIENT HEADER ── -->
-<div class="patient-header">
-    <div class="patient-avatar">
-        <?php echo strtoupper(substr($patient['fname'] ?? 'P', 0, 1)); ?>
-    </div>
-    <div class="patient-header-info">
-        <h2><?php echo htmlspecialchars(fmtName($patient['fname'] ?? '', $patient['lname'] ?? '')); ?></h2>
-        <div class="patient-header-meta">
-            <span><i class="fas fa-id-badge"></i> ID: <?php echo htmlspecialchars($patient['patient_id'] ?? $patient['id']); ?></span>
-            <?php if (!empty($patient['age']) && $patient['age'] > 0): ?>
-            <span><i class="fas fa-birthday-cake"></i> <?php echo $patient['age']; ?> yrs</span>
+<!-- ── HEADER ── -->
+<div class="pt-header">
+    <div class="pt-avatar"><?php echo strtoupper(substr($p['fname']??'P',0,1)); ?></div>
+    <div class="pt-header-info">
+        <h2><?php echo htmlspecialchars(fmtName($p['fname']??'',$p['lname']??'')); ?></h2>
+        <div class="pt-meta">
+            <span><i class="fas fa-id-badge"></i> ID: <?php echo htmlspecialchars($p['patient_id']??$p['id']); ?></span>
+            <?php if(!empty($p['age'])&&$p['age']>0): ?>
+            <span><i class="fas fa-birthday-cake"></i> <?php echo $p['age']; ?> yrs</span>
             <?php endif; ?>
-            <span><i class="fas fa-venus-mars"></i> <?php echo fmtGender($patient['gender'] ?? ''); ?></span>
-            <?php $contact = trim($patient['contact_no'] ?? ''); if ($contact !== ''): ?>
-            <span><i class="fas fa-phone"></i> <a href="tel:<?php echo htmlspecialchars($contact); ?>"><?php echo htmlspecialchars($contact); ?></a></span>
+            <span><i class="fas fa-venus-mars"></i> <?php echo fmtGender($p['gender']??''); ?></span>
+            <?php $ct=trim($p['contact_no']??''); if($ct!==''): ?>
+            <span><i class="fas fa-phone"></i> <a href="tel:<?php echo htmlspecialchars($ct); ?>"><?php echo htmlspecialchars($ct); ?></a></span>
             <?php endif; ?>
-            <span><i class="fas fa-calendar-check"></i> Reg: <?php echo fmtDate($patient['dor'] ?? ''); ?></span>
-            <span><i class="fas fa-file-medical"></i> <?php echo $totalReports; ?> report<?php echo $totalReports != 1 ? 's' : ''; ?></span>
+            <span><i class="fas fa-calendar-check"></i> Reg: <?php echo fmtDate($p['dor']??''); ?></span>
+            <span><i class="fas fa-file-medical"></i> <?php echo $totalReports; ?> visit<?php echo $totalReports!=1?'s':''; ?></span>
         </div>
     </div>
-    <div class="patient-header-actions">
+    <div class="pt-header-actions">
         <a href="/patients" class="btn btn-secondary btn-sm"><i class="fas fa-arrow-left"></i> Back</a>
     </div>
 </div>
 
-<!-- ── COMPACT INFO CARD ── -->
+<!-- ── PATIENT INFORMATION CARD ── -->
 <div class="card mb-16" id="infoCard">
-    <div class="card-header" style="cursor:pointer; user-select:none;" onclick="toggleInfo()">
-        <i class="fas fa-id-card"></i> Patient Information
-        <span style="float:right; font-size:0.8rem; color: var(--gray-400);" id="infoToggleLabel">click to expand</span>
+    <div class="card-header">
+        <div class="info-panel-header" onclick="toggleInfo()">
+            <span><i class="fas fa-id-card"></i> Patient Information</span>
+            <div style="display:flex;gap:8px;align-items:center;" onclick="event.stopPropagation()">
+                <button class="edit-btn-sm" id="infoEditBtn" onclick="toggleInfoEdit()">
+                    <i class="fas fa-edit"></i> Edit
+                </button>
+                <span style="font-size:0.78rem;color:var(--gray-400);" id="infoToggleHint">▾ expand</span>
+            </div>
+        </div>
     </div>
     <div id="infoBody" style="display:none;">
-        <div class="info-grid">
+        <div class="info-grid" id="infoGrid">
+
+            <!-- ROW 1: 6 fields -->
+            <div class="info-item">
+                <div class="info-label">Contact No.</div>
+                <div class="info-value" id="disp_contact_no">
+                    <?php $ct=trim($p['contact_no']??''); echo $ct!=='' ? '<a href="tel:'.htmlspecialchars($ct).'">'.htmlspecialchars($ct).'</a>' : 'N/A'; ?>
+                </div>
+                <input type="text" class="field-edit-input edit-mode" name="contact_no"
+                    value="<?php echo htmlspecialchars(trim($p['contact_no']??'')); ?>" style="display:none;">
+            </div>
+            <div class="info-item">
+                <div class="info-label">Age</div>
+                <div class="info-value" id="disp_age">
+                    <?php echo (!empty($p['age'])&&$p['age']>0) ? htmlspecialchars($p['age']).' yrs' : 'N/A'; ?>
+                </div>
+                <input type="number" class="field-edit-input edit-mode" name="age"
+                    value="<?php echo htmlspecialchars($p['age']??''); ?>" min="0" max="150" style="display:none;">
+            </div>
+            <div class="info-item">
+                <div class="info-label">Gender</div>
+                <div class="info-value" id="disp_gender"><?php echo fmtGender($p['gender']??''); ?></div>
+                <select class="field-edit-input field-edit-select edit-mode" name="gender" style="display:none;">
+                    <option value="">-- Select --</option>
+                    <option value="M" <?php echo ($p['gender']??'')==='M'?'selected':''; ?>>Male</option>
+                    <option value="F" <?php echo ($p['gender']??'')==='F'?'selected':''; ?>>Female</option>
+                </select>
+            </div>
             <div class="info-item">
                 <div class="info-label">Marital Status</div>
-                <div class="info-value"><?php echo htmlspecialchars(fmtMaritalStatus($patient['mrg_status'] ?? '')); ?></div>
+                <div class="info-value" id="disp_mrg_status"><?php echo fmtMrg($p['mrg_status']??''); ?></div>
+                <select class="field-edit-input field-edit-select edit-mode" name="mrg_status" style="display:none;">
+                    <option value="">-- Select --</option>
+                    <option value="S" <?php echo ($p['mrg_status']??'')==='S'?'selected':''; ?>>Single</option>
+                    <option value="M" <?php echo ($p['mrg_status']??'')==='M'?'selected':''; ?>>Married</option>
+                    <option value="D" <?php echo ($p['mrg_status']??'')==='D'?'selected':''; ?>>Divorced</option>
+                    <option value="W" <?php echo ($p['mrg_status']??'')==='W'?'selected':''; ?>>Widowed</option>
+                </select>
             </div>
             <div class="info-item">
-                <div class="info-label">Occupation</div>
-                <div class="info-value editable-field" data-field="occupation" data-id="<?php echo $patientId; ?>">
-                    <span class="field-text"><?php echo htmlspecialchars(fmt($patient['occupation'] ?? null)); ?></span>
-                    <i class="fas fa-pen edit-icon"></i>
-                </div>
-            </div>
-            <div class="info-item">
-                <div class="info-label">Education</div>
-                <div class="info-value editable-field" data-field="education" data-id="<?php echo $patientId; ?>">
-                    <span class="field-text"><?php echo htmlspecialchars(fmt($patient['education'] ?? null)); ?></span>
-                    <i class="fas fa-pen edit-icon"></i>
-                </div>
+                <div class="info-label">Diet</div>
+                <div class="info-value" id="disp_veg"><?php echo fmtVeg($p['veg']??''); ?></div>
+                <select class="field-edit-input field-edit-select edit-mode" name="veg" style="display:none;">
+                    <option value="">-- Select --</option>
+                    <option value="V" <?php echo ($p['veg']??'')==='V'?'selected':''; ?>>Vegetarian</option>
+                    <option value="NV" <?php echo ($p['veg']??'')==='NV'?'selected':''; ?>>Non-Vegetarian</option>
+                    <option value="EV" <?php echo ($p['veg']??'')==='EV'?'selected':''; ?>>Eggetarian</option>
+                </select>
             </div>
             <div class="info-item">
                 <div class="info-label">Religion</div>
-                <div class="info-value"><?php echo htmlspecialchars(fmt($patient['religion'] ?? null)); ?></div>
+                <div class="info-value" id="disp_religion"><?php echo htmlspecialchars(fmt($p['religion']??null)); ?></div>
+                <input type="text" class="field-edit-input edit-mode" name="religion"
+                    value="<?php echo htmlspecialchars(trim($p['religion']??'')); ?>" style="display:none;">
+            </div>
+
+            <!-- ROW 2 -->
+            <div class="info-item">
+                <div class="info-label">Occupation</div>
+                <div class="info-value" id="disp_occupation"><?php echo htmlspecialchars(fmt($p['occupation']??null)); ?></div>
+                <input type="text" class="field-edit-input edit-mode" name="occupation"
+                    value="<?php echo htmlspecialchars(trim($p['occupation']??'')); ?>" style="display:none;">
             </div>
             <div class="info-item">
-                <div class="info-label">Referred By</div>
-                <div class="info-value editable-field" data-field="refered_by" data-id="<?php echo $patientId; ?>">
-                    <span class="field-text"><?php echo htmlspecialchars(fmt($patient['refered_by'] ?? null)); ?></span>
-                    <i class="fas fa-pen edit-icon"></i>
-                </div>
+                <div class="info-label">Education</div>
+                <div class="info-value" id="disp_education"><?php echo htmlspecialchars(fmt($p['education']??null)); ?></div>
+                <input type="text" class="field-edit-input edit-mode" name="education"
+                    value="<?php echo htmlspecialchars(trim($p['education']??'')); ?>" style="display:none;">
             </div>
             <div class="info-item">
                 <div class="info-label">DOB</div>
-                <div class="info-value"><?php echo htmlspecialchars(fmtDate($patient['dob'] ?? '')); ?></div>
+                <div class="info-value" id="disp_dob"><?php echo fmtDate($p['dob']??''); ?></div>
+                <input type="date" class="field-edit-input edit-mode" name="dob"
+                    value="<?php
+                        $dv = $p['dob']??'';
+                        echo ($dv&&$dv!=='0000-00-00'&&$dv!=='1970-01-01') ? htmlspecialchars($dv) : '';
+                    ?>" style="display:none;">
             </div>
+            <div class="info-item">
+                <div class="info-label">Referred By</div>
+                <div class="info-value" id="disp_refered_by"><?php echo htmlspecialchars(fmt($p['refered_by']??null)); ?></div>
+                <input type="text" class="field-edit-input edit-mode" name="refered_by"
+                    value="<?php echo htmlspecialchars(trim($p['refered_by']??'')); ?>" style="display:none;">
+            </div>
+
+            <!-- Full-width rows -->
             <div class="info-full">
                 <div class="info-label">Address</div>
-                <div class="info-value editable-field" data-field="address" data-id="<?php echo $patientId; ?>">
-                    <span class="field-text"><?php echo htmlspecialchars(fmt($patient['address'] ?? null)); ?></span>
-                    <i class="fas fa-pen edit-icon"></i>
-                </div>
+                <div class="info-value normal" id="disp_address"><?php echo htmlspecialchars(fmt($p['address']??null)); ?></div>
+                <input type="text" class="field-edit-input edit-mode" name="address"
+                    value="<?php echo htmlspecialchars(trim($p['address']??'')); ?>" style="display:none;">
             </div>
             <div class="info-full">
-                <div class="info-label">Chief Complaint</div>
-                <div class="info-value editable-field" data-field="chief" data-id="<?php echo $patientId; ?>" style="font-weight: 400; white-space: pre-line;">
-                    <span class="field-text"><?php echo htmlspecialchars(fmt($patient['chief'] ?? null)); ?></span>
-                    <i class="fas fa-pen edit-icon"></i>
-                </div>
+                <div class="info-label">Chief Complaint / Case Notes</div>
+                <div class="info-value normal" id="disp_chief" style="white-space:pre-line;"><?php echo htmlspecialchars(fmt($p['chief']??null)); ?></div>
+                <textarea class="field-edit-input edit-mode" name="chief" rows="5" style="display:none;"><?php echo htmlspecialchars(trim($p['chief']??'')); ?></textarea>
             </div>
+
+        </div><!-- /info-grid -->
+
+        <!-- Save bar (visible only in edit mode) -->
+        <div class="info-save-bar" id="infoSaveBar">
+            <button class="save-btn" style="width:auto;padding:7px 24px;" onclick="saveInfo(<?php echo $pid; ?>)">
+                <i class="fas fa-save"></i> Save Changes
+            </button>
+            <button class="edit-btn-sm" onclick="cancelInfoEdit()">Cancel</button>
+            <span id="infoSaveMsg" style="font-size:0.85rem;color:#166534;display:none;">
+                <i class="fas fa-check-circle"></i> Saved!
+            </span>
         </div>
-    </div>
+    </div><!-- /infoBody -->
 </div>
 
-<!-- ── MAIN WORKSPACE: Add Report LEFT | History RIGHT ── -->
+<!-- ── WORKSPACE ── -->
 <div class="workspace">
 
-    <!-- LEFT: Add New Report -->
+    <!-- LEFT: Add Report -->
     <div class="card report-form-card">
         <div class="card-header">
-            <i class="fas fa-plus-circle"></i> Add Today's Report
+            <i class="fas fa-plus-circle"></i> Add Today's Visit
         </div>
-        <div class="card-body" style="padding: 16px;">
-            <div style="margin-bottom: 12px;">
-                <label class="info-label" style="display:block; margin-bottom:6px;">Date</label>
-                <input type="date" id="reportDate" class="report-input date-input"
-                    value="<?php echo date('Y-m-d'); ?>">
+        <div class="card-body" style="padding:16px;">
+            <div style="margin-bottom:10px;">
+                <label class="info-label" style="display:block;margin-bottom:5px;">Date</label>
+                <input type="date" id="reportDate" class="r-input"
+                    value="<?php echo date('Y-m-d'); ?>" style="height:40px;">
             </div>
-            <div style="margin-bottom: 12px;">
-                <label class="info-label" style="display:block; margin-bottom:6px;">Medicines / Notes</label>
-                <textarea id="reportMedicins" class="report-input" placeholder="e.g. PULS-200, S.L, follow-up..." rows="4"></textarea>
+            <div style="margin-bottom:10px;">
+                <label class="info-label" style="display:block;margin-bottom:5px;">Medicines / Notes</label>
+                <textarea id="reportMedicins" class="r-input" placeholder="e.g. PULS-200, S.L, follow-up..." rows="5"></textarea>
             </div>
-            <div style="margin-bottom: 12px;">
-                <label class="info-label" style="display:block; margin-bottom:6px;">Amount (₹)</label>
-                <input type="number" id="reportAmt" class="report-input amount-input" placeholder="0" min="0">
+            <div style="margin-bottom:12px;">
+                <label class="info-label" style="display:block;margin-bottom:5px;">Amount (₹)</label>
+                <input type="number" id="reportAmt" class="r-input" placeholder="0" min="0" style="height:40px;">
             </div>
-            <button class="save-btn" id="saveReportBtn" onclick="saveReport(<?php echo $patientId; ?>)">
-                <i class="fas fa-save"></i> Save Report
+            <button class="save-btn" id="saveReportBtn" onclick="saveReport(<?php echo $pid; ?>)">
+                <i class="fas fa-save"></i> Save Visit
             </button>
-            <div class="save-success" id="saveSuccess">
-                <i class="fas fa-check-circle"></i> Report saved successfully!
+            <div class="save-ok" id="saveOk">
+                <i class="fas fa-check-circle"></i> Visit saved successfully!
             </div>
         </div>
     </div>
 
-    <!-- RIGHT: History Panel -->
+    <!-- RIGHT: History -->
     <div class="history-panel">
         <div class="card">
-            <div class="card-header" style="display:flex; justify-content:space-between; align-items:center;">
+            <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;">
                 <span><i class="fas fa-history"></i> Visit History</span>
-                <span style="font-size:0.8rem; color: var(--gray-400);" id="reportCountBadge">
-                    <?php echo $totalReports; ?> total
-                </span>
+                <span style="font-size:0.8rem;color:var(--gray-400);" id="visitBadge"><?php echo $totalReports; ?> total</span>
             </div>
             <div class="history-list" id="historyList">
-                <?php if (!empty($reports)): ?>
-                    <?php foreach ($reports as $index => $report): ?>
-                    <div class="history-item <?php echo $index === 0 ? 'latest' : ''; ?>" id="report-<?php echo $report['id']; ?>">
-                        <div class="history-report-num">#<?php echo htmlspecialchars($report['id']); ?></div>
-                        <div class="history-date">
-                            <i class="fas fa-calendar-day"></i>
-                            <?php echo htmlspecialchars(fmtDate($report['date'] ?? '')); ?>
-                        </div>
-                        <div class="history-meds"><?php echo htmlspecialchars(fmt($report['medicins'] ?? null, '—')); ?></div>
-                        <?php if (!empty($report['amt']) && $report['amt'] > 0): ?>
-                        <div class="history-amt">₹<?php echo htmlspecialchars($report['amt']); ?></div>
+                <?php if(!empty($reports)): ?>
+                    <?php foreach($reports as $idx => $r): ?>
+                    <div class="h-item <?php echo $idx===0?'new-entry':''; ?>" id="hitem-<?php echo $r['id']; ?>">
+                        <div class="h-num">#<?php echo htmlspecialchars($r['id']); ?></div>
+                        <div class="h-date"><i class="fas fa-calendar-day"></i> <?php echo htmlspecialchars(fmtDate($r['date']??'')); ?></div>
+                        <div class="h-meds"><?php echo htmlspecialchars(fmt($r['medicins']??null,'—')); ?></div>
+                        <?php if(!empty($r['amt'])&&$r['amt']>0): ?>
+                        <div class="h-amt">₹<?php echo htmlspecialchars($r['amt']); ?></div>
                         <?php endif; ?>
+                        <button class="h-edit-btn" onclick="toggleHistEdit(<?php echo $r['id']; ?>)">
+                            <i class="fas fa-pen"></i> Edit
+                        </button>
+                        <div class="h-edit-form" id="hedit-<?php echo $r['id']; ?>">
+                            <div class="h-edit-row">
+                                <input type="date" class="h-edit-input" id="he-date-<?php echo $r['id']; ?>"
+                                    value="<?php
+                                        $rd=$r['date']??'';
+                                        echo ($rd&&$rd!=='0000-00-00')?htmlspecialchars($rd):'';
+                                    ?>">
+                                <input type="number" class="h-edit-input" id="he-amt-<?php echo $r['id']; ?>"
+                                    placeholder="₹ Amount"
+                                    value="<?php echo htmlspecialchars($r['amt']??0); ?>">
+                            </div>
+                            <textarea class="h-edit-input" id="he-meds-<?php echo $r['id']; ?>"
+                                rows="2" style="margin-bottom:6px;"><?php echo htmlspecialchars($r['medicins']??''); ?></textarea>
+                            <div class="h-edit-actions">
+                                <button class="h-save-btn" onclick="saveHistEdit(<?php echo $r['id']; ?>)">
+                                    <i class="fas fa-save"></i> Save
+                                </button>
+                                <button class="h-cancel-btn" onclick="toggleHistEdit(<?php echo $r['id']; ?>)">Cancel</button>
+                            </div>
+                        </div>
                     </div>
                     <?php endforeach; ?>
                 <?php else: ?>
-                    <div style="text-align:center; padding:40px 20px; color:var(--gray-400);" id="noReportsMsg">
-                        <i class="fas fa-inbox" style="font-size:2rem; display:block; margin-bottom:8px;"></i>
+                    <div style="text-align:center;padding:40px 20px;color:var(--gray-400);" id="noVisitsMsg">
+                        <i class="fas fa-inbox" style="font-size:2rem;display:block;margin-bottom:8px;"></i>
                         No visits yet
                     </div>
                 <?php endif; ?>
@@ -418,157 +412,201 @@ function fmtName($fname, $lname) {
         </div>
     </div>
 
-</div><!-- end workspace -->
+</div><!-- /workspace -->
 
 <script>
-// ── Toggle info panel ──
+const PID = <?php echo $pid; ?>;
+
+// ── Info panel toggle ──
 function toggleInfo() {
-    const body = document.getElementById('infoBody');
-    const label = document.getElementById('infoToggleLabel');
-    const isHidden = body.style.display === 'none';
-    body.style.display = isHidden ? 'block' : 'none';
-    label.textContent = isHidden ? 'click to collapse' : 'click to expand';
+    const b = document.getElementById('infoBody');
+    const h = document.getElementById('infoToggleHint');
+    const open = b.style.display === 'none';
+    b.style.display = open ? 'block' : 'none';
+    h.textContent = open ? '▴ collapse' : '▾ expand';
 }
 
-// ── Save Report ──
+// ── Info edit mode ──
+let infoEditing = false;
+function toggleInfoEdit() {
+    if (infoEditing) { cancelInfoEdit(); return; }
+    // Expand panel if collapsed
+    const b = document.getElementById('infoBody');
+    if (b.style.display === 'none') {
+        b.style.display = 'block';
+        document.getElementById('infoToggleHint').textContent = '▴ collapse';
+    }
+    infoEditing = true;
+    document.getElementById('infoEditBtn').classList.add('active');
+    document.getElementById('infoEditBtn').innerHTML = '<i class="fas fa-times"></i> Cancel';
+    document.getElementById('infoSaveBar').classList.add('visible');
+    // Show inputs, hide display values
+    document.querySelectorAll('#infoGrid .edit-mode').forEach(el => el.style.display = '');
+    document.querySelectorAll('#infoGrid [id^="disp_"]').forEach(el => el.style.display = 'none');
+}
+function cancelInfoEdit() {
+    infoEditing = false;
+    document.getElementById('infoEditBtn').classList.remove('active');
+    document.getElementById('infoEditBtn').innerHTML = '<i class="fas fa-edit"></i> Edit';
+    document.getElementById('infoSaveBar').classList.remove('visible');
+    document.querySelectorAll('#infoGrid .edit-mode').forEach(el => el.style.display = 'none');
+    document.querySelectorAll('#infoGrid [id^="disp_"]').forEach(el => el.style.display = '');
+    document.getElementById('infoSaveMsg').style.display = 'none';
+}
+
+function saveInfo(patientId) {
+    const inputs = document.querySelectorAll('#infoGrid .edit-mode');
+    const fd = new FormData();
+    inputs.forEach(el => { if (el.name) fd.append(el.name, el.value); });
+
+    const saveBtn = document.querySelector('#infoSaveBar .save-btn');
+    saveBtn.disabled = true; saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+
+    fetch(`/api/patient/${patientId}/update`, { method:'POST', body:fd })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            // Update display values
+            const displayMap = {
+                'contact_no': v => v ? `<a href="tel:${escHtml(v)}">${escHtml(v)}</a>` : 'N/A',
+                'age': v => v && v > 0 ? escHtml(v) + ' yrs' : 'N/A',
+                'gender': v => ({M:'Male',F:'Female'})[v] || 'N/A',
+                'mrg_status': v => ({S:'Single',M:'Married',D:'Divorced',W:'Widowed'})[v] || 'N/A',
+                'veg': v => ({V:'Vegetarian',NV:'Non-Vegetarian',EV:'Eggetarian'})[v] || 'N/A',
+                'dob': v => { if(!v) return 'N/A'; const d=new Date(v); return isNaN(d)?'N/A':d.toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}); },
+            };
+            inputs.forEach(el => {
+                const disp = document.getElementById('disp_' + el.name);
+                if (!disp) return;
+                const fn = displayMap[el.name];
+                disp.innerHTML = fn ? fn(el.value) : (escHtml(el.value) || 'N/A');
+            });
+            document.getElementById('infoSaveMsg').style.display = 'inline';
+            setTimeout(() => { cancelInfoEdit(); }, 1200);
+        } else {
+            alert('Save failed: ' + (data.message || ''));
+        }
+    })
+    .catch(() => alert('Network error'))
+    .finally(() => {
+        saveBtn.disabled = false;
+        saveBtn.innerHTML = '<i class="fas fa-save"></i> Save Changes';
+    });
+}
+
+// ── Save new report ──
 function saveReport(patientId) {
     const date = document.getElementById('reportDate').value;
     const medicins = document.getElementById('reportMedicins').value.trim();
     const amt = document.getElementById('reportAmt').value || 0;
     const btn = document.getElementById('saveReportBtn');
-    const successMsg = document.getElementById('saveSuccess');
+    const ok = document.getElementById('saveOk');
 
     if (!medicins) {
-        document.getElementById('reportMedicins').focus();
-        document.getElementById('reportMedicins').style.borderColor = '#ef4444';
-        setTimeout(() => document.getElementById('reportMedicins').style.borderColor = '', 2000);
-        return;
+        const ta = document.getElementById('reportMedicins');
+        ta.style.borderColor='#ef4444'; ta.focus();
+        setTimeout(()=>ta.style.borderColor='',2000); return;
     }
 
     btn.disabled = true;
     btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
 
-    const formData = new FormData();
-    formData.append('date', date);
-    formData.append('medicins', medicins);
-    formData.append('amt', amt);
+    const fd = new FormData();
+    fd.append('date', date); fd.append('medicins', medicins); fd.append('amt', amt);
 
-    fetch(`/api/patient/${patientId}/report`, {
-        method: 'POST',
-        body: formData
-    })
+    fetch(`/api/patient/${patientId}/report`, { method:'POST', body:fd })
     .then(r => r.json())
     .then(data => {
         if (data.success) {
-            // Prepend new report to history list
-            const historyList = document.getElementById('historyList');
-            const noMsg = document.getElementById('noReportsMsg');
+            const list = document.getElementById('historyList');
+            const noMsg = document.getElementById('noVisitsMsg');
             if (noMsg) noMsg.remove();
-
-            // Remove 'latest' from previous first item
-            const prevLatest = historyList.querySelector('.latest');
-            if (prevLatest) prevLatest.classList.remove('latest');
-
-            const amtHtml = amt > 0 ? `<div class="history-amt">₹${amt}</div>` : '';
-            const formattedDate = new Date(date).toLocaleDateString('en-IN', {day:'2-digit', month:'short', year:'numeric'});
-            const newItem = document.createElement('div');
-            newItem.className = 'history-item latest';
-            newItem.id = 'report-' + (data.report_id || '');
-            newItem.innerHTML = `
-                <div class="history-report-num">#${data.report_id || ''}</div>
-                <div class="history-date"><i class="fas fa-calendar-day"></i> ${formattedDate}</div>
-                <div class="history-meds">${escHtml(medicins)}</div>
+            // Remove new-entry highlight from previous
+            list.querySelectorAll('.new-entry').forEach(e=>e.classList.remove('new-entry'));
+            const rId = data.report_id || '';
+            const fd2 = new Date(date).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'});
+            const amtHtml = amt > 0 ? `<div class="h-amt">₹${escHtml(String(amt))}</div>` : '';
+            const el = document.createElement('div');
+            el.className = 'h-item new-entry';
+            el.id = 'hitem-' + rId;
+            el.innerHTML = `
+                <div class="h-num">#${rId}</div>
+                <div class="h-date"><i class="fas fa-calendar-day"></i> ${fd2}</div>
+                <div class="h-meds">${escHtml(medicins)}</div>
                 ${amtHtml}
-            `;
-            historyList.prepend(newItem);
-
-            // Update count
-            const badge = document.getElementById('reportCountBadge');
-            const cur = parseInt(badge.textContent) || 0;
-            badge.textContent = (cur + 1) + ' total';
-
+                <button class="h-edit-btn" onclick="toggleHistEdit(${rId})"><i class="fas fa-pen"></i> Edit</button>
+                <div class="h-edit-form" id="hedit-${rId}">
+                    <div class="h-edit-row">
+                        <input type="date" class="h-edit-input" id="he-date-${rId}" value="${escHtml(date)}">
+                        <input type="number" class="h-edit-input" id="he-amt-${rId}" placeholder="₹ Amount" value="${escHtml(String(amt))}">
+                    </div>
+                    <textarea class="h-edit-input" id="he-meds-${rId}" rows="2" style="margin-bottom:6px;">${escHtml(medicins)}</textarea>
+                    <div class="h-edit-actions">
+                        <button class="h-save-btn" onclick="saveHistEdit(${rId})"><i class="fas fa-save"></i> Save</button>
+                        <button class="h-cancel-btn" onclick="toggleHistEdit(${rId})">Cancel</button>
+                    </div>
+                </div>`;
+            list.prepend(el);
+            // Update badge
+            const badge = document.getElementById('visitBadge');
+            badge.textContent = (parseInt(badge.textContent)||0) + 1 + ' total';
             // Clear form
             document.getElementById('reportMedicins').value = '';
             document.getElementById('reportAmt').value = '';
             document.getElementById('reportDate').value = new Date().toISOString().split('T')[0];
-
-            // Show success
-            successMsg.style.display = 'block';
-            setTimeout(() => { successMsg.style.display = 'none'; }, 3000);
-        } else {
-            alert('Error: ' + (data.message || 'Could not save report'));
-        }
+            ok.style.display = 'block';
+            setTimeout(()=>ok.style.display='none', 3000);
+        } else { alert('Error: ' + (data.message||'')); }
     })
-    .catch(err => {
-        alert('Network error. Please try again.');
-        console.error(err);
-    })
-    .finally(() => {
-        btn.disabled = false;
-        btn.innerHTML = '<i class="fas fa-save"></i> Save Report';
-    });
+    .catch(()=>alert('Network error'))
+    .finally(()=>{ btn.disabled=false; btn.innerHTML='<i class="fas fa-save"></i> Save Visit'; });
 }
 
+// ── History edit ──
+function toggleHistEdit(id) {
+    const form = document.getElementById('hedit-' + id);
+    form.classList.toggle('open');
+}
+function saveHistEdit(id) {
+    const date = document.getElementById('he-date-' + id).value;
+    const medicins = document.getElementById('he-meds-' + id).value.trim();
+    const amt = document.getElementById('he-amt-' + id).value || 0;
+
+    const fd = new FormData();
+    fd.append('date', date); fd.append('medicins', medicins); fd.append('amt', amt);
+
+    fetch(`/api/report/${id}/update`, { method:'POST', body:fd })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            const item = document.getElementById('hitem-' + id);
+            item.querySelector('.h-date').innerHTML = `<i class="fas fa-calendar-day"></i> ${fmtDateJS(date)}`;
+            item.querySelector('.h-meds').textContent = medicins || '—';
+            let amtEl = item.querySelector('.h-amt');
+            if (amt > 0) {
+                if (!amtEl) { amtEl = document.createElement('div'); amtEl.className='h-amt'; item.querySelector('.h-meds').after(amtEl); }
+                amtEl.textContent = '₹' + amt;
+            } else if (amtEl) { amtEl.remove(); }
+            toggleHistEdit(id);
+        } else { alert('Save failed: ' + (data.message||'')); }
+    })
+    .catch(()=>alert('Network error'));
+}
+
+function fmtDateJS(v) {
+    if (!v) return 'N/A';
+    const d = new Date(v);
+    return isNaN(d) ? v : d.toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'});
+}
 function escHtml(str) {
-    const d = document.createElement('div');
-    d.textContent = str;
-    return d.innerHTML;
+    const d = document.createElement('div'); d.textContent = String(str); return d.innerHTML;
 }
-
-// ── Inline Edit ──
-document.querySelectorAll('.editable-field').forEach(el => {
-    el.addEventListener('click', function() {
-        if (this.querySelector('input, textarea')) return; // already editing
-
-        const field = this.dataset.field;
-        const patientId = this.dataset.id;
-        const textSpan = this.querySelector('.field-text');
-        const currentVal = textSpan.textContent === 'N/A' ? '' : textSpan.textContent;
-        const isMultiline = field === 'chief' || field === 'address';
-
-        const input = document.createElement(isMultiline ? 'textarea' : 'input');
-        input.className = 'inline-edit-input';
-        input.value = currentVal;
-        if (isMultiline) { input.rows = 3; input.style.display = 'block'; input.style.width = '100%'; }
-
-        this.innerHTML = '';
-        this.appendChild(input);
-        input.focus();
-
-        const save = () => {
-            const newVal = input.value.trim();
-            const formData = new FormData();
-            formData.append(field, newVal);
-
-            fetch(`/api/patient/${patientId}/update`, { method: 'POST', body: formData })
-            .then(r => r.json())
-            .then(data => {
-                if (data.success) {
-                    this.innerHTML = `<span class="field-text">${escHtml(newVal || 'N/A')}</span><i class="fas fa-pen edit-icon"></i>`;
-                } else {
-                    this.innerHTML = `<span class="field-text">${escHtml(currentVal || 'N/A')}</span><i class="fas fa-pen edit-icon"></i>`;
-                    alert('Save failed: ' + (data.message || ''));
-                }
-            })
-            .catch(() => {
-                this.innerHTML = `<span class="field-text">${escHtml(currentVal || 'N/A')}</span><i class="fas fa-pen edit-icon"></i>`;
-            });
-        };
-
-        input.addEventListener('blur', save);
-        input.addEventListener('keydown', e => {
-            if (!isMultiline && e.key === 'Enter') { e.preventDefault(); input.blur(); }
-            if (e.key === 'Escape') {
-                this.innerHTML = `<span class="field-text">${escHtml(currentVal || 'N/A')}</span><i class="fas fa-pen edit-icon"></i>`;
-            }
-        });
-    });
-});
 </script>
 
 <?php else: ?>
     <div class="alert alert-danger">
-        <i class="fas fa-exclamation-triangle"></i> <?php echo htmlspecialchars($response['message'] ?? 'Patient not found'); ?>
+        <i class="fas fa-exclamation-triangle"></i>
+        <?php echo htmlspecialchars($response['message']??'Patient not found'); ?>
     </div>
 <?php endif; ?>
 

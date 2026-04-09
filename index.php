@@ -193,6 +193,19 @@ switch ($route) {
         echo json_encode($response);
         exit;
 
+    case (preg_match('/^api\/report\/(\d+)\/update$/', $route, $matches) ? true : false):
+        AuthController::requireLogin();
+        header('Content-Type: application/json');
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            echo json_encode(['success' => false, 'message' => 'POST required']);
+            exit;
+        }
+        $reportId = $matches[1];
+        $patientController = new PatientController($db);
+        $response = $patientController->updateReport($reportId, $_POST);
+        echo json_encode($response);
+        exit;
+
     case 'dashboard':
         AuthController::requireLogin();
         $patientController = new PatientController($db);

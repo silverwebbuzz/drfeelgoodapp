@@ -176,6 +176,12 @@ class PatientController {
                 ];
             }
 
+            // Whitelist editable fields
+            $allowed = ['fname','lname','contact_no','dob','age','gender','mrg_status','veg',
+                        'religion','education','occupation','refered_by','address','chief',
+                        'dor','lname'];
+            $data = array_intersect_key($data, array_flip($allowed));
+
             $this->patientModel->updatePatient($patientId, $data);
 
             return [
@@ -216,6 +222,26 @@ class PatientController {
                 'success' => false,
                 'message' => 'Error adding report: ' . $e->getMessage()
             ];
+        }
+    }
+
+    /**
+     * Update a progress report
+     */
+    public function updateReport($reportId, $data) {
+        try {
+            $allowed = ['date', 'medicins', 'amt'];
+            $clean = array_intersect_key($data, array_flip($allowed));
+
+            if (empty($clean)) {
+                return ['success' => false, 'message' => 'No valid fields to update'];
+            }
+
+            $this->progressReportModel->updateReport($reportId, $clean);
+
+            return ['success' => true, 'message' => 'Report updated'];
+        } catch (\Exception $e) {
+            return ['success' => false, 'message' => 'Error updating report: ' . $e->getMessage()];
         }
     }
 
