@@ -8,13 +8,13 @@
 }
 
 .datatable-header {
-    padding: 20px;
+    padding: 12px 14px;
     border-bottom: 1px solid var(--gray-200);
     display: flex;
     justify-content: space-between;
     align-items: center;
     flex-wrap: wrap;
-    gap: 16px;
+    gap: 10px;
 }
 
 .datatable-search {
@@ -36,7 +36,8 @@
 
 .datatable-search .form-control {
     border: 1px solid var(--gray-300);
-    padding: 10px 12px;
+    padding: 6px 10px;
+    font-size: 12px;
 }
 
 .datatable-search .form-control:focus {
@@ -58,18 +59,18 @@
 }
 
 .datatable-entries-select label {
-    font-size: 0.9rem;
+    font-size: 11px;
     color: var(--gray-600);
     margin: 0;
 }
 
 .datatable-entries-select select {
-    padding: 6px 10px;
+    padding: 4px 8px;
     border: 1px solid var(--gray-300);
     border-radius: 4px;
     background: white;
     cursor: pointer;
-    font-size: 0.9rem;
+    font-size: 11px;
 }
 
 .datatable-table-wrapper {
@@ -88,13 +89,13 @@
 }
 
 .datatable-table th {
-    padding: 14px 16px;
+    padding: 8px 12px;
     text-align: left;
     font-weight: 600;
     color: var(--gray-700);
-    font-size: 0.875rem;
+    font-size: 10px;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
+    letter-spacing: 0.4px;
     cursor: pointer;
     user-select: none;
     white-space: nowrap;
@@ -139,9 +140,9 @@
 }
 
 .datatable-table td {
-    padding: 14px 16px;
+    padding: 7px 12px;
     color: var(--gray-700);
-    font-size: 0.95rem;
+    font-size: 12px;
 }
 
 .datatable-table td code {
@@ -175,18 +176,18 @@
 
 /* ========== PAGINATION ========== */
 .datatable-footer {
-    padding: 16px 20px;
+    padding: 8px 14px;
     border-top: 1px solid var(--gray-200);
     display: flex;
     justify-content: space-between;
     align-items: center;
     flex-wrap: wrap;
-    gap: 16px;
+    gap: 10px;
     background: var(--gray-50);
 }
 
 .datatable-info {
-    font-size: 0.9rem;
+    font-size: 11px;
     color: var(--gray-600);
 }
 
@@ -199,8 +200,8 @@
 .datatable-pagination a,
 .datatable-pagination button,
 .datatable-pagination span {
-    min-width: 36px;
-    height: 36px;
+    min-width: 28px;
+    height: 28px;
     padding: 0;
     display: inline-flex;
     align-items: center;
@@ -210,7 +211,7 @@
     background: white;
     color: var(--gray-700);
     text-decoration: none;
-    font-size: 0.9rem;
+    font-size: 11px;
     cursor: pointer;
     transition: all 0.2s ease;
 }
