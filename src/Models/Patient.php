@@ -67,6 +67,18 @@ class Patient extends BaseModel {
     }
 
     /**
+     * Get all patients
+     */
+    public function getAll() {
+        $sql = "SELECT id, patient_id, fname, lname, contact_no, dob, gender, chief
+                FROM {$this->table}
+                ORDER BY fname, lname";
+
+        $stmt = $this->query($sql);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    /**
      * Get patient list with pagination
      */
     public function getPaginated($page = 1, $limit = 10) {

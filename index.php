@@ -133,9 +133,8 @@ switch ($route) {
     // Patient routes
     case 'patients':
         AuthController::requireLogin();
-        $page = $_GET['page'] ?? 1;
         $patientController = new PatientController($db);
-        $response = $patientController->getList($page, 10);
+        $response = $patientController->getAllPatients();
         require __DIR__ . '/views/patient/list.php';
         break;
 

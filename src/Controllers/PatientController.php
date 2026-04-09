@@ -22,6 +22,26 @@ class PatientController {
     }
 
     /**
+     * Get all patients (for client-side DataTable)
+     */
+    public function getAllPatients() {
+        try {
+            $patients = $this->patientModel->getAll();
+
+            return [
+                'success' => true,
+                'data' => $patients,
+                'total' => count($patients)
+            ];
+        } catch (\Exception $e) {
+            return [
+                'success' => false,
+                'message' => 'Error fetching patient list: ' . $e->getMessage()
+            ];
+        }
+    }
+
+    /**
      * Get patient list with pagination
      */
     public function getList($page = 1, $limit = 10) {
