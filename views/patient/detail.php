@@ -177,6 +177,47 @@ textarea.r-input { resize:vertical; }
     padding:4px 10px; font-size:0.82rem; border:1px solid var(--gray-300);
     border-radius:4px; background:white; color:var(--gray-600); cursor:pointer;
 }
+
+/* ── Medicine Tag Picker ── */
+.med-tag {
+    display:inline-flex; align-items:center; gap:5px;
+    background:var(--primary); color:white;
+    padding:3px 9px; border-radius:20px;
+    font-size:11px; font-weight:500;
+    animation: tagPop 0.15s ease;
+}
+@keyframes tagPop {
+    from { transform:scale(0.8); opacity:0; }
+    to   { transform:scale(1);   opacity:1; }
+}
+.med-tag-x {
+    cursor:pointer; font-size:13px; line-height:1;
+    opacity:0.75; margin-left:2px;
+}
+.med-tag-x:hover { opacity:1; }
+.med-drop-item {
+    padding:7px 12px; cursor:pointer; font-size:12px;
+    display:flex; justify-content:space-between; align-items:center;
+    border-bottom:1px solid var(--gray-100);
+    transition:background 0.1s;
+}
+.med-drop-item:last-child { border-bottom:none; }
+.med-drop-item:hover { background:var(--primary-light); color:var(--primary); }
+.med-drop-item.selected { opacity:0.4; cursor:default; }
+.med-drop-item .med-count {
+    font-size:10px; color:var(--gray-400); flex-shrink:0; margin-left:8px;
+}
+.med-drop-item:hover .med-count { color:var(--primary); }
+.med-drop-add {
+    padding:7px 12px; cursor:pointer; font-size:12px;
+    color:var(--primary); font-weight:600;
+    display:flex; align-items:center; gap:6px;
+    border-top:1px solid var(--gray-200);
+}
+.med-drop-add:hover { background:var(--primary-light); }
+.med-drop-empty {
+    padding:12px; text-align:center; font-size:11px; color:var(--gray-400);
+}
 </style>
 
 <!-- ── HEADER ── -->
@@ -337,25 +378,69 @@ textarea.r-input { resize:vertical; }
         <div class="card-header">
             <i class="fas fa-plus-circle"></i> Add Today's Visit
         </div>
-        <div class="card-body" style="padding:16px;">
+        <div class="card-body" style="padding:14px;">
+
+            <!-- Date + Amount row -->
+            <div style="display:grid;grid-template-columns:1fr 120px;gap:10px;margin-bottom:10px;">
+                <div>
+                    <label class="info-label" style="display:block;margin-bottom:4px;">Date</label>
+                    <input type="date" id="reportDate" class="r-input"
+                        value="<?php echo date('Y-m-d'); ?>" style="height:34px;">
+                </div>
+                <div>
+                    <label class="info-label" style="display:block;margin-bottom:4px;">Amount (₹)</label>
+                    <input type="number" id="reportAmt" class="r-input" placeholder="0" min="0" style="height:34px;">
+                </div>
+            </div>
+
+            <!-- Medicine tag picker -->
             <div style="margin-bottom:10px;">
-                <label class="info-label" style="display:block;margin-bottom:5px;">Date</label>
-                <input type="date" id="reportDate" class="r-input"
-                    value="<?php echo date('Y-m-d'); ?>" style="height:40px;">
+                <label class="info-label" style="display:block;margin-bottom:4px;">
+                    Medicines
+                    <span style="font-weight:400;color:var(--gray-400);margin-left:6px;">— search or type below</span>
+                </label>
+
+                <!-- Search box -->
+                <div style="position:relative;" id="medPickerWrap">
+                    <div style="display:flex;align-items:center;gap:6px;border:1px solid var(--gray-300);border-radius:5px;padding:5px 8px;background:white;flex-wrap:wrap;" id="tagInputArea">
+                        <!-- Tags render here -->
+                        <input type="text" id="medSearch"
+                            placeholder="Search medicine or type new..."
+                            autocomplete="off"
+                            style="border:none;outline:none;font-size:12px;min-width:160px;flex:1;padding:2px 0;">
+                    </div>
+                    <!-- Dropdown -->
+                    <div id="medDropdown" style="
+                        display:none; position:absolute; top:100%; left:0; right:0; z-index:200;
+                        background:white; border:1px solid var(--gray-200); border-top:none;
+                        border-radius:0 0 6px 6px; max-height:220px; overflow-y:auto;
+                        box-shadow:var(--shadow-md);">
+                    </div>
+                </div>
+
+                <!-- Selected tags display -->
+                <div id="selectedTags" style="display:flex;flex-wrap:wrap;gap:5px;margin-top:7px;min-height:20px;">
+                    <!-- Tags appear here -->
+                </div>
             </div>
+
+            <!-- Freetext notes (optional extra) -->
             <div style="margin-bottom:10px;">
-                <label class="info-label" style="display:block;margin-bottom:5px;">Medicines / Notes</label>
-                <textarea id="reportMedicins" class="r-input" placeholder="e.g. PULS-200, S.L, follow-up..." rows="5"></textarea>
+                <label class="info-label" style="display:block;margin-bottom:4px;">
+                    Notes / Extra
+                    <span style="font-weight:400;color:var(--gray-400);margin-left:6px;">— any additional notes</span>
+                </label>
+                <textarea id="reportNotes" class="r-input" placeholder="e.g. follow-up, improvement noted..." rows="2"></textarea>
             </div>
-            <div style="margin-bottom:12px;">
-                <label class="info-label" style="display:block;margin-bottom:5px;">Amount (₹)</label>
-                <input type="number" id="reportAmt" class="r-input" placeholder="0" min="0" style="height:40px;">
-            </div>
+
+            <!-- Hidden final textarea that gets submitted -->
+            <textarea id="reportMedicins" style="display:none;"></textarea>
+
             <button class="save-btn" id="saveReportBtn" onclick="saveReport(<?php echo $pid; ?>)">
                 <i class="fas fa-save"></i> Save Visit
             </button>
             <div class="save-ok" id="saveOk">
-                <i class="fas fa-check-circle"></i> Visit saved successfully!
+                <i class="fas fa-check-circle"></i> Visit saved!
             </div>
         </div>
     </div>
@@ -416,6 +501,145 @@ textarea.r-input { resize:vertical; }
 
 <script>
 const PID = <?php echo $pid; ?>;
+
+// ════════════════════════════════════════
+// MEDICINE TAG PICKER
+// ════════════════════════════════════════
+const MedPicker = {
+    selected: [],   // array of { name }
+    debounceTimer: null,
+
+    init() {
+        const input = document.getElementById('medSearch');
+        const dropdown = document.getElementById('medDropdown');
+
+        // Show top medicines on focus
+        input.addEventListener('focus', () => {
+            if (this.selected.length === 0 || input.value === '') {
+                this.fetchMeds('');
+            }
+        });
+
+        // Search on type
+        input.addEventListener('input', () => {
+            clearTimeout(this.debounceTimer);
+            this.debounceTimer = setTimeout(() => {
+                this.fetchMeds(input.value.trim());
+            }, 200);
+        });
+
+        // Hide dropdown on outside click
+        document.addEventListener('click', (e) => {
+            if (!document.getElementById('medPickerWrap').contains(e.target)) {
+                dropdown.style.display = 'none';
+            }
+        });
+
+        // Allow Enter/comma to add custom medicine
+        input.addEventListener('keydown', (e) => {
+            if ((e.key === 'Enter' || e.key === ',') && input.value.trim() !== '') {
+                e.preventDefault();
+                this.addTag(input.value.replace(/,/g,'').trim());
+                input.value = '';
+                dropdown.style.display = 'none';
+            }
+            if (e.key === 'Escape') {
+                dropdown.style.display = 'none';
+            }
+        });
+    },
+
+    fetchMeds(query) {
+        const url = `/api/medicines${query ? '?q=' + encodeURIComponent(query) : ''}`;
+        fetch(url)
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) this.renderDropdown(data.data, query);
+        })
+        .catch(() => {});
+    },
+
+    renderDropdown(items, query) {
+        const dropdown = document.getElementById('medDropdown');
+        const selectedNames = this.selected.map(s => s.name.toLowerCase());
+        let html = '';
+
+        const filtered = items.filter(i => !selectedNames.includes(i.name.toLowerCase()));
+
+        if (filtered.length === 0 && !query) {
+            html = '<div class="med-drop-empty">No medicines found</div>';
+        } else {
+            filtered.forEach(item => {
+                const count = item.usage_count > 0 ? `<span class="med-count">×${item.usage_count}</span>` : '';
+                html += `<div class="med-drop-item" onclick="MedPicker.addTag('${escHtml(item.name)}')">
+                    <span>${escHtml(item.name)}</span>${count}
+                </div>`;
+            });
+        }
+
+        // If query doesn't exactly match any result, offer to add it
+        if (query && !items.find(i => i.name.toLowerCase() === query.toLowerCase())) {
+            html += `<div class="med-drop-add" onclick="MedPicker.addTag('${escHtml(query)}'); document.getElementById('medSearch').value='';">
+                <i class="fas fa-plus-circle"></i> Add "<strong>${escHtml(query)}</strong>"
+            </div>`;
+        }
+
+        dropdown.innerHTML = html;
+        dropdown.style.display = 'block';
+    },
+
+    addTag(name) {
+        name = name.trim();
+        if (!name || name.length < 1) return;
+        // Prevent duplicate
+        if (this.selected.find(s => s.name.toLowerCase() === name.toLowerCase())) return;
+
+        this.selected.push({ name });
+        this.renderTags();
+        this.syncTextarea();
+        document.getElementById('medDropdown').style.display = 'none';
+        document.getElementById('medSearch').value = '';
+        document.getElementById('medSearch').focus();
+    },
+
+    removeTag(name) {
+        this.selected = this.selected.filter(s => s.name !== name);
+        this.renderTags();
+        this.syncTextarea();
+    },
+
+    renderTags() {
+        const container = document.getElementById('selectedTags');
+        container.innerHTML = this.selected.map(s =>
+            `<span class="med-tag">
+                ${escHtml(s.name)}
+                <span class="med-tag-x" onclick="MedPicker.removeTag('${escHtml(s.name)}')">×</span>
+            </span>`
+        ).join('');
+    },
+
+    syncTextarea() {
+        // Combine tags + any free notes into hidden textarea
+        const notes = document.getElementById('reportNotes').value.trim();
+        const meds = this.selected.map(s => s.name).join(', ');
+        const combined = notes ? (meds ? meds + ', ' + notes : notes) : meds;
+        document.getElementById('reportMedicins').value = combined;
+    },
+
+    clear() {
+        this.selected = [];
+        this.renderTags();
+        document.getElementById('medSearch').value = '';
+        document.getElementById('reportNotes').value = '';
+        document.getElementById('reportMedicins').value = '';
+    }
+};
+
+// Keep textarea in sync when doc types in notes field
+document.getElementById('reportNotes').addEventListener('input', () => MedPicker.syncTextarea());
+
+// Init on load
+MedPicker.init();
 
 // ── Info panel toggle ──
 function toggleInfo() {
@@ -496,6 +720,9 @@ function saveInfo(patientId) {
 
 // ── Save new report ──
 function saveReport(patientId) {
+    // Sync tag picker into hidden textarea first
+    MedPicker.syncTextarea();
+
     const date = document.getElementById('reportDate').value;
     const medicins = document.getElementById('reportMedicins').value.trim();
     const amt = document.getElementById('reportAmt').value || 0;
@@ -503,9 +730,11 @@ function saveReport(patientId) {
     const ok = document.getElementById('saveOk');
 
     if (!medicins) {
-        const ta = document.getElementById('reportMedicins');
-        ta.style.borderColor='#ef4444'; ta.focus();
-        setTimeout(()=>ta.style.borderColor='',2000); return;
+        const searchBox = document.getElementById('medSearch');
+        const wrap = document.getElementById('tagInputArea');
+        wrap.style.borderColor='#ef4444';
+        searchBox.focus();
+        setTimeout(()=>wrap.style.borderColor='',2000); return;
     }
 
     btn.disabled = true;
@@ -551,7 +780,7 @@ function saveReport(patientId) {
             const badge = document.getElementById('visitBadge');
             badge.textContent = (parseInt(badge.textContent)||0) + 1 + ' total';
             // Clear form
-            document.getElementById('reportMedicins').value = '';
+            MedPicker.clear();
             document.getElementById('reportAmt').value = '';
             document.getElementById('reportDate').value = new Date().toISOString().split('T')[0];
             ok.style.display = 'block';

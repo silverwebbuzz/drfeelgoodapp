@@ -68,6 +68,7 @@ try {
 // Import controllers
 use App\Controllers\AuthController;
 use App\Controllers\PatientController;
+use App\Controllers\MedicineController;
 
 // Check session timeout
 AuthController::checkSessionTimeout();
@@ -157,6 +158,15 @@ switch ($route) {
         }
         require __DIR__ . '/views/patient/create.php';
         break;
+
+    case 'api/medicines':
+        AuthController::requireLogin();
+        header('Content-Type: application/json');
+        $medicineController = new MedicineController($db);
+        $q = trim($_GET['q'] ?? '');
+        $response = $q !== '' ? $medicineController->search($q) : $medicineController->getTop();
+        echo json_encode($response);
+        exit;
 
     case 'api/patient/search':
         AuthController::requireLogin();

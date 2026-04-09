@@ -9,16 +9,19 @@ namespace App\Controllers;
 use App\Models\Patient;
 use App\Models\AdditionalInfo;
 use App\Models\ProgressReport;
+use App\Models\Medicine;
 
 class PatientController {
     private $patientModel;
     private $additionalInfoModel;
     private $progressReportModel;
+    private $medicineModel;
 
     public function __construct($db) {
         $this->patientModel = new Patient($db);
         $this->additionalInfoModel = new AdditionalInfo($db);
         $this->progressReportModel = new ProgressReport($db);
+        $this->medicineModel = new Medicine($db);
     }
 
     /**
@@ -211,6 +214,11 @@ class PatientController {
             }
 
             $reportId = $this->progressReportModel->create($patientId, $data);
+
+            // Auto-grow master medicines list from what doctor typed
+            if (!empty($data['medicins'])) {
+                $this->medicineModel->upsertFromString($data['medicins']);
+            }
 
             return [
                 'success' => true,
