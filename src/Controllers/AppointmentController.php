@@ -38,13 +38,18 @@ class AppointmentController {
                 // New patient — auto-create basic record so doctor can access detail page
                 $name  = trim($data['patient_name'] ?? '');
                 $phone = trim($data['patient_phone'] ?? '');
+                $chief = trim($data['chief_complaint'] ?? '');
                 if ($name) {
-                    $newId = $this->patientModel->createQuick($name, $phone, $data['chief_complaint'] ?? '');
-                    $data['patient_id']    = $newId;
+                    $newId = $this->patientModel->createQuick($name, $phone, $chief);
+                    $data['patient_id']     = $newId;
                     $data['is_new_patient'] = 1;
                 } else {
                     $data['is_new_patient'] = 1;
                 }
+            }
+            // chief_complaint is optional — set null if empty
+            if (empty(trim($data['chief_complaint'] ?? ''))) {
+                $data['chief_complaint'] = null;
             }
 
             $id   = $this->apptModel->createWalkin($data, $userId);
@@ -155,21 +160,26 @@ class AppointmentController {
                 // Existing registered patient
                 $patient = $this->patientModel->getById($data['patient_id']);
                 if ($patient) {
-                    $data['patient_name']  = trim(($patient['fname'] ?? '') . ' ' . ($patient['lname'] ?? ''));
-                    $data['patient_phone'] = $patient['contact_no'] ?? '';
+                    $data['patient_name']   = trim(($patient['fname'] ?? '') . ' ' . ($patient['lname'] ?? ''));
+                    $data['patient_phone']  = $patient['contact_no'] ?? '';
                     $data['is_new_patient'] = 0;
                 }
             } else {
                 // New patient — auto-create basic record
                 $name  = trim($data['patient_name'] ?? '');
                 $phone = trim($data['patient_phone'] ?? '');
+                $chief = trim($data['chief_complaint'] ?? '');
                 if ($name) {
-                    $newId = $this->patientModel->createQuick($name, $phone, $data['chief_complaint'] ?? '');
-                    $data['patient_id']    = $newId;
+                    $newId = $this->patientModel->createQuick($name, $phone, $chief);
+                    $data['patient_id']     = $newId;
                     $data['is_new_patient'] = 1;
                 } else {
                     $data['is_new_patient'] = 1;
                 }
+            }
+            // chief_complaint is optional
+            if (empty(trim($data['chief_complaint'] ?? ''))) {
+                $data['chief_complaint'] = null;
             }
 
             $id   = $this->apptModel->createPrebooked($data);

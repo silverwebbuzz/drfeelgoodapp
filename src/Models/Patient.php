@@ -129,14 +129,16 @@ class Patient extends BaseModel {
         $parts = explode(' ', trim($name), 2);
         $fname = $parts[0] ?? $name;
         $lname = $parts[1] ?? '';
-        return $this->insert([
-            'patient_id' => 'AUTO-' . date('ymd') . '-' . strtoupper(substr($fname, 0, 3)),
+        // patient_id is INT — use timestamp-based unique number
+        $data = [
+            'patient_id' => (int)(date('ymd') . rand(10, 99)),
             'fname'      => $fname,
             'lname'      => $lname,
             'contact_no' => $phone,
-            'chief'      => $chief,
             'dor'        => date('Y-m-d'),
-        ]);
+        ];
+        if ($chief !== '') $data['chief'] = $chief;
+        return $this->insert($data);
     }
 
     public function create($data) {
