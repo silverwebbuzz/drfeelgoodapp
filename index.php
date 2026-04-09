@@ -322,6 +322,8 @@ switch ($route) {
         $apptController = new AppointmentController($db);
         // Pass booking_days_ahead to the view
         $bookingDaysAhead = (int)(new App\Models\Setting($db))->get('booking_days_ahead', 15);
+        $closedDatesRaw   = (new App\Models\Appointment($db))->getClosedDates();
+        $closedDatesArr   = array_column($closedDatesRaw, 'date'); // ['2026-04-15', ...]
         require __DIR__ . '/views/booking/index.php';
         break;
 

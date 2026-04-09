@@ -51,6 +51,8 @@
         .dc .d-num { font-size:20px; font-weight:800; color:#111; line-height:1.1; }
         .dc .d-mon { font-size:9px; color:#6b7280; }
         .dc.sel .d-day, .dc.sel .d-num, .dc.sel .d-mon { color:#1d4ed8; }
+        .dc.closed-day { opacity:.45; cursor:not-allowed; border-color:#f3f4f6; background:#f9fafb; }
+        .d-closed { font-size:8px; color:#ef4444; font-weight:700; text-transform:uppercase; margin-top:1px; }
 
         /* ── Slot area ── */
         .slot-area { min-height:60px; }
@@ -250,29 +252,45 @@ function goStep(n) {
 }
 
 // ── STEP 1: Build date strip + auto-load today's slots ────────────────────────
-const DAY_NAMES = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
-const MON_NAMES = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-const DAYS_AHEAD = <?php echo (int)($bookingDaysAhead ?? 15); ?>;
+const DAY_NAMES   = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+const MON_NAMES   = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const DAYS_AHEAD  = <?php echo (int)($bookingDaysAhead ?? 15); ?>;
+const CLOSED_DATES = <?php echo json_encode($closedDatesArr ?? []); ?>; // e.g. ["2026-04-15"]
 
-(function buildDates() {
+document.addEventListener('DOMContentLoaded', function() {
     const strip = document.getElementById('dateStrip');
+    let firstSelectable = null;
+
     for (let i = 0; i < DAYS_AHEAD; i++) {
-        const ist  = getIST();
+        const ist = getIST();
         ist.setDate(ist.getDate() + i);
-        const ymd  = ist.getFullYear() + '-' + pad(ist.getMonth()+1) + '-' + pad(ist.getDate());
+        const ymd = ist.getFullYear() + '-' + pad(ist.getMonth()+1) + '-' + pad(ist.getDate());
+        const isClosed = CLOSED_DATES.indexOf(ymd) !== -1;
+
         const card = document.createElement('div');
-        card.className  = 'dc' + (i === 0 ? ' sel' : '');
+        card.className   = 'dc' + (isClosed ? ' closed-day' : '');
         card.dataset.ymd = ymd;
-        card.innerHTML  = `<div class="d-day">${DAY_NAMES[ist.getDay()]}</div>
-                           <div class="d-num">${ist.getDate()}</div>
-                           <div class="d-mon">${MON_NAMES[ist.getMonth()]}</div>`;
-        card.addEventListener('click', () => selectDate(card, ymd));
+        card.innerHTML   = `<div class="d-day">${DAY_NAMES[ist.getDay()]}</div>
+                            <div class="d-num">${ist.getDate()}</div>
+                            <div class="d-mon">${MON_NAMES[ist.getMonth()]}</div>
+                            ${isClosed ? '<div class="d-closed">Closed</div>' : ''}`;
+        if (!isClosed) {
+            card.addEventListener('click', function() { selectDate(card, ymd); });
+            if (!firstSelectable) firstSelectable = { card, ymd };
+        }
         strip.appendChild(card);
     }
-    // Auto-select today and load its slots
-    S.date = todayIST();
-    loadSlots(S.date);
-})();
+
+    // Auto-select first available date and load its slots
+    if (firstSelectable) {
+        firstSelectable.card.classList.add('sel');
+        S.date = firstSelectable.ymd;
+        loadSlots(firstSelectable.ymd);
+    } else {
+        document.getElementById('slotArea').innerHTML =
+            '<div class="slot-empty">No available dates in the booking window.</div>';
+    }
+});
 
 function selectDate(card, ymd) {
     document.querySelectorAll('.dc').forEach(c => c.classList.remove('sel'));
