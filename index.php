@@ -23,6 +23,9 @@ ini_set('log_errors', 1); // Always log errors
 // Start session
 session_start();
 
+// Indian Standard Time for all date() calls
+date_default_timezone_set('Asia/Kolkata');
+
 // Load database configuration
 require_once __DIR__ . '/config/database.php';
 

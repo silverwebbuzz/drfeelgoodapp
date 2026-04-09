@@ -54,7 +54,19 @@ class AppointmentController {
         }
         try {
             $this->apptModel->updateStatus($id, $status);
-            return ['success' => true, 'status' => $status];
+            $appt = $this->apptModel->getByIdFull($id);
+
+            $redirect = null;
+            // Call → go to patient detail page
+            if ($status === 'in_consultation' && !empty($appt['patient_id'])) {
+                $redirect = '/patient/' . (int)$appt['patient_id'];
+            }
+            // Completed → go back to queue
+            if ($status === 'completed') {
+                $redirect = '/queue';
+            }
+
+            return ['success' => true, 'status' => $status, 'redirect' => $redirect];
         } catch (\Exception $e) {
             return ['success' => false, 'message' => $e->getMessage()];
         }

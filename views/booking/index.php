@@ -62,7 +62,7 @@
             <h5 style="font-size:14px;margin:0 0 16px;font-weight:700;">Select Date & Enter Phone</h5>
             <div class="mb-3">
                 <label class="form-label">Appointment Date</label>
-                <input type="date" id="apptDate" class="form-control" min="<?php echo date('Y-m-d'); ?>" value="<?php echo date('Y-m-d'); ?>">
+                <input type="date" id="apptDate" class="form-control" min="" value="">
             </div>
             <div class="mb-3">
                 <label class="form-label">Your Phone Number</label>
@@ -139,6 +139,18 @@
 </div>
 
 <script>
+// Set date picker min/value to today IST on load
+(function() {
+    const today = getTodayISTEarly();
+    const el = document.getElementById('apptDate');
+    if (el) { el.min = today; el.value = today; }
+})();
+function getTodayISTEarly() {
+    const now = new Date();
+    const ist = new Date(now.getTime() + now.getTimezoneOffset()*60000 + 5.5*3600000);
+    return ist.getFullYear()+'-'+String(ist.getMonth()+1).padStart(2,'0')+'-'+String(ist.getDate()).padStart(2,'0');
+}
+
 let state = { date:'', phone:'', patientId:'', patientName:'', chiefComplaint:'', isFollowup:0, slotTime:'' };
 
 function goStep(n) {
@@ -210,9 +222,26 @@ function loadSlots(date) {
             el.innerHTML='<div style="color:#6b7280;font-size:12px;padding:20px;text-align:center;">No slots available for this date.</div>';
             return;
         }
+
+        // Current IST time as HH:MM string
+        const nowIST = getNowIST();
+        const isToday = (date === getTodayIST());
+
+        // Filter: remove fully booked slots; hide past slots if today
+        const available = data.slots.filter(s => {
+            if (!s.available) return false;          // fully booked — hide
+            if (isToday && s.time <= nowIST) return false; // past slot — hide
+            return true;
+        });
+
+        if (!available.length) {
+            el.innerHTML='<div style="color:#6b7280;font-size:12px;padding:20px;text-align:center;">No available slots for this date.</div>';
+            return;
+        }
+
         // Split morning (before 13:00) and evening
-        const morning = data.slots.filter(s => s.time < '13:00');
-        const evening = data.slots.filter(s => s.time >= '13:00');
+        const morning = available.filter(s => s.time < '13:00');
+        const evening = available.filter(s => s.time >= '13:00');
         let html = '';
         if (morning.length) {
             html += '<div class="session-label">Morning</div><div class="slot-grid">';
@@ -228,12 +257,27 @@ function loadSlots(date) {
     });
 }
 
+// Get current IST time as "HH:MM"
+function getNowIST() {
+    const now = new Date();
+    // IST = UTC+5:30
+    const utc = now.getTime() + now.getTimezoneOffset() * 60000;
+    const ist = new Date(utc + 5.5 * 3600000);
+    return String(ist.getHours()).padStart(2,'0') + ':' + String(ist.getMinutes()).padStart(2,'0');
+}
+
+// Get today's date in IST as "YYYY-MM-DD"
+function getTodayIST() {
+    const now = new Date();
+    const utc = now.getTime() + now.getTimezoneOffset() * 60000;
+    const ist = new Date(utc + 5.5 * 3600000);
+    return ist.getFullYear() + '-' + String(ist.getMonth()+1).padStart(2,'0') + '-' + String(ist.getDate()).padStart(2,'0');
+}
+
 function slotBtn(s) {
-    const full = !s.available;
     const t12 = to12(s.time);
-    return `<div class="slot-btn ${full?'full':''}" data-time="${s.time}" onclick="selectSlot(this,'${s.time}')">
+    return `<div class="slot-btn" data-time="${s.time}" onclick="selectSlot(this,'${s.time}')">
         <div class="time">${t12}</div>
-        ${full ? '<div style="font-size:10px;color:#9ca3af;">Full</div>' : ''}
     </div>`;
 }
 

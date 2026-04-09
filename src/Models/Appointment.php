@@ -85,12 +85,22 @@ class Appointment extends BaseModel {
 
     /** Update appointment status */
     public function updateStatus($id, $status) {
+        $now = date('Y-m-d H:i:s'); // IST — set by date_default_timezone_set in index.php
         $extra = [];
-        if ($status === 'in_consultation') $extra['called_at']    = date('Y-m-d H:i:s');
-        if ($status === 'completed')       $extra['completed_at'] = date('Y-m-d H:i:s');
-
+        if ($status === 'in_consultation') $extra['called_at']    = $now; // Dr attended patient
+        if ($status === 'completed')       $extra['completed_at'] = $now; // Patient out
         $data = array_merge(['status' => $status], $extra);
         $this->update($id, $data);
+    }
+
+    /** Get single appointment with patient join */
+    public function getByIdFull($id) {
+        $sql = "SELECT a.*, p.fname, p.lname, p.contact_no
+                FROM {$this->table} a
+                LEFT JOIN patient p ON a.patient_id = p.id
+                WHERE a.id = ?";
+        $stmt = $this->query($sql, [$id]);
+        return $stmt->fetch(PDO::FETCH_ASSOC);
     }
 
     /** Stats for today */

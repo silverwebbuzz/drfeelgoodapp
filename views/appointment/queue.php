@@ -1,7 +1,6 @@
 <?php
 $page_title = 'Today\'s Queue';
 
-// Helpers
 function qFmt($v, $fallback = 'N/A') {
     $v = trim((string)($v ?? ''));
     return ($v === '' || $v === '0000-00-00' || $v === '1970-01-01') ? $fallback : htmlspecialchars($v);
@@ -10,6 +9,10 @@ function qName($row) {
     $fn = trim(($row['fname'] ?? '') . ' ' . ($row['lname'] ?? ''));
     if ($fn !== '') return htmlspecialchars($fn);
     return qFmt($row['patient_name'] ?? '', 'Unknown');
+}
+function qTime($dt) {
+    if (!$dt || $dt === '0000-00-00 00:00:00') return '<span style="color:#d1d5db;">—</span>';
+    return '<span style="font-size:11px;">' . date('h:i A', strtotime($dt)) . '</span>';
 }
 function statusBadge($s) {
     $map = [
@@ -39,6 +42,11 @@ ob_start();
 .date-nav { display:flex; align-items:center; gap:8px; }
 #filterTabs .nav-link { padding:4px 12px; font-size:12px; }
 .queue-row td { vertical-align:middle; }
+.time-col { text-align:center; min-width:64px; }
+.time-col .tlabel { font-size:10px; color:#9ca3af; display:block; }
+/* Highlight in-consultation row */
+.queue-row[data-status="in_consultation"] { background:#eff6ff; }
+.queue-row[data-status="completed"] { opacity:.75; }
 </style>
 
 <div class="page-header" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
@@ -77,7 +85,7 @@ ob_start();
 </div>
 
 <!-- Filter tabs -->
-<ul class="nav nav-tabs mb-10" id="filterTabs" style="margin-bottom:10px;">
+<ul class="nav nav-tabs" id="filterTabs" style="margin-bottom:10px;">
     <li class="nav-item"><a class="nav-link active" href="#" data-filter="all">All</a></li>
     <li class="nav-item"><a class="nav-link" href="#" data-filter="waiting">Waiting</a></li>
     <li class="nav-item"><a class="nav-link" href="#" data-filter="in_consultation">In Consult</a></li>
@@ -95,23 +103,26 @@ ob_start();
         <table class="table" style="margin:0;" id="queueTable">
             <thead>
                 <tr>
-                    <th style="width:50px;">#</th>
+                    <th style="width:46px;">#</th>
                     <th>Patient</th>
                     <th>Phone</th>
                     <th>Type</th>
-                    <th>Time</th>
+                    <th>Slot</th>
+                    <th class="time-col" title="Dr. called patient in">In (Called)</th>
+                    <th class="time-col" title="Consultation finished">Out (Done)</th>
                     <th>Complaint</th>
                     <th>Status</th>
-                    <th style="width:220px;">Actions</th>
+                    <th style="width:200px;">Actions</th>
                 </tr>
             </thead>
             <tbody>
             <?php foreach ($queue as $row): ?>
-                <tr class="queue-row" data-status="<?php echo htmlspecialchars($row['status']); ?>" data-id="<?php echo (int)$row['id']; ?>">
+                <?php $s = $row['status']; $id = (int)$row['id']; $pid = (int)($row['patient_id'] ?? 0); ?>
+                <tr class="queue-row" data-status="<?php echo htmlspecialchars($s); ?>" data-id="<?php echo $id; ?>">
                     <td><span class="token-badge"><?php echo (int)$row['token_number']; ?></span></td>
                     <td>
-                        <?php if (!empty($row['patient_id'])): ?>
-                            <a href="/patient/<?php echo (int)$row['patient_id']; ?>" style="font-weight:600;"><?php echo qName($row); ?></a>
+                        <?php if ($pid): ?>
+                            <a href="/patient/<?php echo $pid; ?>" style="font-weight:600;"><?php echo qName($row); ?></a>
                         <?php else: ?>
                             <span style="font-weight:600;"><?php echo qName($row); ?></span>
                             <span class="badge bg-info" style="font-size:10px;">New</span>
@@ -122,23 +133,33 @@ ob_start();
                         <?php if ($row['type'] === 'walkin'): ?>
                             <span class="badge bg-secondary">Walk-in</span>
                         <?php else: ?>
-                            <span class="badge bg-info">Pre-booked</span>
+                            <span class="badge bg-info">Pre-book</span>
                         <?php endif; ?>
                     </td>
                     <td><?php echo $row['slot_time'] ? date('h:i A', strtotime($row['slot_time'])) : '<span style="color:#9ca3af;">—</span>'; ?></td>
+                    <td class="time-col"><?php echo qTime($row['called_at'] ?? null); ?></td>
+                    <td class="time-col"><?php echo qTime($row['completed_at'] ?? null); ?></td>
                     <td><?php echo qFmt($row['chief_complaint'] ?? ''); ?></td>
-                    <td class="status-cell"><?php echo statusBadge($row['status']); ?></td>
+                    <td class="status-cell"><?php echo statusBadge($s); ?></td>
                     <td class="status-btns">
-                        <?php $s = $row['status']; $id = (int)$row['id']; ?>
                         <?php if ($s === 'waiting'): ?>
-                            <button class="btn btn-primary btn-sm" onclick="setStatus(<?php echo $id; ?>,'in_consultation')"><i class="fas fa-stethoscope"></i> Call</button>
+                            <button class="btn btn-primary btn-sm" onclick="callPatient(<?php echo $id; ?>, <?php echo $pid; ?>)">
+                                <i class="fas fa-stethoscope"></i> Call
+                            </button>
                             <button class="btn btn-danger btn-sm" onclick="setStatus(<?php echo $id; ?>,'no_show')">No Show</button>
                         <?php elseif ($s === 'in_consultation'): ?>
-                            <button class="btn btn-success btn-sm" onclick="setStatus(<?php echo $id; ?>,'completed')"><i class="fas fa-check"></i> Done</button>
+                            <button class="btn btn-success btn-sm" onclick="finishConsult(<?php echo $id; ?>)">
+                                <i class="fas fa-check"></i> Finish
+                            </button>
+                            <?php if ($pid): ?>
+                            <a href="/patient/<?php echo $pid; ?>" class="btn btn-secondary btn-sm" title="View Patient">
+                                <i class="fas fa-user"></i>
+                            </a>
+                            <?php endif; ?>
                         <?php elseif ($s === 'completed'): ?>
                             <span style="color:#9ca3af;font-size:11px;"><i class="fas fa-check-double"></i> Done</span>
                         <?php else: ?>
-                            <span style="color:#9ca3af;font-size:11px;"><?php echo ucfirst($s); ?></span>
+                            <span style="color:#9ca3af;font-size:11px;"><?php echo ucfirst(str_replace('_',' ',$s)); ?></span>
                         <?php endif; ?>
                         <?php if (!in_array($s, ['completed','cancelled','no_show'])): ?>
                             <button class="btn btn-secondary btn-sm" onclick="setStatus(<?php echo $id; ?>,'cancelled')" title="Cancel"><i class="fas fa-times"></i></button>
@@ -166,9 +187,32 @@ document.querySelectorAll('#filterTabs .nav-link').forEach(tab => {
     });
 });
 
-// Status update
+// Call patient → set in_consultation, redirect to patient detail
+function callPatient(id, patientId) {
+    doStatus(id, 'in_consultation', function(data) {
+        if (data.redirect) {
+            location.href = data.redirect;
+        } else {
+            location.reload();
+        }
+    });
+}
+
+// Finish consultation → set completed, redirect back to queue
+function finishConsult(id) {
+    doStatus(id, 'completed', function(data) {
+        location.href = '/queue';
+    });
+}
+
+// Generic status update (no redirect)
 function setStatus(id, status) {
-    const labels = {waiting:'Waiting',in_consultation:'In Consult',completed:'Completed',cancelled:'Cancelled',no_show:'No Show'};
+    doStatus(id, status, function(data) {
+        location.reload();
+    });
+}
+
+function doStatus(id, status, cb) {
     fetch('/api/appointment/' + id + '/status', {
         method: 'POST',
         headers: {'Content-Type': 'application/x-www-form-urlencoded'},
@@ -176,13 +220,17 @@ function setStatus(id, status) {
     })
     .then(r => r.json())
     .then(data => {
-        if (data.success) location.reload();
+        if (data.success) cb(data);
         else alert('Error: ' + data.message);
     });
 }
 
-// Auto-refresh every 60s
-setTimeout(() => location.reload(), 60000);
+// Auto-refresh every 60s (only if page is visible)
+let refreshTimer = setTimeout(() => location.reload(), 60000);
+document.addEventListener('visibilitychange', () => {
+    if (document.hidden) clearTimeout(refreshTimer);
+    else refreshTimer = setTimeout(() => location.reload(), 60000);
+});
 </script>
 
 <?php
