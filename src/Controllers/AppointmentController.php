@@ -91,10 +91,7 @@ class AppointmentController {
     /** Public booking — lookup patient by phone */
     public function lookupByPhone($phone) {
         try {
-            $sql = "SELECT id, patient_id, fname, lname, contact_no
-                    FROM patient WHERE contact_no = ? LIMIT 1";
-            $stmt = $this->patientModel->query($sql, [$phone]);
-            $patient = $stmt->fetch(\PDO::FETCH_ASSOC);
+            $patient = $this->patientModel->findByPhone($phone);
             if ($patient) {
                 return ['success' => true, 'found' => true, 'patient' => $patient];
             }

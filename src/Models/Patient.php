@@ -51,6 +51,13 @@ class Patient extends BaseModel {
     /**
      * Search patients by name
      */
+    public function findByPhone($phone) {
+        $sql = "SELECT id, patient_id, fname, lname, contact_no
+                FROM {$this->table} WHERE contact_no = ? LIMIT 1";
+        $stmt = $this->query($sql, [$phone]);
+        return $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
+    }
+
     public function searchByName($name) {
         $sql = "SELECT id, fname, lname, contact_no, dob, gender, chief
                 FROM {$this->table}
