@@ -1,6 +1,18 @@
 <?php
 ob_start();
 $page_title = 'Dashboard - Dr. Feelgood';
+
+function dashFmt($v) {
+    if ($v === null) return 'N/A';
+    $v = is_string($v) ? trim($v) : $v;
+    if ($v === '' || $v === '0000-00-00') return 'N/A';
+    return $v;
+}
+
+function dashFmtName($f, $l) {
+    $full = trim(trim($f ?? '') . ' ' . trim($l ?? ''));
+    return $full === '' ? 'N/A' : $full;
+}
 ?>
 
 <?php if (isset($recentPatients) && $recentPatients['success']): ?>
@@ -99,25 +111,26 @@ $page_title = 'Dashboard - Dr. Feelgood';
                                     <?php foreach ($recentPatients['data'] as $patient): ?>
                                         <tr>
                                             <td>
-                                                <strong><?php echo htmlspecialchars($patient['fname'] . ' ' . ($patient['lname'] ?? '')); ?></strong>
+                                                <strong><?php echo htmlspecialchars(dashFmtName($patient['fname'] ?? '', $patient['lname'] ?? '')); ?></strong>
                                             </td>
-                                            <td><?php echo htmlspecialchars($patient['contact_no'] ?? 'N/A'); ?></td>
+                                            <td><?php echo htmlspecialchars(dashFmt($patient['contact_no'] ?? null)); ?></td>
                                             <td>
-                                                <?php if ($patient['gender'] === 'M'): ?>
+                                                <?php if (($patient['gender'] ?? '') === 'M'): ?>
                                                     <span class="badge badge-male">
                                                         <i class="fas fa-mars"></i> Male
                                                     </span>
-                                                <?php elseif ($patient['gender'] === 'F'): ?>
+                                                <?php elseif (($patient['gender'] ?? '') === 'F'): ?>
                                                     <span class="badge badge-female">
                                                         <i class="fas fa-venus"></i> Female
                                                     </span>
                                                 <?php else: ?>
-                                                    <span class="badge badge-primary">Other</span>
+                                                    <span style="color: var(--gray-400);">N/A</span>
                                                 <?php endif; ?>
                                             </td>
                                             <td>
+                                                <?php $chief = trim($patient['chief'] ?? ''); ?>
                                                 <span style="color: var(--gray-600);">
-                                                    <?php echo htmlspecialchars(substr($patient['chief'] ?? 'N/A', 0, 40)); ?>
+                                                    <?php echo $chief === '' ? '<span style="color: var(--gray-400);">N/A</span>' : htmlspecialchars(mb_strimwidth($chief, 0, 40, '...')); ?>
                                                 </span>
                                             </td>
                                             <td>

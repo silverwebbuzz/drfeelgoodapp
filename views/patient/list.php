@@ -1,6 +1,29 @@
 <?php
 ob_start();
 $page_title = 'Patients - Dr. Feelgood';
+
+/**
+ * Format legacy data — treats empty strings, nulls, and '0000-00-00' as N/A
+ */
+function fmt($value, $fallback = 'N/A') {
+    if ($value === null || $value === '' || $value === '0000-00-00' || $value === '1970-01-01') {
+        return $fallback;
+    }
+    return $value;
+}
+
+function fmtDate($value) {
+    if ($value === null || $value === '' || $value === '0000-00-00' || strpos($value, '0000') === 0 || $value === '1970-01-01') {
+        return 'N/A';
+    }
+    $ts = strtotime($value);
+    return $ts ? date('d M Y', $ts) : 'N/A';
+}
+
+function fmtName($fname, $lname) {
+    $full = trim(trim($fname ?? '') . ' ' . trim($lname ?? ''));
+    return $full === '' ? 'N/A' : $full;
+}
 ?>
 
 <!-- PAGE HEADER -->
@@ -51,26 +74,30 @@ $page_title = 'Patients - Dr. Feelgood';
                                 <code><?php echo htmlspecialchars($patient['patient_id'] ?? $patient['id']); ?></code>
                             </td>
                             <td>
-                                <strong><?php echo htmlspecialchars($patient['fname'] . ' ' . ($patient['lname'] ?? '')); ?></strong>
+                                <strong><?php echo htmlspecialchars(fmtName($patient['fname'] ?? '', $patient['lname'] ?? '')); ?></strong>
                             </td>
                             <td>
-                                <a href="tel:<?php echo htmlspecialchars($patient['contact_no']); ?>">
-                                    <?php echo htmlspecialchars($patient['contact_no'] ?? 'N/A'); ?>
-                                </a>
-                            </td>
-                            <td>
-                                <?php if ($patient['gender'] === 'M'): ?>
-                                    <span class="badge badge-male"><i class="fas fa-mars"></i> Male</span>
-                                <?php elseif ($patient['gender'] === 'F'): ?>
-                                    <span class="badge badge-female"><i class="fas fa-venus"></i> Female</span>
+                                <?php $contact = trim($patient['contact_no'] ?? ''); ?>
+                                <?php if ($contact !== ''): ?>
+                                    <a href="tel:<?php echo htmlspecialchars($contact); ?>"><?php echo htmlspecialchars($contact); ?></a>
                                 <?php else: ?>
-                                    <span class="badge badge-primary">Other</span>
+                                    <span style="color: var(--gray-400);">N/A</span>
                                 <?php endif; ?>
                             </td>
-                            <td><?php echo htmlspecialchars($patient['dob'] ?? 'N/A'); ?></td>
                             <td>
+                                <?php if (($patient['gender'] ?? '') === 'M'): ?>
+                                    <span class="badge badge-male"><i class="fas fa-mars"></i> Male</span>
+                                <?php elseif (($patient['gender'] ?? '') === 'F'): ?>
+                                    <span class="badge badge-female"><i class="fas fa-venus"></i> Female</span>
+                                <?php else: ?>
+                                    <span style="color: var(--gray-400);">N/A</span>
+                                <?php endif; ?>
+                            </td>
+                            <td><?php echo htmlspecialchars(fmtDate($patient['dob'] ?? '')); ?></td>
+                            <td>
+                                <?php $chief = trim($patient['chief'] ?? ''); ?>
                                 <span style="color: var(--gray-600);">
-                                    <?php echo htmlspecialchars(substr($patient['chief'] ?? 'N/A', 0, 40)); ?>
+                                    <?php echo $chief === '' ? '<span style="color: var(--gray-400);">N/A</span>' : htmlspecialchars(mb_strimwidth($chief, 0, 50, '...')); ?>
                                 </span>
                             </td>
                             <td style="text-align: center;">

@@ -41,5 +41,8 @@ build/
 # PHP OpCache
 .opcache
 
+# Database dumps (may contain PHI / sensitive patient data)
+*.sql
+
 # Composer lock (optional)
 # composer.lock
