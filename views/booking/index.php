@@ -255,7 +255,7 @@ function goStep(n) {
 const DAY_NAMES   = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 const MON_NAMES   = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 const DAYS_AHEAD  = <?php echo (int)($bookingDaysAhead ?? 15); ?>;
-const CLOSED_DATES = <?php echo json_encode($closedDatesArr ?? []); ?>; // e.g. ["2026-04-15"]
+const CLOSED_DATES = <?php echo json_encode($unavailableDates ?? []); ?>; // closed + no-session days
 
 document.addEventListener('DOMContentLoaded', function() {
     const strip = document.getElementById('dateStrip');

@@ -319,11 +319,30 @@ switch ($route) {
 
     case 'booking':
         // Public booking page — no auth required
-        $apptController = new AppointmentController($db);
-        // Pass booking_days_ahead to the view
-        $bookingDaysAhead = (int)(new App\Models\Setting($db))->get('booking_days_ahead', 15);
+        $settingModel     = new App\Models\Setting($db);
+        $bookingDaysAhead = (int)$settingModel->get('booking_days_ahead', 15);
         $closedDatesRaw   = (new App\Models\Appointment($db))->getClosedDates();
-        $closedDatesArr   = array_column($closedDatesRaw, 'date'); // ['2026-04-15', ...]
+        $closedDatesArr   = array_column($closedDatesRaw, 'date');
+
+        // Build list of unavailable dates (closed dates + days with no sessions configured)
+        $unavailableDates = $closedDatesArr;
+        for ($i = 0; $i < $bookingDaysAhead; $i++) {
+            $d   = date('Y-m-d', strtotime("+{$i} days"));
+            $dow = (int)date('N', strtotime($d)); // 1=Mon, 7=Sun
+            $noSlots = false;
+            if ($dow === 7) {
+                // Sunday
+                $noSlots = $settingModel->get('sunday_on', '1') !== '1';
+            } else {
+                // Mon-Sat: no slots if both sessions are off
+                $morningOff = $settingModel->get('mon_sat_morning_on', '1') !== '1';
+                $eveningOff = $settingModel->get('mon_sat_evening_on', '1') !== '1';
+                $noSlots = $morningOff && $eveningOff;
+            }
+            if ($noSlots && !in_array($d, $unavailableDates)) {
+                $unavailableDates[] = $d;
+            }
+        }
         require __DIR__ . '/views/booking/index.php';
         break;
 
