@@ -12,7 +12,7 @@ class Setting extends BaseModel {
         return $row ? $row['value'] : $default;
     }
 
-    public function getAll() {
+    public function getAllSettings() {
         $sql = "SELECT `key`, value FROM {$this->table} ORDER BY `key`";
         $stmt = $this->query($sql);
         $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);

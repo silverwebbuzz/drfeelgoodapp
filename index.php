@@ -250,7 +250,7 @@ switch ($route) {
         }
         // Load current settings for the form
         $settingModel = new App\Models\Setting($db);
-        $clinicSettings = $settingModel->getAll();
+        $clinicSettings = $settingModel->getAllSettings();
         require __DIR__ . '/views/appointment/settings.php';
         break;
 
