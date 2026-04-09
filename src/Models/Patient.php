@@ -130,13 +130,12 @@ class Patient extends BaseModel {
         $fname = $parts[0] ?? $name;
         $lname = $parts[1] ?? '';
         return $this->insert([
-            'patient_id'  => 'AUTO-' . date('ymd') . '-' . strtoupper(substr($fname, 0, 3)),
-            'fname'       => $fname,
-            'lname'       => $lname,
-            'contact_no'  => $phone,
-            'chief'       => $chief,
-            'dor'         => date('Y-m-d'),
-            'is_new_patient' => 1,
+            'patient_id' => 'AUTO-' . date('ymd') . '-' . strtoupper(substr($fname, 0, 3)),
+            'fname'      => $fname,
+            'lname'      => $lname,
+            'contact_no' => $phone,
+            'chief'      => $chief,
+            'dor'        => date('Y-m-d'),
         ]);
     }
 
