@@ -46,13 +46,13 @@
                             </a>
                         </li>
                         <li>
-                            <a href="#" onclick="alert('Coming soon')" style="cursor: not-allowed; opacity: 0.6;">
-                                <i class="fas fa-file-medical"></i>
-                                <span>Reports</span>
+                            <a href="/queue" class="<?php echo (strpos($_SERVER['REQUEST_URI'], 'queue') !== false || strpos($_SERVER['REQUEST_URI'], 'walkin') !== false) ? 'active' : ''; ?>">
+                                <i class="fas fa-list-ol"></i>
+                                <span>Queue</span>
                             </a>
                         </li>
                         <li>
-                            <a href="#" onclick="alert('Coming soon')" style="cursor: not-allowed; opacity: 0.6;">
+                            <a href="/clinic-settings" class="<?php echo (strpos($_SERVER['REQUEST_URI'], 'clinic-settings') !== false) ? 'active' : ''; ?>">
                                 <i class="fas fa-cog"></i>
                                 <span>Settings</span>
                             </a>

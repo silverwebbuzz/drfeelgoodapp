@@ -69,6 +69,7 @@ try {
 use App\Controllers\AuthController;
 use App\Controllers\PatientController;
 use App\Controllers\MedicineController;
+use App\Controllers\AppointmentController;
 
 // Check session timeout
 AuthController::checkSessionTimeout();
@@ -221,6 +222,102 @@ switch ($route) {
         $patientController = new PatientController($db);
         $recentPatients = $patientController->getRecent(5);
         require __DIR__ . '/views/dashboard.php';
+        break;
+
+    // ── Appointment / Queue routes ──────────────────────────────────────────
+
+    case 'queue':
+        AuthController::requireLogin();
+        $apptController = new AppointmentController($db);
+        $date = $_GET['date'] ?? null;
+        $queueData = $apptController->getQueue($date);
+        require __DIR__ . '/views/appointment/queue.php';
+        break;
+
+    case 'walkin':
+        AuthController::requireLogin();
+        require __DIR__ . '/views/appointment/walkin.php';
+        break;
+
+    case 'clinic-settings':
+        AuthController::requireLogin();
+        $apptController = new AppointmentController($db);
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $response = $apptController->saveSettings($_POST);
+            header('Content-Type: application/json');
+            echo json_encode($response);
+            exit;
+        }
+        // Load current settings for the form
+        $settingModel = new App\Models\Setting($db);
+        $clinicSettings = $settingModel->getAll();
+        require __DIR__ . '/views/appointment/settings.php';
+        break;
+
+    case 'api/appointment/walkin':
+        AuthController::requireLogin();
+        header('Content-Type: application/json');
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            echo json_encode(['success' => false, 'message' => 'POST required']);
+            exit;
+        }
+        $apptController = new AppointmentController($db);
+        $userId = $_SESSION['user_id'] ?? null;
+        $response = $apptController->createWalkin($_POST, $userId);
+        echo json_encode($response);
+        exit;
+
+    case (preg_match('/^api\/appointment\/(\d+)\/status$/', $route, $matches) ? true : false):
+        AuthController::requireLogin();
+        header('Content-Type: application/json');
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            echo json_encode(['success' => false, 'message' => 'POST required']);
+            exit;
+        }
+        $apptId = $matches[1];
+        $apptController = new AppointmentController($db);
+        $response = $apptController->updateStatus($apptId, $_POST['status'] ?? '');
+        echo json_encode($response);
+        exit;
+
+    case 'api/slots':
+        // Public — no auth required
+        header('Content-Type: application/json');
+        $date = $_GET['date'] ?? date('Y-m-d');
+        $apptController = new AppointmentController($db);
+        $response = $apptController->getAvailableSlots($date);
+        echo json_encode($response);
+        exit;
+
+    case 'api/booking':
+        // Public — no auth required
+        header('Content-Type: application/json');
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            echo json_encode(['success' => false, 'message' => 'POST required']);
+            exit;
+        }
+        $apptController = new AppointmentController($db);
+        $response = $apptController->createPrebooked($_POST);
+        echo json_encode($response);
+        exit;
+
+    case 'api/patient/lookup':
+        // Public — no auth required
+        header('Content-Type: application/json');
+        $phone = trim($_GET['phone'] ?? '');
+        if ($phone === '') {
+            echo json_encode(['success' => false, 'message' => 'Phone required']);
+            exit;
+        }
+        $apptController = new AppointmentController($db);
+        $response = $apptController->lookupByPhone($phone);
+        echo json_encode($response);
+        exit;
+
+    case 'booking':
+        // Public booking page — no auth required
+        $apptController = new AppointmentController($db);
+        require __DIR__ . '/views/booking/index.php';
         break;
 
     default:
