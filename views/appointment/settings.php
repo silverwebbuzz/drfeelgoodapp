@@ -111,6 +111,24 @@ ob_start();
 </div>
 
 <div class="settings-section">
+    <h3><i class="fas fa-clock" style="color:#ef4444;margin-right:6px;"></i> Extended Hours (Walk-in Admin Only)</h3>
+    <div style="font-size:12px;color:#6b7280;margin-bottom:10px;">
+        These extended end times are only visible in the admin walk-in form — never on the public booking page.
+        Useful when doctor allows last-minute patients beyond normal hours.
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <div>
+            <label class="form-label">Morning Extended End <span style="color:#9ca3af;font-weight:400;">(after normal morning end)</span></label>
+            <input type="time" name="extended_morning_end" class="form-control" value="<?php echo htmlspecialchars($s['extended_morning_end'] ?? '14:30'); ?>">
+        </div>
+        <div>
+            <label class="form-label">Evening Extended End <span style="color:#9ca3af;font-weight:400;">(after normal evening end)</span></label>
+            <input type="time" name="extended_evening_end" class="form-control" value="<?php echo htmlspecialchars($s['extended_evening_end'] ?? '23:30'); ?>">
+        </div>
+    </div>
+</div>
+
+<div class="settings-section">
     <h3><i class="fas fa-calendar-alt" style="color:var(--primary);margin-right:6px;"></i> Online Booking Window</h3>
     <div style="font-size:12px;color:#6b7280;margin-bottom:8px;">How many days ahead can patients book online?</div>
     <div style="display:flex;gap:12px;">

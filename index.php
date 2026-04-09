@@ -284,11 +284,12 @@ switch ($route) {
         exit;
 
     case 'api/slots':
-        // Public — no auth required
         header('Content-Type: application/json');
         $date = $_GET['date'] ?? date('Y-m-d');
+        // extended=1 only honoured for logged-in staff, never for public
+        $extended = isset($_SESSION['user_id']) && ($_GET['extended'] ?? '0') === '1';
         $apptController = new AppointmentController($db);
-        $response = $apptController->getAvailableSlots($date);
+        $response = $apptController->getAvailableSlots($date, $extended);
         echo json_encode($response);
         exit;
 

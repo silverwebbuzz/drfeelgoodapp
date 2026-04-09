@@ -27,7 +27,7 @@ class Appointment extends BaseModel {
     /** How many bookings exist for a specific date+time slot */
     public function countSlot($date, $time) {
         $sql = "SELECT COUNT(*) as cnt FROM {$this->table}
-                WHERE appt_date = ? AND slot_time = ?
+                WHERE appt_date = ? AND TIME_FORMAT(slot_time,'%H:%i') = ?
                 AND status NOT IN ('cancelled','no_show')";
         $stmt = $this->query($sql, [$date, $time]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -61,9 +61,10 @@ class Appointment extends BaseModel {
         $this->query($sql, [(int)$id]);
     }
 
-    /** Booked slot times for a date (for public booking page) */
+    /** Booked slot times for a date — returns HH:MM strings to match generateSlots() output */
     public function bookedSlots($date) {
-        $sql = "SELECT slot_time FROM {$this->table}
+        $sql = "SELECT TIME_FORMAT(slot_time, '%H:%i') as slot_time
+                FROM {$this->table}
                 WHERE appt_date = ? AND status NOT IN ('cancelled','no_show')
                 AND slot_time IS NOT NULL";
         $stmt = $this->query($sql, [$date]);

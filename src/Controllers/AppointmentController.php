@@ -73,7 +73,7 @@ class AppointmentController {
     }
 
     /** Get available slots for public booking page */
-    public function getAvailableSlots($date) {
+    public function getAvailableSlots($date, $extended = false) {
         try {
             // Check if clinic is closed that day
             $closed = $this->apptModel->isClosedDate($date);
@@ -81,7 +81,7 @@ class AppointmentController {
                 return ['success' => true, 'slots' => [], 'closed' => true, 'date' => $date];
             }
 
-            $allSlots    = $this->settingModel->generateSlots($date);
+            $allSlots    = $this->settingModel->generateSlots($date, $extended);
             $bookedSlots = $this->apptModel->bookedSlots($date);
             $maxPerSlot  = max(1, (int)$this->settingModel->get('max_per_slot', 1));
 
@@ -169,6 +169,7 @@ class AppointmentController {
                 'sunday_on','sunday_start','sunday_end',
                 'max_per_slot','clinic_name','clinic_phone','consultation_fee',
                 'booking_days_ahead',
+                'extended_morning_end','extended_evening_end',
             ];
             $clean = array_intersect_key($data, array_flip($allowed));
             // Checkboxes not sent when off — set to 0

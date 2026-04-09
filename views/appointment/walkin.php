@@ -73,7 +73,13 @@ ob_start();
 
     <!-- Slot picker -->
     <div class="mb-3">
-        <label class="form-label fw-semibold">Time Slot <span style="font-weight:400;color:#9ca3af;font-size:11px;">(optional — assign a slot to avoid overlap)</span></label>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+            <label class="form-label fw-semibold" style="margin:0;">Time Slot <span style="font-weight:400;color:#9ca3af;font-size:11px;">(optional — assign a slot to avoid overlap)</span></label>
+            <label style="font-size:12px;display:flex;align-items:center;gap:6px;cursor:pointer;color:#ef4444;font-weight:600;">
+                <input type="checkbox" id="extendedHours" onchange="reloadSlots()">
+                <i class="fas fa-clock"></i> Extended Hours
+            </label>
+        </div>
         <input type="hidden" name="slot_time" id="slotTimeInput">
         <div id="slotArea"><div id="slotLoading"><i class="fas fa-spinner fa-spin"></i> Loading slots…</div></div>
         <div style="font-size:11px;color:#6b7280;margin-top:4px;">
@@ -180,16 +186,22 @@ loadSlots(document.getElementById('apptDate').value);
 
 // Reload slots when date changes
 document.getElementById('apptDate').addEventListener('change', function() {
-    document.getElementById('slotTimeInput').value = ''; // reset selection
+    document.getElementById('slotTimeInput').value = '';
     loadSlots(this.value);
 });
+
+function reloadSlots() {
+    document.getElementById('slotTimeInput').value = '';
+    loadSlots(document.getElementById('apptDate').value);
+}
 
 function loadSlots(date) {
     const area = document.getElementById('slotArea');
     area.innerHTML = '<div id="slotLoading"><i class="fas fa-spinner fa-spin"></i> Loading slots…</div>';
     document.getElementById('slotTimeInput').value = '';
 
-    fetch('/api/slots?date=' + encodeURIComponent(date))
+    const extended = document.getElementById('extendedHours').checked ? '1' : '0';
+    fetch('/api/slots?date=' + encodeURIComponent(date) + '&extended=' + extended)
     .then(r => r.json())
     .then(data => renderSlots(data, date))
     .catch(() => {

@@ -37,13 +37,13 @@ class Setting extends BaseModel {
      * Generate available time slots for a given date based on settings
      * Returns array of 'HH:MM' strings
      */
-    public function generateSlots($date) {
-        $dayOfWeek = (int)date('N', strtotime($date)); // 1=Mon, 7=Sun — cast to int for strict compare
+    public function generateSlots($date, $extended = false) {
+        $dayOfWeek = (int)date('N', strtotime($date)); // 1=Mon, 7=Sun
         $duration  = (int)$this->get('slot_duration_min', 30);
         $slots = [];
 
         if ($dayOfWeek === 7) {
-            // Sunday
+            // Sunday — no extended hours for Sunday
             if ($this->get('sunday_on', '1') === '1') {
                 $slots = array_merge($slots, $this->buildSlots(
                     $this->get('sunday_start', '10:00'),
@@ -54,17 +54,21 @@ class Setting extends BaseModel {
         } else {
             // Mon–Sat morning
             if ($this->get('mon_sat_morning_on', '1') === '1') {
+                $normalEnd  = $this->get('mon_sat_morning_end', '13:30');
+                $extendEnd  = $this->get('extended_morning_end', '14:30');
                 $slots = array_merge($slots, $this->buildSlots(
                     $this->get('mon_sat_morning_start', '09:30'),
-                    $this->get('mon_sat_morning_end',   '13:30'),
+                    $extended ? $extendEnd : $normalEnd,
                     $duration
                 ));
             }
             // Mon–Sat evening
             if ($this->get('mon_sat_evening_on', '1') === '1') {
+                $normalEnd  = $this->get('mon_sat_evening_end', '20:30');
+                $extendEnd  = $this->get('extended_evening_end', '23:30');
                 $slots = array_merge($slots, $this->buildSlots(
                     $this->get('mon_sat_evening_start', '16:30'),
-                    $this->get('mon_sat_evening_end',   '20:30'),
+                    $extended ? $extendEnd : $normalEnd,
                     $duration
                 ));
             }
