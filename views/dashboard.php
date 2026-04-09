@@ -1,85 +1,83 @@
 <?php
+ob_start();
 $page_title = 'Dashboard - Dr. Feelgood';
 ?>
 
-<?php
-if (isset($recentPatients) && $recentPatients['success']): ?>
-    <nav aria-label="breadcrumb">
-        <ol class="breadcrumb">
-            <li class="breadcrumb-item active"><i class="fas fa-home"></i> Dashboard</li>
-        </ol>
-    </nav>
+<?php if (isset($recentPatients) && $recentPatients['success']): ?>
 
-    <div class="row">
-        <div class="col-md-12">
-            <h2 style="margin-bottom: 30px; color: #333;">
-                <i class="fas fa-chart-line"></i> Dashboard
-            </h2>
-        </div>
+    <!-- PAGE HEADER -->
+    <div class="page-header">
+        <h1 class="page-title">
+            <i class="fas fa-chart-line"></i> Dashboard
+        </h1>
     </div>
 
-    <!-- Stats Cards -->
-    <div class="row">
-        <div class="col-md-3">
-            <div class="card" style="border-left: 4px solid #0F6E56;">
-                <div class="card-body">
-                    <div style="text-align: center;">
-                        <i class="fas fa-users" style="font-size: 2rem; color: #0F6E56;"></i>
-                        <div style="margin-top: 15px;">
-                            <div style="color: #999; font-size: 0.9rem;">Total Patients</div>
-                            <div style="font-size: 1.8rem; font-weight: 700; color: #333;">8,312</div>
-                        </div>
-                    </div>
+    <!-- STATISTICS ROW -->
+    <div class="row mb-24">
+        <div class="col-md-6 col-lg-3 mb-3">
+            <div class="stat-card">
+                <div class="stat-icon blue">
+                    <i class="fas fa-users"></i>
+                </div>
+                <div class="stat-content">
+                    <h3>Total Patients</h3>
+                    <p class="stat-value">8,312</p>
+                    <span class="stat-change positive">
+                        <i class="fas fa-arrow-up"></i> Active Records
+                    </span>
                 </div>
             </div>
         </div>
 
-        <div class="col-md-3">
-            <div class="card" style="border-left: 4px solid #1D9E75;">
-                <div class="card-body">
-                    <div style="text-align: center;">
-                        <i class="fas fa-file-medical" style="font-size: 2rem; color: #1D9E75;"></i>
-                        <div style="margin-top: 15px;">
-                            <div style="color: #999; font-size: 0.9rem;">Progress Reports</div>
-                            <div style="font-size: 1.8rem; font-weight: 700; color: #333;">605K+</div>
-                        </div>
-                    </div>
+        <div class="col-md-6 col-lg-3 mb-3">
+            <div class="stat-card">
+                <div class="stat-icon green">
+                    <i class="fas fa-file-medical"></i>
+                </div>
+                <div class="stat-content">
+                    <h3>Progress Reports</h3>
+                    <p class="stat-value">605K+</p>
+                    <span class="stat-change positive">
+                        <i class="fas fa-arrow-up"></i> Complete History
+                    </span>
                 </div>
             </div>
         </div>
 
-        <div class="col-md-3">
-            <div class="card" style="border-left: 4px solid #00796B;">
-                <div class="card-body">
-                    <div style="text-align: center;">
-                        <i class="fas fa-calendar-alt" style="font-size: 2rem; color: #00796B;"></i>
-                        <div style="margin-top: 15px;">
-                            <div style="color: #999; font-size: 0.9rem;">Assessments</div>
-                            <div style="font-size: 1.8rem; font-weight: 700; color: #333;">8,180</div>
-                        </div>
-                    </div>
+        <div class="col-md-6 col-lg-3 mb-3">
+            <div class="stat-card">
+                <div class="stat-icon yellow">
+                    <i class="fas fa-clipboard-check"></i>
+                </div>
+                <div class="stat-content">
+                    <h3>Assessments</h3>
+                    <p class="stat-value">8,180</p>
+                    <span class="stat-change positive">
+                        <i class="fas fa-arrow-up"></i> Recorded
+                    </span>
                 </div>
             </div>
         </div>
 
-        <div class="col-md-3">
-            <div class="card" style="border-left: 4px solid #004D40;">
-                <div class="card-body">
-                    <div style="text-align: center;">
-                        <i class="fas fa-stethoscope" style="font-size: 2rem; color: #004D40;"></i>
-                        <div style="margin-top: 15px;">
-                            <div style="color: #999; font-size: 0.9rem;">Doctors/Staff</div>
-                            <div style="font-size: 1.8rem; font-weight: 700; color: #333;">2</div>
-                        </div>
-                    </div>
+        <div class="col-md-6 col-lg-3 mb-3">
+            <div class="stat-card">
+                <div class="stat-icon red">
+                    <i class="fas fa-stethoscope"></i>
+                </div>
+                <div class="stat-content">
+                    <h3>Doctors/Staff</h3>
+                    <p class="stat-value">2</p>
+                    <span class="stat-change positive">
+                        <i class="fas fa-arrow-up"></i> Active Users
+                    </span>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Recent Patients -->
-    <div class="row" style="margin-top: 30px;">
-        <div class="col-md-12">
+    <!-- RECENT PATIENTS SECTION -->
+    <div class="row mb-24">
+        <div class="col-lg-12">
             <div class="card">
                 <div class="card-header">
                     <i class="fas fa-history"></i> Recent Patients
@@ -87,10 +85,10 @@ if (isset($recentPatients) && $recentPatients['success']): ?>
                 <div class="card-body">
                     <?php if (!empty($recentPatients['data'])): ?>
                         <div class="table-responsive">
-                            <table class="table table-hover">
+                            <table class="table">
                                 <thead>
                                     <tr>
-                                        <th>Name</th>
+                                        <th>Patient Name</th>
                                         <th>Contact</th>
                                         <th>Gender</th>
                                         <th>Chief Complaint</th>
@@ -106,14 +104,24 @@ if (isset($recentPatients) && $recentPatients['success']): ?>
                                             <td><?php echo htmlspecialchars($patient['contact_no'] ?? 'N/A'); ?></td>
                                             <td>
                                                 <?php if ($patient['gender'] === 'M'): ?>
-                                                    <span class="badge bg-light text-dark"><i class="fas fa-mars"></i> Male</span>
+                                                    <span class="badge badge-male">
+                                                        <i class="fas fa-mars"></i> Male
+                                                    </span>
                                                 <?php elseif ($patient['gender'] === 'F'): ?>
-                                                    <span class="badge bg-light text-dark"><i class="fas fa-venus"></i> Female</span>
+                                                    <span class="badge badge-female">
+                                                        <i class="fas fa-venus"></i> Female
+                                                    </span>
+                                                <?php else: ?>
+                                                    <span class="badge badge-primary">Other</span>
                                                 <?php endif; ?>
                                             </td>
-                                            <td><?php echo htmlspecialchars($patient['chief'] ?? 'N/A'); ?></td>
                                             <td>
-                                                <a href="/patient/<?php echo $patient['id']; ?>" class="btn btn-sm btn-primary">
+                                                <span style="color: var(--gray-600);">
+                                                    <?php echo htmlspecialchars(substr($patient['chief'] ?? 'N/A', 0, 40)); ?>
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <a href="/patient/<?php echo $patient['id']; ?>" class="btn btn-primary btn-sm">
                                                     <i class="fas fa-eye"></i> View
                                                 </a>
                                             </td>
@@ -122,42 +130,66 @@ if (isset($recentPatients) && $recentPatients['success']): ?>
                                 </tbody>
                             </table>
                         </div>
-                        <div style="text-align: center;">
+                        <div style="text-align: center; margin-top: 16px;">
                             <a href="/patients" class="btn btn-outline-primary">
                                 <i class="fas fa-arrow-right"></i> View All Patients
                             </a>
                         </div>
                     <?php else: ?>
-                        <p style="color: #999; text-align: center;">No recent patients</p>
+                        <div style="text-align: center; padding: 40px 20px; color: var(--gray-500);">
+                            <i class="fas fa-inbox" style="font-size: 2.5rem; margin-bottom: 12px; display: block;"></i>
+                            No recent patients found
+                        </div>
                     <?php endif; ?>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Quick Actions -->
-    <div class="row" style="margin-top: 30px;">
-        <div class="col-md-12">
+    <!-- QUICK ACTIONS SECTION -->
+    <div class="row">
+        <div class="col-lg-12">
             <div class="card">
                 <div class="card-header">
-                    <i class="fas fa-lightning-bolt"></i> Quick Actions
+                    <i class="fas fa-bolt"></i> Quick Actions
                 </div>
                 <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-4">
-                            <a href="/patient/create" class="btn btn-primary w-100" style="padding: 15px;">
-                                <i class="fas fa-user-plus"></i> Add New Patient
+                    <div class="row gap-16">
+                        <div class="col-md-6 col-lg-3">
+                            <a href="/patients" class="btn btn-primary w-100" style="padding: 12px; height: auto;">
+                                <i class="fas fa-search"></i>
+                                <div style="text-align: left;">
+                                    <div style="font-weight: 600;">Search Patient</div>
+                                    <div style="font-size: 0.8rem; opacity: 0.9;">Find existing patient</div>
+                                </div>
                             </a>
                         </div>
-                        <div class="col-md-4">
-                            <a href="/patients" class="btn btn-outline-primary w-100" style="padding: 15px;">
-                                <i class="fas fa-search"></i> Search Patient
-                            </a>
-                        </div>
-                        <div class="col-md-4">
-                            <button class="btn btn-outline-primary w-100" style="padding: 15px;" onclick="alert('Reports feature coming soon!')">
-                                <i class="fas fa-chart-bar"></i> View Reports
+                        <div class="col-md-6 col-lg-3">
+                            <button class="btn btn-secondary w-100" style="padding: 12px; height: auto;" onclick="alert('Feature coming soon')">
+                                <i class="fas fa-file-pdf"></i>
+                                <div style="text-align: left;">
+                                    <div style="font-weight: 600;">View Reports</div>
+                                    <div style="font-size: 0.8rem; opacity: 0.9;">Generate reports</div>
+                                </div>
                             </button>
+                        </div>
+                        <div class="col-md-6 col-lg-3">
+                            <button class="btn btn-secondary w-100" style="padding: 12px; height: auto;" onclick="alert('Feature coming soon')">
+                                <i class="fas fa-user-cog"></i>
+                                <div style="text-align: left;">
+                                    <div style="font-weight: 600;">Settings</div>
+                                    <div style="font-size: 0.8rem; opacity: 0.9;">Manage account</div>
+                                </div>
+                            </button>
+                        </div>
+                        <div class="col-md-6 col-lg-3">
+                            <a href="/logout" class="btn btn-danger w-100" style="padding: 12px; height: auto;">
+                                <i class="fas fa-sign-out-alt"></i>
+                                <div style="text-align: left;">
+                                    <div style="font-weight: 600;">Logout</div>
+                                    <div style="font-size: 0.8rem; opacity: 0.9;">Sign out</div>
+                                </div>
+                            </a>
                         </div>
                     </div>
                 </div>

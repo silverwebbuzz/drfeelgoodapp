@@ -1,152 +1,176 @@
 <?php
-$page_title = 'Patients - Dr. Feelgood';
 ob_start();
+$page_title = 'Patients - Dr. Feelgood';
 ?>
 
-<nav aria-label="breadcrumb">
-    <ol class="breadcrumb">
-        <li class="breadcrumb-item"><a href="/dashboard">Dashboard</a></li>
-        <li class="breadcrumb-item active">Patients</li>
-    </ol>
-</nav>
-
-<div class="row">
-    <div class="col-md-12">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
-            <h2 style="color: #333; margin: 0;">
-                <i class="fas fa-users"></i> Patient List
-            </h2>
-            <a href="/patient/create" class="btn btn-primary">
-                <i class="fas fa-user-plus"></i> Add Patient
-            </a>
-        </div>
-    </div>
+<!-- PAGE HEADER -->
+<div class="page-header">
+    <h1 class="page-title">
+        <i class="fas fa-users"></i> Patient List
+    </h1>
 </div>
 
-<?php if (isset($response) && $response['success']): ?>
-    <!-- Search Box -->
-    <div class="row" style="margin-bottom: 20px;">
-        <div class="col-md-6">
-            <div class="search-box">
-                <input type="text" class="form-control" id="patientSearch" placeholder="Search by name or contact...">
-                <i class="fas fa-search search-icon"></i>
-            </div>
-        </div>
-    </div>
-
-    <!-- Patients Table -->
-    <div class="row">
-        <div class="col-md-12">
-            <div class="card">
-                <div class="card-body">
-                    <?php if (!empty($response['data'])): ?>
-                        <div class="table-responsive">
-                            <table class="table table-hover">
-                                <thead>
-                                    <tr>
-                                        <th>Name</th>
-                                        <th>Contact</th>
-                                        <th>Age</th>
-                                        <th>Gender</th>
-                                        <th>Chief Complaint</th>
-                                        <th>Action</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <?php foreach ($response['data'] as $patient): ?>
-                                        <tr>
-                                            <td>
-                                                <strong class="patient-name">
-                                                    <?php echo htmlspecialchars($patient['fname'] . ' ' . ($patient['lname'] ?? '')); ?>
-                                                </strong>
-                                            </td>
-                                            <td><?php echo htmlspecialchars($patient['contact_no'] ?? 'N/A'); ?></td>
-                                            <td><?php echo htmlspecialchars($patient['age'] ?? 'N/A'); ?></td>
-                                            <td>
-                                                <?php if ($patient['gender'] === 'M'): ?>
-                                                    <span class="badge bg-light text-dark"><i class="fas fa-mars"></i> Male</span>
-                                                <?php elseif ($patient['gender'] === 'F'): ?>
-                                                    <span class="badge bg-light text-dark"><i class="fas fa-venus"></i> Female</span>
-                                                <?php endif; ?>
-                                            </td>
-                                            <td><?php echo htmlspecialchars($patient['chief'] ?? 'N/A'); ?></td>
-                                            <td>
-                                                <a href="/patient/<?php echo $patient['id']; ?>" class="btn btn-sm btn-primary">
-                                                    <i class="fas fa-eye"></i> View
-                                                </a>
-                                            </td>
-                                        </tr>
-                                    <?php endforeach; ?>
-                                </tbody>
-                            </table>
-                        </div>
-
-                        <!-- Pagination -->
-                        <?php if (isset($response['pagination'])): ?>
-                            <nav aria-label="Page navigation">
-                                <ul class="pagination justify-content-center">
-                                    <?php for ($i = 1; $i <= $response['pagination']['total_pages']; $i++): ?>
-                                        <li class="page-item <?php echo ($i == $response['pagination']['current_page']) ? 'active' : ''; ?>">
-                                            <a class="page-link" href="/patients?page=<?php echo $i; ?>"><?php echo $i; ?></a>
-                                        </li>
-                                    <?php endfor; ?>
-                                </ul>
-                            </nav>
-                        <?php endif; ?>
-                    <?php else: ?>
-                        <p style="color: #999; text-align: center; padding: 40px;">
-                            <i class="fas fa-info-circle"></i> No patients found
-                        </p>
-                    <?php endif; ?>
+<!-- SEARCH SECTION -->
+<div class="row mb-24">
+    <div class="col-lg-12">
+        <div class="card">
+            <div class="card-body">
+                <div class="input-group">
+                    <span class="input-group-text" style="background: white; border-right: none;">
+                        <i class="fas fa-search" style="color: var(--gray-400);"></i>
+                    </span>
+                    <input
+                        type="text"
+                        class="form-control"
+                        id="patientSearch"
+                        placeholder="Search by name, contact, or ID..."
+                        style="border-left: none;"
+                    >
+                </div>
+                <div id="searchResults" style="margin-top: 12px; display: none;">
+                    <div style="padding: 12px; color: var(--gray-600);">
+                        <span id="searchResultsCount">0</span> results found
+                    </div>
+                    <div id="searchList" style="max-height: 300px; overflow-y: auto;"></div>
                 </div>
             </div>
         </div>
     </div>
+</div>
 
-<?php else: ?>
-    <div class="alert alert-danger">
-        <i class="fas fa-exclamation-triangle"></i> Error loading patient list
-        <?php if (isset($response['message'])): ?>
-            <br><?php echo htmlspecialchars($response['message']); ?>
-        <?php endif; ?>
+<!-- PATIENTS TABLE -->
+<div class="row">
+    <div class="col-lg-12">
+        <div class="card">
+            <div class="card-header">
+                Patients (Page <?php echo htmlspecialchars($_GET['page'] ?? 1); ?>)
+            </div>
+            <div class="card-body">
+                <?php if (isset($response['success']) && $response['success'] && !empty($response['data'])): ?>
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Name</th>
+                                    <th>Contact</th>
+                                    <th>Gender</th>
+                                    <th>DOB</th>
+                                    <th>Chief Complaint</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php foreach ($response['data'] as $patient): ?>
+                                    <tr>
+                                        <td>
+                                            <code style="background: var(--gray-100); padding: 4px 8px; border-radius: 4px; font-size: 0.85rem;">
+                                                <?php echo htmlspecialchars($patient['patient_id'] ?? $patient['id']); ?>
+                                            </code>
+                                        </td>
+                                        <td>
+                                            <strong><?php echo htmlspecialchars($patient['fname'] . ' ' . ($patient['lname'] ?? '')); ?></strong>
+                                        </td>
+                                        <td>
+                                            <a href="tel:<?php echo htmlspecialchars($patient['contact_no']); ?>">
+                                                <?php echo htmlspecialchars($patient['contact_no'] ?? 'N/A'); ?>
+                                            </a>
+                                        </td>
+                                        <td>
+                                            <?php if ($patient['gender'] === 'M'): ?>
+                                                <span class="badge badge-male">
+                                                    <i class="fas fa-mars"></i> Male
+                                                </span>
+                                            <?php elseif ($patient['gender'] === 'F'): ?>
+                                                <span class="badge badge-female">
+                                                    <i class="fas fa-venus"></i> Female
+                                                </span>
+                                            <?php else: ?>
+                                                <span class="badge badge-primary">Other</span>
+                                            <?php endif; ?>
+                                        </td>
+                                        <td>
+                                            <?php echo htmlspecialchars($patient['dob'] ?? 'N/A'); ?>
+                                        </td>
+                                        <td>
+                                            <span style="color: var(--gray-600);">
+                                                <?php echo htmlspecialchars(substr($patient['chief'] ?? 'N/A', 0, 35)); ?>
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <a href="/patient/<?php echo $patient['id']; ?>" class="btn btn-primary btn-sm">
+                                                <i class="fas fa-eye"></i> View
+                                            </a>
+                                        </td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- PAGINATION -->
+                    <div style="display: flex; justify-content: center; gap: 8px; margin-top: 20px;">
+                        <?php
+                        $currentPage = (int)($_GET['page'] ?? 1);
+                        if ($currentPage > 1): ?>
+                            <a href="/patients?page=<?php echo $currentPage - 1; ?>" class="btn btn-outline-primary">
+                                <i class="fas fa-chevron-left"></i> Previous
+                            </a>
+                        <?php endif; ?>
+
+                        <span style="display: flex; align-items: center; color: var(--gray-600);">
+                            Page <?php echo $currentPage; ?>
+                        </span>
+
+                        <a href="/patients?page=<?php echo $currentPage + 1; ?>" class="btn btn-outline-primary">
+                            Next <i class="fas fa-chevron-right"></i>
+                        </a>
+                    </div>
+
+                <?php else: ?>
+                    <div style="text-align: center; padding: 40px 20px; color: var(--gray-500);">
+                        <i class="fas fa-inbox" style="font-size: 2.5rem; margin-bottom: 12px; display: block;"></i>
+                        No patients found
+                    </div>
+                <?php endif; ?>
+            </div>
+        </div>
     </div>
-<?php endif; ?>
+</div>
 
 <script>
-document.getElementById('patientSearch').addEventListener('keyup', function(e) {
-    const query = this.value;
-    if (query.length < 2) return;
+document.getElementById('patientSearch').addEventListener('input', async function(e) {
+    const query = e.target.value.trim();
 
-    fetch(`/api/patient/search?q=${encodeURIComponent(query)}`)
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                console.log('Search results:', data.data);
-                // Update table with search results
-                const tableBody = document.querySelector('table tbody');
-                tableBody.innerHTML = '';
+    if (query.length < 2) {
+        document.getElementById('searchResults').style.display = 'none';
+        return;
+    }
 
-                if (data.data.length === 0) {
-                    tableBody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px;">No results found</td></tr>';
-                    return;
-                }
+    try {
+        const response = await fetch(`/api/patient/search?q=${encodeURIComponent(query)}`);
+        const data = await response.json();
 
-                data.data.forEach(patient => {
-                    const row = `
-                        <tr>
-                            <td><strong class="patient-name">${patient.fname} ${patient.lname}</strong></td>
-                            <td>${patient.contact_no || 'N/A'}</td>
-                            <td>N/A</td>
-                            <td>${patient.gender === 'M' ? '<span class="badge bg-light text-dark"><i class="fas fa-mars"></i> Male</span>' : '<span class="badge bg-light text-dark"><i class="fas fa-venus"></i> Female</span>'}</td>
-                            <td>${patient.chief || 'N/A'}</td>
-                            <td><a href="/patient/${patient.id}" class="btn btn-sm btn-primary"><i class="fas fa-eye"></i> View</a></td>
-                        </tr>
-                    `;
-                    tableBody.innerHTML += row;
-                });
-            }
-        })
-        .catch(error => console.error('Search error:', error));
+        if (data.success && data.data.length > 0) {
+            let html = '';
+            data.data.forEach(patient => {
+                html += `
+                    <div style="padding: 12px; border-bottom: 1px solid var(--gray-200); cursor: pointer;" onclick="window.location.href='/patient/${patient.id}'">
+                        <strong>${patient.fname} ${patient.lname || ''}</strong>
+                        <br>
+                        <small style="color: var(--gray-500);">${patient.contact_no} • ${patient.dob}</small>
+                    </div>
+                `;
+            });
+            document.getElementById('searchList').innerHTML = html;
+            document.getElementById('searchResultsCount').textContent = data.data.length;
+            document.getElementById('searchResults').style.display = 'block';
+        } else {
+            document.getElementById('searchResults').style.display = 'none';
+        }
+    } catch (error) {
+        console.error('Search error:', error);
+    }
 });
 </script>
 
