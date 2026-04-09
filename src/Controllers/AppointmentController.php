@@ -76,7 +76,10 @@ class AppointmentController {
     public function getAvailableSlots($date) {
         try {
             // Check if clinic is closed that day
-            $closedSql = "SELECT id FROM clinic_closed_dates WHERE date = ?";
+            $closed = $this->apptModel->isClosedDate($date);
+            if ($closed) {
+                return ['success' => true, 'slots' => [], 'closed' => true, 'date' => $date];
+            }
 
             $allSlots    = $this->settingModel->generateSlots($date);
             $bookedSlots = $this->apptModel->bookedSlots($date);
@@ -164,6 +167,7 @@ class AppointmentController {
                 'mon_sat_evening_on','mon_sat_evening_start','mon_sat_evening_end',
                 'sunday_on','sunday_start','sunday_end',
                 'max_per_slot','clinic_name','clinic_phone','consultation_fee',
+                'booking_days_ahead',
             ];
             $clean = array_intersect_key($data, array_flip($allowed));
             // Checkboxes not sent when off — set to 0

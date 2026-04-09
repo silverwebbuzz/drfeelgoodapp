@@ -235,6 +235,7 @@ function fmtLong(ymd) {
 }
 
 // ── State ────────────────────────────────────────────────────────────────────
+var currentFetch = null; // must be var — used before declaration in buildDates IIFE
 const S = { date:'', slot:'', phone:'', pid:'', name:'', complaint:'', followup:'0' };
 
 // ── Progress ─────────────────────────────────────────────────────────────────
@@ -252,10 +253,11 @@ function goStep(n) {
 // ── STEP 1: Build date strip + auto-load today's slots ────────────────────────
 const DAY_NAMES = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 const MON_NAMES = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const DAYS_AHEAD = <?php echo (int)($bookingDaysAhead ?? 15); ?>;
 
 (function buildDates() {
     const strip = document.getElementById('dateStrip');
-    for (let i = 0; i < 14; i++) {
+    for (let i = 0; i < DAYS_AHEAD; i++) {
         const ist  = getIST();
         ist.setDate(ist.getDate() + i);
         const ymd  = ist.getFullYear() + '-' + pad(ist.getMonth()+1) + '-' + pad(ist.getDate());
@@ -309,6 +311,10 @@ function renderSlots(data, date) {
     const isToday = (date === todayIST());
     const nowTime = nowTimeIST();
 
+    if (data.closed) {
+        area.innerHTML = '<div class="slot-empty"><i class="fas fa-ban" style="color:#ef4444;"></i> Clinic is closed on this date.</div>';
+        return;
+    }
     if (!data.success || !data.slots.length) {
         area.innerHTML = '<div class="slot-empty"><i class="fas fa-calendar-times"></i> No slots available for this date.</div>';
         return;

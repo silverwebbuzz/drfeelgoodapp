@@ -320,8 +320,42 @@ switch ($route) {
     case 'booking':
         // Public booking page — no auth required
         $apptController = new AppointmentController($db);
+        // Pass booking_days_ahead to the view
+        $bookingDaysAhead = (int)(new App\Models\Setting($db))->get('booking_days_ahead', 15);
         require __DIR__ . '/views/booking/index.php';
         break;
+
+    case 'api/closed-dates':
+        AuthController::requireLogin();
+        header('Content-Type: application/json');
+        $apptController = new AppointmentController($db);
+        $dates = (new App\Models\Appointment($db))->getClosedDates();
+        echo json_encode(['success' => true, 'dates' => $dates]);
+        exit;
+
+    case 'api/closed-dates/add':
+        AuthController::requireLogin();
+        header('Content-Type: application/json');
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') { echo json_encode(['success'=>false]); exit; }
+        $date   = $_POST['date']   ?? '';
+        $reason = $_POST['reason'] ?? '';
+        if (!$date || !preg_match('/^\d{4}-\d{2}-\d{2}$/', $date)) {
+            echo json_encode(['success'=>false,'message'=>'Invalid date']);
+            exit;
+        }
+        (new App\Models\Appointment($db))->addClosedDate($date, $reason);
+        echo json_encode(['success' => true]);
+        exit;
+
+    case 'api/closed-dates/remove':
+        AuthController::requireLogin();
+        header('Content-Type: application/json');
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') { echo json_encode(['success'=>false]); exit; }
+        $id = (int)($_POST['id'] ?? 0);
+        if (!$id) { echo json_encode(['success'=>false,'message'=>'Invalid ID']); exit; }
+        (new App\Models\Appointment($db))->removeClosedDate($id);
+        echo json_encode(['success' => true]);
+        exit;
 
     default:
         error_log("404 - Route not found: '{$route}'");

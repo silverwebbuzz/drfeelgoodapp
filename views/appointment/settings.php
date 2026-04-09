@@ -110,6 +110,37 @@ ob_start();
     </div>
 </div>
 
+<div class="settings-section">
+    <h3><i class="fas fa-calendar-alt" style="color:var(--primary);margin-right:6px;"></i> Online Booking Window</h3>
+    <div style="font-size:12px;color:#6b7280;margin-bottom:8px;">How many days ahead can patients book online?</div>
+    <div style="display:flex;gap:12px;">
+        <?php foreach ([7,15,30] as $d): ?>
+        <label style="font-size:12px;display:flex;align-items:center;gap:6px;">
+            <input type="radio" name="booking_days_ahead" value="<?php echo $d; ?>"
+                <?php echo ((int)($s['booking_days_ahead'] ?? 15)) === $d ? 'checked' : ''; ?>>
+            <?php echo $d; ?> days
+        </label>
+        <?php endforeach; ?>
+    </div>
+</div>
+
+<div class="settings-section">
+    <h3><i class="fas fa-ban" style="color:var(--primary);margin-right:6px;"></i> Closed / Holiday Dates</h3>
+    <div style="font-size:12px;color:#6b7280;margin-bottom:10px;">
+        Dates marked here will show no slots on the booking page.
+    </div>
+    <div style="display:flex;gap:8px;margin-bottom:10px;">
+        <input type="date" id="newClosedDate" class="form-control" style="width:180px;">
+        <input type="text" id="newClosedReason" class="form-control" placeholder="Reason (optional)" style="flex:1;">
+        <button type="button" class="btn btn-primary btn-sm" onclick="addClosedDate()">
+            <i class="fas fa-plus"></i> Add
+        </button>
+    </div>
+    <div id="closedDatesList">
+        <div style="color:#9ca3af;font-size:12px;" id="closedLoading">Loading…</div>
+    </div>
+</div>
+
 <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Save Settings</button>
 
 </form>
@@ -129,6 +160,71 @@ document.getElementById('settingsForm').addEventListener('submit', function(e) {
         setTimeout(() => el.style.display='none', 3000);
     });
 });
+
+// ── Closed dates ──────────────────────────────────────────────────────────────
+loadClosedDates();
+
+function loadClosedDates() {
+    fetch('/api/closed-dates')
+    .then(r => r.json())
+    .then(data => {
+        const el = document.getElementById('closedDatesList');
+        if (!data.success || !data.dates.length) {
+            el.innerHTML = '<div style="color:#9ca3af;font-size:12px;">No closed dates added yet.</div>';
+            return;
+        }
+        el.innerHTML = data.dates.map(d =>
+            `<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 10px;background:#f9fafb;border-radius:6px;margin-bottom:6px;font-size:12px;">
+                <div>
+                    <strong>${d.date}</strong>
+                    ${d.reason ? ' <span style="color:#6b7280;">— ' + escHtml(d.reason) + '</span>' : ''}
+                </div>
+                <button onclick="removeClosedDate(${d.id})" style="background:none;border:none;color:#ef4444;cursor:pointer;font-size:13px;" title="Remove">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>`
+        ).join('');
+    });
+}
+
+function addClosedDate() {
+    const date   = document.getElementById('newClosedDate').value;
+    const reason = document.getElementById('newClosedReason').value.trim();
+    if (!date) { alert('Please select a date.'); return; }
+    fetch('/api/closed-dates/add', {
+        method: 'POST',
+        headers: {'Content-Type':'application/x-www-form-urlencoded'},
+        body: 'date=' + encodeURIComponent(date) + '&reason=' + encodeURIComponent(reason)
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            document.getElementById('newClosedDate').value = '';
+            document.getElementById('newClosedReason').value = '';
+            loadClosedDates();
+        } else {
+            alert(data.message || 'Error adding date.');
+        }
+    });
+}
+
+function removeClosedDate(id) {
+    if (!confirm('Remove this closed date?')) return;
+    fetch('/api/closed-dates/remove', {
+        method: 'POST',
+        headers: {'Content-Type':'application/x-www-form-urlencoded'},
+        body: 'id=' + id
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) loadClosedDates();
+        else alert(data.message || 'Error removing date.');
+    });
+}
+
+function escHtml(s) {
+    return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
 </script>
 
 <?php

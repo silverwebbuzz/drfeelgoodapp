@@ -34,6 +34,33 @@ class Appointment extends BaseModel {
         return (int)$row['cnt'];
     }
 
+    /** Check if a date is a clinic holiday / closed day */
+    public function isClosedDate($date) {
+        $sql = "SELECT id FROM clinic_closed_dates WHERE date = ? LIMIT 1";
+        $stmt = $this->query($sql, [$date]);
+        return $stmt->fetch(PDO::FETCH_ASSOC) !== false;
+    }
+
+    /** List all closed dates */
+    public function getClosedDates() {
+        $sql = "SELECT id, date, reason FROM clinic_closed_dates ORDER BY date ASC";
+        $stmt = $this->query($sql);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    /** Add a closed date */
+    public function addClosedDate($date, $reason = '') {
+        $sql = "INSERT IGNORE INTO clinic_closed_dates (date, reason) VALUES (?, ?)";
+        $this->query($sql, [$date, $reason]);
+        return $this->db->lastInsertId();
+    }
+
+    /** Remove a closed date */
+    public function removeClosedDate($id) {
+        $sql = "DELETE FROM clinic_closed_dates WHERE id = ?";
+        $this->query($sql, [(int)$id]);
+    }
+
     /** Booked slot times for a date (for public booking page) */
     public function bookedSlots($date) {
         $sql = "SELECT slot_time FROM {$this->table}
