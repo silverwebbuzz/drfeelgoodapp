@@ -220,6 +220,22 @@ textarea.r-input { resize:vertical; }
 }
 </style>
 
+<?php
+$fromQueue = ($_GET['from'] ?? '') === 'queue';
+$apptId    = (int)($_GET['appt'] ?? 0);
+?>
+
+<?php if ($fromQueue && $apptId): ?>
+<div style="background:#eff6ff;border:2px solid #2563eb;border-radius:8px;padding:10px 16px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;">
+    <div style="font-size:12px;color:#1d4ed8;">
+        <i class="fas fa-stethoscope"></i> <strong>In Consultation</strong> — Add visit notes below, then finish when done.
+    </div>
+    <button onclick="finishConsult(<?php echo $apptId; ?>)" class="btn btn-success btn-sm">
+        <i class="fas fa-check"></i> Finish &amp; Back to Queue
+    </button>
+</div>
+<?php endif; ?>
+
 <!-- ── HEADER ── -->
 <div class="pt-header">
     <div class="pt-avatar"><?php echo strtoupper(substr($p['fname']??'P',0,1)); ?></div>
@@ -829,6 +845,20 @@ function fmtDateJS(v) {
 }
 function escHtml(str) {
     const d = document.createElement('div'); d.textContent = String(str); return d.innerHTML;
+}
+
+// Finish consultation — mark completed and go back to queue
+function finishConsult(apptId) {
+    fetch('/api/appointment/' + apptId + '/status', {
+        method: 'POST',
+        headers: {'Content-Type':'application/x-www-form-urlencoded'},
+        body: 'status=completed'
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) window.location.href = '/queue';
+        else alert('Error: ' + data.message);
+    });
 }
 </script>
 

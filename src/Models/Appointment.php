@@ -75,7 +75,7 @@ class Appointment extends BaseModel {
     public function createWalkin($data, $userId = null) {
         $date = $data['appt_date'] ?? date('Y-m-d');
         $insert = [
-            'patient_id'      => $data['patient_id'] ?? null,
+            'patient_id'      => !empty($data['patient_id']) ? (int)$data['patient_id'] : null,
             'appt_date'       => $date,
             'slot_time'       => null,
             'token_number'    => $this->nextToken($date),
@@ -95,7 +95,7 @@ class Appointment extends BaseModel {
     public function createPrebooked($data) {
         $date = $data['appt_date'];
         $insert = [
-            'patient_id'      => $data['patient_id'] ?? null,
+            'patient_id'      => !empty($data['patient_id']) ? (int)$data['patient_id'] : null,
             'appt_date'       => $date,
             'slot_time'       => $data['slot_time'],
             'token_number'    => $this->nextToken($date),

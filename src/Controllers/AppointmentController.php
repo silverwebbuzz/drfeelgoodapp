@@ -27,20 +27,35 @@ class AppointmentController {
     /** Create walk-in token (receptionist) */
     public function createWalkin($data, $userId = null) {
         try {
-            // If patient_id given, verify exists
             if (!empty($data['patient_id'])) {
+                // Existing registered patient
                 $patient = $this->patientModel->getById($data['patient_id']);
                 if (!$patient) return ['success' => false, 'message' => 'Patient not found'];
                 $data['patient_name']  = trim(($patient['fname'] ?? '') . ' ' . ($patient['lname'] ?? ''));
                 $data['patient_phone'] = $patient['contact_no'] ?? '';
                 $data['is_new_patient'] = 0;
             } else {
-                $data['is_new_patient'] = 1;
+                // New patient — auto-create basic record so doctor can access detail page
+                $name  = trim($data['patient_name'] ?? '');
+                $phone = trim($data['patient_phone'] ?? '');
+                if ($name) {
+                    $newId = $this->patientModel->createQuick($name, $phone, $data['chief_complaint'] ?? '');
+                    $data['patient_id']    = $newId;
+                    $data['is_new_patient'] = 1;
+                } else {
+                    $data['is_new_patient'] = 1;
+                }
             }
 
-            $id    = $this->apptModel->createWalkin($data, $userId);
-            $appt  = $this->apptModel->getById($id);
-            return ['success' => true, 'message' => 'Token created', 'token' => $appt['token_number'], 'id' => $id];
+            $id   = $this->apptModel->createWalkin($data, $userId);
+            $appt = $this->apptModel->getById($id);
+            return [
+                'success'    => true,
+                'message'    => 'Token created',
+                'token'      => $appt['token_number'],
+                'id'         => $id,
+                'patient_id' => $data['patient_id'] ?? null,
+            ];
         } catch (\Exception $e) {
             return ['success' => false, 'message' => $e->getMessage()];
         }
@@ -57,9 +72,13 @@ class AppointmentController {
             $appt = $this->apptModel->getByIdFull($id);
 
             $redirect = null;
-            // Call → go to patient detail page
-            if ($status === 'in_consultation' && !empty($appt['patient_id'])) {
-                $redirect = '/patient/' . (int)$appt['patient_id'];
+            // Call → go to patient detail page (patient always exists now)
+            if ($status === 'in_consultation') {
+                if (!empty($appt['patient_id'])) {
+                    $redirect = '/patient/' . (int)$appt['patient_id'] . '?from=queue&appt=' . (int)$id;
+                } else {
+                    $redirect = '/queue'; // fallback: no patient record (very old data)
+                }
             }
             // Completed → go back to queue
             if ($status === 'completed') {
@@ -132,8 +151,8 @@ class AppointmentController {
                 return ['success' => false, 'message' => 'This slot is no longer available'];
             }
 
-            // Link existing patient
             if (!empty($data['patient_id'])) {
+                // Existing registered patient
                 $patient = $this->patientModel->getById($data['patient_id']);
                 if ($patient) {
                     $data['patient_name']  = trim(($patient['fname'] ?? '') . ' ' . ($patient['lname'] ?? ''));
@@ -141,7 +160,16 @@ class AppointmentController {
                     $data['is_new_patient'] = 0;
                 }
             } else {
-                $data['is_new_patient'] = 1;
+                // New patient — auto-create basic record
+                $name  = trim($data['patient_name'] ?? '');
+                $phone = trim($data['patient_phone'] ?? '');
+                if ($name) {
+                    $newId = $this->patientModel->createQuick($name, $phone, $data['chief_complaint'] ?? '');
+                    $data['patient_id']    = $newId;
+                    $data['is_new_patient'] = 1;
+                } else {
+                    $data['is_new_patient'] = 1;
+                }
             }
 
             $id   = $this->apptModel->createPrebooked($data);
@@ -153,6 +181,7 @@ class AppointmentController {
                 'id'           => $id,
                 'slot_time'    => $data['slot_time'],
                 'appt_date'    => $data['appt_date'],
+                'patient_id'   => $data['patient_id'] ?? null,
             ];
         } catch (\Exception $e) {
             return ['success' => false, 'message' => $e->getMessage()];

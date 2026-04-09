@@ -107,9 +107,12 @@ ob_start();
     <div id="tokenNum" style="font-size:72px;font-weight:800;color:var(--primary);line-height:1;"></div>
     <div id="tokenSlot" style="font-size:13px;color:#6b7280;margin-top:4px;"></div>
     <div id="tokenName" style="font-size:14px;color:#374151;margin-top:4px;"></div>
-    <div style="margin-top:20px;display:flex;gap:10px;justify-content:center;">
+    <div style="margin-top:20px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
         <button class="btn btn-primary" onclick="resetForm()"><i class="fas fa-plus"></i> New Token</button>
         <a href="/queue" class="btn btn-secondary"><i class="fas fa-list"></i> View Queue</a>
+        <a id="patientLink" href="#" class="btn btn-secondary" style="display:none;">
+            <i class="fas fa-user"></i> View Patient
+        </a>
     </div>
 </div>
 
@@ -287,6 +290,12 @@ document.getElementById('walkinForm').addEventListener('submit', function(e) {
             document.getElementById('tokenName').textContent = fd.get('patient_name') || 'Patient';
             const slot = fd.get('slot_time');
             document.getElementById('tokenSlot').textContent = slot ? 'Slot: ' + to12(slot) : 'Walk-in (no slot)';
+            // Show patient link if auto-created
+            if (data.patient_id) {
+                const linkEl = document.getElementById('patientLink');
+                linkEl.href = '/patient/' + data.patient_id;
+                linkEl.style.display = 'inline-block';
+            }
             document.getElementById('tokenDisplay').style.display = 'block';
         } else {
             showMsg(data.message || 'Error', 'danger');

@@ -121,6 +121,25 @@ class Patient extends BaseModel {
     /**
      * Add new patient
      */
+    /**
+     * Quick-create a minimal patient record from appointment data (name + phone only)
+     * Used when walk-in or booking patient is not in the system yet
+     */
+    public function createQuick($name, $phone, $chief = '') {
+        $parts = explode(' ', trim($name), 2);
+        $fname = $parts[0] ?? $name;
+        $lname = $parts[1] ?? '';
+        return $this->insert([
+            'patient_id'  => 'AUTO-' . date('ymd') . '-' . strtoupper(substr($fname, 0, 3)),
+            'fname'       => $fname,
+            'lname'       => $lname,
+            'contact_no'  => $phone,
+            'chief'       => $chief,
+            'dor'         => date('Y-m-d'),
+            'is_new_patient' => 1,
+        ]);
+    }
+
     public function create($data) {
         $requiredFields = ['fname', 'lname', 'contact_no', 'dob'];
 
