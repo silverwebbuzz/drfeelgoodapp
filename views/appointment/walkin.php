@@ -15,7 +15,7 @@ ob_start();
 .slot-pill { padding:7px 4px; border:2px solid #e5e7eb; border-radius:7px; text-align:center; cursor:pointer; font-size:11px; font-weight:600; color:#374151; background:#fff; transition:.15s; }
 .slot-pill:hover { border-color:#93c5fd; background:#eff6ff; }
 .slot-pill.selected { border-color:var(--primary); background:var(--primary); color:#fff; }
-.slot-pill.full { opacity:.4; cursor:not-allowed; text-decoration:line-through; }
+.slot-pill.full { opacity:.45; cursor:not-allowed; background:#f9fafb; border-color:#f3f4f6; color:#9ca3af; }
 #slotLoading { font-size:12px; color:#9ca3af; padding:10px 0; }
 #slotArea { min-height:40px; }
 </style>
@@ -219,11 +219,10 @@ function renderSlots(data, date) {
     const isToday = (date === getTodayIST());
     const nowTime = getNowIST();
 
-    // Filter: hide past slots (if today) and fully booked slots
+    // Filter: hide past slots (if today); keep full slots visible but disabled
     const slots = (data.slots || []).filter(s => {
-        if (!s.available) return false;
-        if (isToday && s.time <= nowTime) return false;
-        return true;
+        if (isToday && s.time <= nowTime) return false; // past — hide
+        return true; // show available AND full slots (full = greyed, not selectable)
     });
 
     if (!slots.length) {
@@ -250,7 +249,11 @@ function renderSlots(data, date) {
 }
 
 function slotPill(s) {
-    return `<div class="slot-pill" data-time="${s.time}" onclick="selectSlot(this,'${s.time}')">${to12(s.time)}</div>`;
+    if (!s.available) {
+        // Full — show greyed, not clickable
+        return `<div class="slot-pill full" title="Booked: ${s.booked}/${s.max}">${to12(s.time)}<br><span style="font-size:9px;font-weight:400;">Full</span></div>`;
+    }
+    return `<div class="slot-pill" data-time="${s.time}" onclick="selectSlot(this,'${s.time}')">${to12(s.time)}${s.booked>0 ? '<br><span style="font-size:9px;font-weight:400;color:#f59e0b;">'+s.booked+'/'+s.max+' booked</span>' : ''}</div>`;
 }
 
 function selectSlot(el, time) {

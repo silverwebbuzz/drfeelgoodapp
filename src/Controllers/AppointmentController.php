@@ -83,9 +83,9 @@ class AppointmentController {
 
             $allSlots    = $this->settingModel->generateSlots($date);
             $bookedSlots = $this->apptModel->bookedSlots($date);
-            $maxPerSlot  = (int)$this->settingModel->get('max_per_slot', 1);
+            $maxPerSlot  = max(1, (int)$this->settingModel->get('max_per_slot', 1));
 
-            // Count bookings per slot
+            // Count active bookings per slot
             $bookedCount = array_count_values($bookedSlots);
 
             $result = [];
@@ -95,9 +95,10 @@ class AppointmentController {
                     'time'      => $slot,
                     'available' => $booked < $maxPerSlot,
                     'booked'    => $booked,
+                    'max'       => $maxPerSlot,
                 ];
             }
-            return ['success' => true, 'slots' => $result, 'date' => $date];
+            return ['success' => true, 'slots' => $result, 'date' => $date, 'max_per_slot' => $maxPerSlot];
         } catch (\Exception $e) {
             return ['success' => false, 'message' => $e->getMessage()];
         }
