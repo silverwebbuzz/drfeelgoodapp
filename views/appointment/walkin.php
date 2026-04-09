@@ -197,6 +197,17 @@ function loadSlots(date) {
     });
 }
 
+function getNowIST() {
+    const now = new Date();
+    const ist = new Date(now.getTime() + now.getTimezoneOffset()*60000 + 5.5*3600000);
+    return String(ist.getHours()).padStart(2,'0') + ':' + String(ist.getMinutes()).padStart(2,'0');
+}
+function getTodayIST() {
+    const now = new Date();
+    const ist = new Date(now.getTime() + now.getTimezoneOffset()*60000 + 5.5*3600000);
+    return ist.getFullYear()+'-'+String(ist.getMonth()+1).padStart(2,'0')+'-'+String(ist.getDate()).padStart(2,'0');
+}
+
 function renderSlots(data, date) {
     const area = document.getElementById('slotArea');
 
@@ -205,9 +216,15 @@ function renderSlots(data, date) {
         return;
     }
 
-    // Admin sees ALL slots (including full ones — they can override)
-    // but marks full ones visually
-    const slots = (data.slots || []);
+    const isToday = (date === getTodayIST());
+    const nowTime = getNowIST();
+
+    // Filter: hide past slots (if today) and fully booked slots
+    const slots = (data.slots || []).filter(s => {
+        if (!s.available) return false;
+        if (isToday && s.time <= nowTime) return false;
+        return true;
+    });
 
     if (!slots.length) {
         area.innerHTML = '<div style="color:#9ca3af;font-size:12px;">No slots configured for this date.</div>';
@@ -233,9 +250,7 @@ function renderSlots(data, date) {
 }
 
 function slotPill(s) {
-    const fullCls = s.available ? '' : ' full';
-    const fullTip = s.available ? '' : ` title="Slot full (${s.booked} booked)"`;
-    return `<div class="slot-pill${fullCls}" data-time="${s.time}"${fullTip} onclick="selectSlot(this,'${s.time}')">${to12(s.time)}</div>`;
+    return `<div class="slot-pill" data-time="${s.time}" onclick="selectSlot(this,'${s.time}')">${to12(s.time)}</div>`;
 }
 
 function selectSlot(el, time) {
