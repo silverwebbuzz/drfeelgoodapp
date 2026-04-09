@@ -62,8 +62,9 @@ function fmtName($fname, $lname) {
                         <th class="sortable" data-column="name" data-type="text">Name</th>
                         <th class="sortable" data-column="contact_no" data-type="text">Contact</th>
                         <th class="sortable" data-column="gender" data-type="text">Gender</th>
-                        <th class="sortable" data-column="dob" data-type="date">DOB</th>
-                        <th>Chief Complaint</th>
+                        <th class="sortable" data-column="age" data-type="number">Age</th>
+                        <th class="sortable" data-column="mrg_status" data-type="text">Mrg. Status</th>
+                        <th class="sortable" data-column="dor" data-type="date">Date of Reg.</th>
                         <th style="text-align: center;">Action</th>
                     </tr>
                 </thead>
@@ -93,13 +94,18 @@ function fmtName($fname, $lname) {
                                     <span style="color: var(--gray-400);">N/A</span>
                                 <?php endif; ?>
                             </td>
-                            <td><?php echo htmlspecialchars(fmtDate($patient['dob'] ?? '')); ?></td>
                             <td>
-                                <?php $chief = trim($patient['chief'] ?? ''); ?>
-                                <span style="color: var(--gray-600);">
-                                    <?php echo $chief === '' ? '<span style="color: var(--gray-400);">N/A</span>' : htmlspecialchars(mb_strimwidth($chief, 0, 50, '...')); ?>
-                                </span>
+                                <?php $age = (int)($patient['age'] ?? 0); ?>
+                                <?php echo $age > 0 ? htmlspecialchars($age) . ' yrs' : '<span style="color: var(--gray-400);">N/A</span>'; ?>
                             </td>
+                            <td>
+                                <?php
+                                $mrgMap = ['S' => 'Single', 'M' => 'Married', 'D' => 'Divorced', 'W' => 'Widowed'];
+                                $mrg = $mrgMap[$patient['mrg_status'] ?? ''] ?? '';
+                                echo $mrg !== '' ? htmlspecialchars($mrg) : '<span style="color: var(--gray-400);">N/A</span>';
+                                ?>
+                            </td>
+                            <td><?php echo htmlspecialchars(fmtDate($patient['dor'] ?? '')); ?></td>
                             <td style="text-align: center;">
                                 <a href="/patient/<?php echo $patient['id']; ?>" class="btn btn-primary btn-sm">
                                     <i class="fas fa-eye"></i> View
@@ -243,7 +249,7 @@ class DataTable {
         const paginatedRows = this.visibleRows.slice(start, end);
 
         if (paginatedRows.length === 0) {
-            this.tableBody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 40px; color: var(--gray-500);">No records found</td></tr>';
+            this.tableBody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 40px; color: var(--gray-500);">No records found</td></tr>';
         } else {
             paginatedRows.forEach(row => this.tableBody.appendChild(row.cloneNode(true)));
         }

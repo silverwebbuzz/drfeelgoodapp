@@ -70,7 +70,7 @@ class Patient extends BaseModel {
      * Get all patients
      */
     public function getAll($limit = null, $offset = 0) {
-        $sql = "SELECT id, patient_id, fname, lname, contact_no, dob, gender, chief
+        $sql = "SELECT id, patient_id, fname, lname, contact_no, dob, age, gender, mrg_status, chief, dor
                 FROM {$this->table}
                 ORDER BY fname, lname";
 
@@ -92,7 +92,7 @@ class Patient extends BaseModel {
         $limit = (int)$limit;
         $offset = (int)$offset;
 
-        $sql = "SELECT id, patient_id, fname, lname, contact_no, dob, gender, chief
+        $sql = "SELECT id, patient_id, fname, lname, contact_no, dob, age, gender, mrg_status, chief, dor
                 FROM {$this->table}
                 ORDER BY fname, lname
                 LIMIT {$limit} OFFSET {$offset}";
@@ -147,7 +147,7 @@ class Patient extends BaseModel {
     public function getRecent($limit = 10) {
         $limit = (int)$limit;
 
-        $sql = "SELECT id, patient_id, fname, lname, contact_no, dob, gender, chief
+        $sql = "SELECT id, patient_id, fname, lname, contact_no, dob, age, gender, mrg_status, chief, dor
                 FROM {$this->table}
                 ORDER BY dor DESC
                 LIMIT {$limit}";
