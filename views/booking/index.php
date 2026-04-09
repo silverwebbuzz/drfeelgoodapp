@@ -235,7 +235,6 @@ function fmtLong(ymd) {
 }
 
 // ── State ────────────────────────────────────────────────────────────────────
-var currentFetch = null; // must be var — used before declaration in buildDates IIFE
 const S = { date:'', slot:'', phone:'', pid:'', name:'', complaint:'', followup:'0' };
 
 // ── Progress ─────────────────────────────────────────────────────────────────
@@ -284,23 +283,19 @@ function selectDate(card, ymd) {
 }
 
 // ── Slot loader ───────────────────────────────────────────────────────────────
+var _slotReqDate = null; // track which date we last requested
 function loadSlots(date) {
+    _slotReqDate = date;
     const area = document.getElementById('slotArea');
     area.innerHTML = '<div class="slot-loading"><i class="fas fa-spinner fa-spin"></i> Loading slots…</div>';
 
-    if (currentFetch) currentFetch.abort();
-    const ctrl = new AbortController();
-    currentFetch = ctrl;
-
-    fetch('/api/slots?date=' + encodeURIComponent(date), { signal: ctrl.signal })
-    .then(r => r.json())
-    .then(data => {
-        currentFetch = null;
+    fetch('/api/slots?date=' + encodeURIComponent(date))
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+        if (_slotReqDate !== date) return; // stale response, ignore
         renderSlots(data, date);
     })
-    .catch(e => {
-        if (e.name === 'AbortError') return;
-        currentFetch = null;
+    .catch(function() {
         area.innerHTML = '<div class="slot-empty">Could not load slots. Please try again.</div>';
     });
 }
