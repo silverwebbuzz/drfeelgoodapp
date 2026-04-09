@@ -69,10 +69,16 @@ class Patient extends BaseModel {
     /**
      * Get all patients
      */
-    public function getAll() {
+    public function getAll($limit = null, $offset = 0) {
         $sql = "SELECT id, patient_id, fname, lname, contact_no, dob, gender, chief
                 FROM {$this->table}
                 ORDER BY fname, lname";
+
+        if ($limit) {
+            $limit = (int)$limit;
+            $offset = (int)$offset;
+            $sql .= " LIMIT {$limit} OFFSET {$offset}";
+        }
 
         $stmt = $this->query($sql);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
