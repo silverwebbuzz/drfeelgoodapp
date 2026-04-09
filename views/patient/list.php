@@ -6,171 +6,278 @@ $page_title = 'Patients - Dr. Feelgood';
 <!-- PAGE HEADER -->
 <div class="page-header">
     <h1 class="page-title">
-        <i class="fas fa-users"></i> Patient List
+        <i class="fas fa-users"></i> Patient Management
     </h1>
 </div>
 
-<!-- SEARCH SECTION -->
-<div class="row mb-24">
-    <div class="col-lg-12">
-        <div class="card">
-            <div class="card-body">
-                <div class="input-group">
-                    <span class="input-group-text" style="background: white; border-right: none;">
-                        <i class="fas fa-search" style="color: var(--gray-400);"></i>
-                    </span>
-                    <input
-                        type="text"
-                        class="form-control"
-                        id="patientSearch"
-                        placeholder="Search by name, contact, or ID..."
-                        style="border-left: none;"
-                    >
-                </div>
-                <div id="searchResults" style="margin-top: 12px; display: none;">
-                    <div style="padding: 12px; color: var(--gray-600);">
-                        <span id="searchResultsCount">0</span> results found
-                    </div>
-                    <div id="searchList" style="max-height: 300px; overflow-y: auto;"></div>
-                </div>
+<!-- DATATABLE SECTION -->
+<div class="datatable-container">
+    <!-- HEADER WITH SEARCH & CONTROLS -->
+    <div class="datatable-header">
+        <div class="datatable-search">
+            <div class="input-group">
+                <span class="input-group-text">
+                    <i class="fas fa-search"></i>
+                </span>
+                <input
+                    type="text"
+                    class="form-control"
+                    id="tableSearch"
+                    placeholder="Search patients by name, contact, or ID..."
+                >
             </div>
         </div>
     </div>
-</div>
 
-<!-- PATIENTS TABLE -->
-<div class="row">
-    <div class="col-lg-12">
-        <div class="card">
-            <div class="card-header">
-                Patients (Page <?php echo htmlspecialchars($_GET['page'] ?? 1); ?>)
+    <!-- TABLE WRAPPER -->
+    <div class="datatable-table-wrapper">
+        <?php if (isset($response['success']) && $response['success'] && !empty($response['data'])): ?>
+            <table class="datatable-table" id="patientsTable">
+                <thead>
+                    <tr>
+                        <th class="sortable" data-column="patient_id" data-type="text">Patient ID</th>
+                        <th class="sortable" data-column="name" data-type="text">Name</th>
+                        <th class="sortable" data-column="contact_no" data-type="text">Contact</th>
+                        <th class="sortable" data-column="gender" data-type="text">Gender</th>
+                        <th class="sortable" data-column="dob" data-type="date">DOB</th>
+                        <th>Chief Complaint</th>
+                        <th style="text-align: center;">Action</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody">
+                    <?php foreach ($response['data'] as $patient): ?>
+                        <tr>
+                            <td>
+                                <code><?php echo htmlspecialchars($patient['patient_id'] ?? $patient['id']); ?></code>
+                            </td>
+                            <td>
+                                <strong><?php echo htmlspecialchars($patient['fname'] . ' ' . ($patient['lname'] ?? '')); ?></strong>
+                            </td>
+                            <td>
+                                <a href="tel:<?php echo htmlspecialchars($patient['contact_no']); ?>">
+                                    <?php echo htmlspecialchars($patient['contact_no'] ?? 'N/A'); ?>
+                                </a>
+                            </td>
+                            <td>
+                                <?php if ($patient['gender'] === 'M'): ?>
+                                    <span class="badge badge-male"><i class="fas fa-mars"></i> Male</span>
+                                <?php elseif ($patient['gender'] === 'F'): ?>
+                                    <span class="badge badge-female"><i class="fas fa-venus"></i> Female</span>
+                                <?php else: ?>
+                                    <span class="badge badge-primary">Other</span>
+                                <?php endif; ?>
+                            </td>
+                            <td><?php echo htmlspecialchars($patient['dob'] ?? 'N/A'); ?></td>
+                            <td>
+                                <span style="color: var(--gray-600);">
+                                    <?php echo htmlspecialchars(substr($patient['chief'] ?? 'N/A', 0, 40)); ?>
+                                </span>
+                            </td>
+                            <td style="text-align: center;">
+                                <a href="/patient/<?php echo $patient['id']; ?>" class="btn btn-primary btn-sm">
+                                    <i class="fas fa-eye"></i> View
+                                </a>
+                            </td>
+                        </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+        <?php else: ?>
+            <div class="datatable-empty">
+                <i class="fas fa-inbox"></i>
+                <p>No patients found</p>
             </div>
-            <div class="card-body">
-                <?php if (isset($response['success']) && $response['success'] && !empty($response['data'])): ?>
-                    <div class="table-responsive">
-                        <table class="table">
-                            <thead>
-                                <tr>
-                                    <th>ID</th>
-                                    <th>Name</th>
-                                    <th>Contact</th>
-                                    <th>Gender</th>
-                                    <th>DOB</th>
-                                    <th>Chief Complaint</th>
-                                    <th>Action</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <?php foreach ($response['data'] as $patient): ?>
-                                    <tr>
-                                        <td>
-                                            <code style="background: var(--gray-100); padding: 4px 8px; border-radius: 4px; font-size: 0.85rem;">
-                                                <?php echo htmlspecialchars($patient['patient_id'] ?? $patient['id']); ?>
-                                            </code>
-                                        </td>
-                                        <td>
-                                            <strong><?php echo htmlspecialchars($patient['fname'] . ' ' . ($patient['lname'] ?? '')); ?></strong>
-                                        </td>
-                                        <td>
-                                            <a href="tel:<?php echo htmlspecialchars($patient['contact_no']); ?>">
-                                                <?php echo htmlspecialchars($patient['contact_no'] ?? 'N/A'); ?>
-                                            </a>
-                                        </td>
-                                        <td>
-                                            <?php if ($patient['gender'] === 'M'): ?>
-                                                <span class="badge badge-male">
-                                                    <i class="fas fa-mars"></i> Male
-                                                </span>
-                                            <?php elseif ($patient['gender'] === 'F'): ?>
-                                                <span class="badge badge-female">
-                                                    <i class="fas fa-venus"></i> Female
-                                                </span>
-                                            <?php else: ?>
-                                                <span class="badge badge-primary">Other</span>
-                                            <?php endif; ?>
-                                        </td>
-                                        <td>
-                                            <?php echo htmlspecialchars($patient['dob'] ?? 'N/A'); ?>
-                                        </td>
-                                        <td>
-                                            <span style="color: var(--gray-600);">
-                                                <?php echo htmlspecialchars(substr($patient['chief'] ?? 'N/A', 0, 35)); ?>
-                                            </span>
-                                        </td>
-                                        <td>
-                                            <a href="/patient/<?php echo $patient['id']; ?>" class="btn btn-primary btn-sm">
-                                                <i class="fas fa-eye"></i> View
-                                            </a>
-                                        </td>
-                                    </tr>
-                                <?php endforeach; ?>
-                            </tbody>
-                        </table>
-                    </div>
+        <?php endif; ?>
+    </div>
 
-                    <!-- PAGINATION -->
-                    <div style="display: flex; justify-content: center; gap: 8px; margin-top: 20px;">
-                        <?php
-                        $currentPage = (int)($_GET['page'] ?? 1);
-                        if ($currentPage > 1): ?>
-                            <a href="/patients?page=<?php echo $currentPage - 1; ?>" class="btn btn-outline-primary">
-                                <i class="fas fa-chevron-left"></i> Previous
-                            </a>
-                        <?php endif; ?>
+    <!-- FOOTER WITH PAGINATION & INFO -->
+    <div class="datatable-footer">
+        <div class="datatable-info">
+            Showing <span id="startEntry">1</span> to <span id="endEntry">10</span> of <span id="totalEntries">0</span> entries
+        </div>
 
-                        <span style="display: flex; align-items: center; color: var(--gray-600);">
-                            Page <?php echo $currentPage; ?>
-                        </span>
-
-                        <a href="/patients?page=<?php echo $currentPage + 1; ?>" class="btn btn-outline-primary">
-                            Next <i class="fas fa-chevron-right"></i>
-                        </a>
-                    </div>
-
-                <?php else: ?>
-                    <div style="text-align: center; padding: 40px 20px; color: var(--gray-500);">
-                        <i class="fas fa-inbox" style="font-size: 2.5rem; margin-bottom: 12px; display: block;"></i>
-                        No patients found
-                    </div>
-                <?php endif; ?>
+        <div class="datatable-controls">
+            <div class="datatable-entries-select">
+                <label for="entriesPerPage">Show</label>
+                <select id="entriesPerPage">
+                    <option value="10">10</option>
+                    <option value="25">25</option>
+                    <option value="50">50</option>
+                    <option value="100">100</option>
+                </select>
+                <span>entries</span>
             </div>
         </div>
+
+        <div class="datatable-pagination" id="pagination"></div>
     </div>
 </div>
 
 <script>
-document.getElementById('patientSearch').addEventListener('input', async function(e) {
-    const query = e.target.value.trim();
+class DataTable {
+    constructor(options) {
+        this.tableBody = document.getElementById(options.bodyId);
+        this.table = document.getElementById(options.tableId);
+        this.searchInput = document.getElementById(options.searchId);
+        this.paginationContainer = document.getElementById(options.paginationId);
+        this.entriesSelect = document.getElementById(options.entriesSelectId);
+        this.allRows = Array.from(this.tableBody.querySelectorAll('tr'));
+        this.currentPage = 1;
+        this.entriesPerPage = 10;
+        this.sortColumn = null;
+        this.sortDirection = 'asc';
 
-    if (query.length < 2) {
-        document.getElementById('searchResults').style.display = 'none';
-        return;
+        this.init();
     }
 
-    try {
-        const response = await fetch(`/api/patient/search?q=${encodeURIComponent(query)}`);
-        const data = await response.json();
+    init() {
+        this.updateTotalEntries();
+        this.attachSearchListener();
+        this.attachSortListeners();
+        this.attachEntriesSelectListener();
+        this.render();
+    }
 
-        if (data.success && data.data.length > 0) {
-            let html = '';
-            data.data.forEach(patient => {
-                html += `
-                    <div style="padding: 12px; border-bottom: 1px solid var(--gray-200); cursor: pointer;" onclick="window.location.href='/patient/${patient.id}'">
-                        <strong>${patient.fname} ${patient.lname || ''}</strong>
-                        <br>
-                        <small style="color: var(--gray-500);">${patient.contact_no} • ${patient.dob}</small>
-                    </div>
-                `;
+    attachSearchListener() {
+        this.searchInput.addEventListener('input', (e) => {
+            this.currentPage = 1;
+            this.filterRows(e.target.value.toLowerCase());
+        });
+    }
+
+    filterRows(query) {
+        this.visibleRows = this.allRows.filter(row => {
+            return row.innerText.toLowerCase().includes(query);
+        });
+        this.updateTotalEntries();
+        this.currentPage = 1;
+        this.render();
+    }
+
+    attachSortListeners() {
+        const headers = this.table.querySelectorAll('th.sortable');
+        headers.forEach(header => {
+            header.addEventListener('click', () => {
+                const column = header.dataset.column;
+                if (this.sortColumn === column) {
+                    this.sortDirection = this.sortDirection === 'asc' ? 'desc' : 'asc';
+                } else {
+                    this.sortColumn = column;
+                    this.sortDirection = 'asc';
+                }
+
+                headers.forEach(h => h.classList.remove('sort-asc', 'sort-desc'));
+                header.classList.add(this.sortDirection === 'asc' ? 'sort-asc' : 'sort-desc');
+
+                this.sortRows();
+                this.currentPage = 1;
+                this.render();
             });
-            document.getElementById('searchList').innerHTML = html;
-            document.getElementById('searchResultsCount').textContent = data.data.length;
-            document.getElementById('searchResults').style.display = 'block';
-        } else {
-            document.getElementById('searchResults').style.display = 'none';
-        }
-    } catch (error) {
-        console.error('Search error:', error);
+        });
     }
+
+    sortRows() {
+        this.visibleRows.sort((a, b) => {
+            const aValue = a.cells[this.getColumnIndex(this.sortColumn)].innerText.trim();
+            const bValue = b.cells[this.getColumnIndex(this.sortColumn)].innerText.trim();
+
+            let aNum = parseFloat(aValue) || aValue;
+            let bNum = parseFloat(bValue) || bValue;
+
+            if (aNum < bNum) return this.sortDirection === 'asc' ? -1 : 1;
+            if (aNum > bNum) return this.sortDirection === 'asc' ? 1 : -1;
+            return 0;
+        });
+    }
+
+    getColumnIndex(columnName) {
+        const headers = Array.from(this.table.querySelectorAll('th.sortable'));
+        return headers.findIndex(h => h.dataset.column === columnName);
+    }
+
+    attachEntriesSelectListener() {
+        this.entriesSelect.addEventListener('change', (e) => {
+            this.entriesPerPage = parseInt(e.target.value);
+            this.currentPage = 1;
+            this.render();
+        });
+    }
+
+    updateTotalEntries() {
+        this.visibleRows = this.visibleRows || this.allRows;
+        document.getElementById('totalEntries').textContent = this.visibleRows.length;
+    }
+
+    render() {
+        this.tableBody.innerHTML = '';
+
+        const start = (this.currentPage - 1) * this.entriesPerPage;
+        const end = start + this.entriesPerPage;
+        const paginatedRows = this.visibleRows.slice(start, end);
+
+        if (paginatedRows.length === 0) {
+            this.tableBody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 40px; color: var(--gray-500);">No records found</td></tr>';
+        } else {
+            paginatedRows.forEach(row => this.tableBody.appendChild(row.cloneNode(true)));
+        }
+
+        this.updateInfo(start, end);
+        this.renderPagination();
+    }
+
+    updateInfo(start, end) {
+        const total = this.visibleRows.length;
+        document.getElementById('startEntry').textContent = total === 0 ? 0 : start + 1;
+        document.getElementById('endEntry').textContent = Math.min(end, total);
+        document.getElementById('totalEntries').textContent = total;
+    }
+
+    renderPagination() {
+        const totalPages = Math.ceil(this.visibleRows.length / this.entriesPerPage);
+        let html = '';
+
+        // Previous button
+        if (this.currentPage > 1) {
+            html += `<a href="#" onclick="return table.goToPage(${this.currentPage - 1})"><i class="fas fa-chevron-left"></i></a>`;
+        } else {
+            html += `<span class="disabled"><i class="fas fa-chevron-left"></i></span>`;
+        }
+
+        // Page numbers
+        for (let i = 1; i <= totalPages; i++) {
+            if (i === this.currentPage) {
+                html += `<span class="active">${i}</span>`;
+            } else if (i <= 3 || i > totalPages - 2 || (i > this.currentPage - 2 && i < this.currentPage + 2)) {
+                html += `<a href="#" onclick="return table.goToPage(${i})">${i}</a>`;
+            } else if (i === 4 || i === totalPages - 2) {
+                html += `<span>...</span>`;
+            }
+        }
+
+        // Next button
+        if (this.currentPage < totalPages) {
+            html += `<a href="#" onclick="return table.goToPage(${this.currentPage + 1})"><i class="fas fa-chevron-right"></i></a>`;
+        } else {
+            html += `<span class="disabled"><i class="fas fa-chevron-right"></i></span>`;
+        }
+
+        this.paginationContainer.innerHTML = html;
+    }
+
+    goToPage(page) {
+        this.currentPage = page;
+        this.render();
+        return false;
+    }
+}
+
+// Initialize table
+const table = new DataTable({
+    tableId: 'patientsTable',
+    bodyId: 'tableBody',
+    searchId: 'tableSearch',
+    paginationId: 'pagination',
+    entriesSelectId: 'entriesPerPage'
 });
 </script>
 
