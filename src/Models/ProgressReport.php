@@ -15,13 +15,16 @@ class ProgressReport extends BaseModel {
      * Get all progress reports for a patient
      */
     public function getByPatientId($patientId, $limit = 50, $offset = 0) {
+        $limit = (int)$limit;
+        $offset = (int)$offset;
+
         $sql = "SELECT id, p_id, date, medicins, amt
                 FROM {$this->table}
                 WHERE p_id = ?
                 ORDER BY date DESC
-                LIMIT ? OFFSET ?";
+                LIMIT {$limit} OFFSET {$offset}";
 
-        $stmt = $this->query($sql, [$patientId, $limit, $offset]);
+        $stmt = $this->query($sql, [$patientId]);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
@@ -66,15 +69,17 @@ class ProgressReport extends BaseModel {
      * Get recent reports across all patients
      */
     public function getRecent($limit = 20) {
+        $limit = (int)$limit;
+
         $sql = "SELECT
                     pr.id, pr.p_id, pr.date, pr.medicins, pr.amt,
                     CONCAT(p.fname, ' ', p.lname) as patient_name
                 FROM {$this->table} pr
                 JOIN patient p ON pr.p_id = p.id
                 ORDER BY pr.date DESC
-                LIMIT ?";
+                LIMIT {$limit}";
 
-        $stmt = $this->query($sql, [$limit]);
+        $stmt = $this->query($sql);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
@@ -91,8 +96,9 @@ class ProgressReport extends BaseModel {
                 ORDER BY pr.date DESC";
 
         if ($limit) {
-            $sql .= " LIMIT ?";
-            $stmt = $this->query($sql, [$startDate, $endDate, $limit]);
+            $limit = (int)$limit;
+            $sql .= " LIMIT {$limit}";
+            $stmt = $this->query($sql, [$startDate, $endDate]);
         } else {
             $stmt = $this->query($sql, [$startDate, $endDate]);
         }
