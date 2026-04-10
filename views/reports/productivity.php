@@ -68,7 +68,8 @@ $monthVals   = json_encode($mVals);
             backgroundColor:CHART_COLORS.primary+'bb',
             borderColor:CHART_COLORS.primary, borderWidth:1, borderRadius:4,
         }]},
-        options:{ responsive:true, plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true,ticks:{precision:0}}} }
+        options:{ responsive:true, plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true,grace:'15%',ticks:{precision:0}}} },
+        plugins:[topLabelPlugin]
     });
 
     const datasets = {

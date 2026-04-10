@@ -12,12 +12,13 @@ class ReportController {
 
     private function resolveDates(array $params): array {
         $period = $params['period'] ?? 'week';
+        $year   = (int)($params['year'] ?? date('Y'));
         if ($period === 'custom') {
             $from = $params['from'] ?? date('Y-m-d');
             $to   = $params['to']   ?? date('Y-m-d');
             if ($from > $to) [$from, $to] = [$to, $from];
         } else {
-            [$from, $to] = Report::periodDates($period);
+            [$from, $to] = Report::periodDates($period, $year);
         }
         return [$period, $from, $to];
     }

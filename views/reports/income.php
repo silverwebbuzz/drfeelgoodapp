@@ -12,6 +12,7 @@ $byMonth = $reportData['byMonth'] ?? [];
 $period  = $reportData['period']  ?? 'week';
 $year    = $reportData['year']    ?? date('Y');
 
+$showYearPicker = true;
 require __DIR__ . '/_header.php';
 
 function rFmt($n) { return '₹' . number_format((float)$n, 0); }
@@ -73,8 +74,9 @@ $monthVals   = json_encode($monthTotals);
         options: {
             responsive: true,
             plugins: { legend: { display: false } },
-            scales: { y: { beginAtZero:true, ticks:{ callback: v => '₹'+v.toLocaleString() } } }
-        }
+            scales: { y: { beginAtZero:true, grace:'15%', ticks:{ callback: v => '₹'+v.toLocaleString() } } }
+        },
+        plugins: [topLabelPlugin]
     });
 
     const datasets = {
@@ -109,38 +111,29 @@ $monthVals   = json_encode($monthTotals);
     </div>
     <?php endif; ?>
 
-    <!-- Monthly bar chart — always shows full year -->
+    <!-- Monthly bar chart — full year, driven by year dropdown -->
     <div class="chart-card">
         <h6><i class="fas fa-calendar-alt"></i> Monthly Revenue — <?php echo $year; ?></h6>
         <canvas id="chartMonth" height="120"></canvas>
+        <script>
+        (function(){
+            new Chart(document.getElementById('chartMonth'), {
+                type: 'bar',
+                data: {
+                    labels: <?php echo $monthLabels; ?>,
+                    datasets: [{ label:'Revenue (₹)', data: <?php echo $monthVals; ?>,
+                        backgroundColor:CHART_COLORS.green+'bb', borderColor:CHART_COLORS.green, borderWidth:1, borderRadius:4 }]
+                },
+                options: { responsive:true, plugins:{legend:{display:false}},
+                    scales:{ y:{ beginAtZero:true, grace:'15%', ticks:{ callback: v=>'₹'+v.toLocaleString() } } } },
+                plugins:[topLabelPlugin]
+            });
+        })();
+        </script>
     </div>
-    <script>
-    (function(){
-        new Chart(document.getElementById('chartMonth'), {
-            type: 'bar',
-            data: {
-                labels: <?php echo $monthLabels; ?>,
-                datasets: [{ label:'Revenue (₹)', data: <?php echo $monthVals; ?>,
-                    backgroundColor:CHART_COLORS.green+'bb', borderColor:CHART_COLORS.green, borderWidth:1, borderRadius:4 }]
-            },
-            options: { responsive:true, plugins:{legend:{display:false}},
-                scales:{ y:{ beginAtZero:true, ticks:{ callback: v=>'₹'+v.toLocaleString() } } } }
-        });
-    })();
-    </script>
 
 </div>
 
-<!-- Year selector -->
-<div style="font-size:12px;color:#9ca3af;margin-top:4px;">
-    View monthly by year:
-    <?php for ($y = date('Y'); $y >= date('Y')-4; $y--): ?>
-        <a href="<?php echo $reportBase; ?>?period=<?php echo $period; ?>&year=<?php echo $y; ?>"
-           style="margin:0 4px;<?php echo $y===$year?'font-weight:700;color:var(--primary)':'color:var(--gray-500)'; ?>">
-            <?php echo $y; ?>
-        </a>
-    <?php endfor; ?>
-</div>
 
 <?php
 $content = ob_get_clean();

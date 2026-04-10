@@ -84,9 +84,10 @@ $monthCan    = json_encode($mCan);
         ]},
         options:{
             responsive:true,
-            scales:{ x:{stacked:true}, y:{stacked:true,beginAtZero:true,ticks:{precision:0}} },
+            scales:{ x:{stacked:true}, y:{stacked:true,beginAtZero:true,grace:'12%',ticks:{precision:0}} },
             plugins:{ legend:{position:'bottom'} }
-        }
+        },
+        plugins:[topLabelPlugin]
     });
 
     const datasets = {
@@ -117,7 +118,8 @@ $monthCan    = json_encode($mCan);
                 datasets:[{ label:'Appointments', data:raw.map(r=>parseInt(r.total)),
                     backgroundColor:CHART_COLORS.yellow+'cc', borderColor:CHART_COLORS.yellow, borderWidth:1, borderRadius:4 }]
             },
-            options:{ responsive:true, plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true,ticks:{precision:0}}} }
+            options:{ responsive:true, plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true,grace:'15%',ticks:{precision:0}}} },
+            plugins:[topLabelPlugin]
         });
     })();
     </script>

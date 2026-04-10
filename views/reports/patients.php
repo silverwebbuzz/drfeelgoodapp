@@ -15,6 +15,7 @@ $newReturning = $reportData['newReturning'] ?? [];
 $period       = $reportData['period']       ?? 'week';
 $year         = $reportData['year']         ?? date('Y');
 
+$showYearPicker = true;
 require __DIR__ . '/_header.php';
 
 $newPts   = (int)($newReturning['new_patients']       ?? 0);
@@ -89,32 +90,72 @@ $monthVals   = json_encode($mCounts);
 
 <div class="report-grid-2">
 
-    <!-- Gender doughnut — no toggle needed, all-time data -->
+    <!-- Gender doughnut -->
     <div class="chart-card">
         <h6><i class="fas fa-venus-mars"></i> Gender Distribution (All Time)</h6>
-        <canvas id="chartGender" height="120"></canvas>
+        <?php
+        $genderMap   = ['M'=>'Male','F'=>'Female',''=>'Unknown'];
+        $genderTotal = array_sum(array_column($gender, 'count'));
+        ?>
+        <canvas id="chartGender" height="140"></canvas>
+        <!-- Counts table below chart -->
+        <div style="display:flex;justify-content:center;gap:20px;margin-top:10px;flex-wrap:wrap;">
+        <?php
+        $gColors = ['#3b82f6','#ef4444','#9ca3af'];
+        foreach ($gender as $i => $g):
+            $lbl = $genderMap[$g['gender']] ?? ($g['gender'] ?: 'Unknown');
+            $pct = $genderTotal > 0 ? round($g['count']/$genderTotal*100, 1) : 0;
+        ?>
+            <div style="text-align:center;">
+                <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:<?php echo $gColors[$i%3]; ?>;margin-right:4px;vertical-align:middle;"></span>
+                <span style="font-size:12px;color:#374151;"><?php echo $lbl; ?></span><br>
+                <span style="font-size:18px;font-weight:800;color:<?php echo $gColors[$i%3]; ?>;"><?php echo number_format((int)$g['count']); ?></span>
+                <span style="font-size:11px;color:#9ca3af;"> (<?php echo $pct; ?>%)</span>
+            </div>
+        <?php endforeach; ?>
+        </div>
     </div>
     <script>
     (function(){
         const raw = <?php echo json_encode($gender); ?>;
         const labelMap = { 'M':'Male','F':'Female','':'Unknown' };
+        const total = raw.reduce((s,r)=>s+parseInt(r.count),0);
         new Chart(document.getElementById('chartGender'), {
             type: 'doughnut',
             data: {
-                labels: raw.map(r => labelMap[r.gender] || r.gender || 'Unknown'),
+                labels: raw.map(r => {
+                    const lbl = labelMap[r.gender] || r.gender || 'Unknown';
+                    const pct = total > 0 ? (parseInt(r.count)/total*100).toFixed(1) : 0;
+                    return `${lbl} — ${parseInt(r.count).toLocaleString()} (${pct}%)`;
+                }),
                 datasets: [{ data: raw.map(r=>parseInt(r.count)),
                     backgroundColor:[CHART_COLORS.primary,CHART_COLORS.red,CHART_COLORS.gray], borderWidth:2 }]
             },
-            options:{ responsive:true, plugins:{legend:{position:'bottom'}} }
+            options:{
+                responsive:true,
+                plugins:{
+                    legend:{ position:'bottom', labels:{ font:{size:11}, padding:12 } },
+                    tooltip:{ callbacks:{ label: ctx => ' '+ctx.formattedValue+' patients' } }
+                }
+            }
         });
     })();
     </script>
 
-    <!-- Age groups — no toggle, all-time -->
+    <!-- Age groups with counts on bars -->
     <?php if (!empty($ageGroups)): ?>
     <div class="chart-card">
         <h6><i class="fas fa-chart-bar"></i> Age Groups (All Time)</h6>
-        <canvas id="chartAge" height="120"></canvas>
+        <canvas id="chartAge" height="140"></canvas>
+        <!-- Counts summary row -->
+        <div style="display:flex;justify-content:space-around;margin-top:10px;flex-wrap:wrap;gap:6px;">
+        <?php foreach ($ageGroups as $ag): ?>
+            <div style="text-align:center;">
+                <div style="font-size:15px;font-weight:800;color:#8b5cf6;"><?php echo number_format((int)$ag['count']); ?></div>
+                <div style="font-size:10px;color:#9ca3af;"><?php echo htmlspecialchars($ag['age_group']); ?> yrs</div>
+            </div>
+        <?php endforeach; ?>
+        </div>
     </div>
     <script>
     (function(){
@@ -122,11 +163,21 @@ $monthVals   = json_encode($mCounts);
         new Chart(document.getElementById('chartAge'), {
             type: 'bar',
             data: {
-                labels: raw.map(r=>r.age_group),
+                labels: raw.map(r=>r.age_group+' yrs'),
                 datasets:[{ label:'Patients', data:raw.map(r=>parseInt(r.count)),
                     backgroundColor:CHART_COLORS.purple+'bb', borderColor:CHART_COLORS.purple, borderWidth:1, borderRadius:4 }]
             },
-            options:{ responsive:true, plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true,ticks:{precision:0}}} }
+            options:{
+                responsive:true,
+                plugins:{ legend:{display:false} },
+                scales:{ y:{
+                    beginAtZero:true,
+                    ticks:{ precision:0 },
+                    // extra top padding so labels don't clip
+                    grace: '15%'
+                }}
+            },
+            plugins:[topLabelPlugin]
         });
     })();
     </script>
@@ -155,16 +206,6 @@ $monthVals   = json_encode($mCounts);
 </div>
 <?php endif; ?>
 
-<!-- Year selector -->
-<div style="font-size:12px;color:#9ca3af;margin-top:8px;">
-    View monthly by year:
-    <?php for ($y = date('Y'); $y >= date('Y')-4; $y--): ?>
-        <a href="<?php echo $reportBase; ?>?period=<?php echo $period; ?>&year=<?php echo $y; ?>"
-           style="margin:0 4px;<?php echo $y===$year?'font-weight:700;color:var(--primary)':'color:var(--gray-500)'; ?>">
-            <?php echo $y; ?>
-        </a>
-    <?php endfor; ?>
-</div>
 
 <?php
 $content = ob_get_clean();

@@ -1,11 +1,14 @@
 <?php
 /**
  * Shared report header partial.
- * Requires: $reportData (array with 'period','from','to'), $reportTitle, $reportIcon, $reportBase (URL slug e.g. '/reports/income')
+ * Requires: $reportData (array with 'period','from','to','year'), $reportTitle, $reportIcon, $reportBase
+ * Optional: $showYearPicker = true (default false) — shows year dropdown in period bar
  */
-$period = $reportData['period'] ?? 'week';
-$from   = $reportData['from']   ?? date('Y-m-d');
-$to     = $reportData['to']     ?? date('Y-m-d');
+$period          = $reportData['period'] ?? 'week';
+$from            = $reportData['from']   ?? date('Y-m-d');
+$to              = $reportData['to']     ?? date('Y-m-d');
+$selectedYear    = (int)($reportData['year'] ?? date('Y'));
+$showYearPicker  = $showYearPicker ?? false;
 ?>
 <style>
 /* ── Report shared styles ──────────────────────────────────────── */
@@ -39,22 +42,40 @@ $to     = $reportData['to']     ?? date('Y-m-d');
     $periods = ['today'=>'Today','week'=>'This Week','month'=>'This Month','year'=>'This Year'];
     foreach ($periods as $key => $label):
         $active = ($period === $key) ? 'active' : '';
+        // Always carry year param so switching period doesn't reset the year
+        $href = $reportBase . '?period=' . $key . '&year=' . $selectedYear;
     ?>
-        <a href="<?php echo $reportBase; ?>?period=<?php echo $key; ?>" class="period-btn <?php echo $active; ?>"><?php echo $label; ?></a>
+        <a href="<?php echo $href; ?>" class="period-btn <?php echo $active; ?>"><?php echo $label; ?></a>
     <?php endforeach; ?>
 
     <!-- Custom range -->
     <form method="GET" action="<?php echo $reportBase; ?>" style="display:flex;align-items:center;gap:6px;margin-left:4px;">
         <input type="hidden" name="period" value="custom">
+        <input type="hidden" name="year" value="<?php echo $selectedYear; ?>">
         <input type="date" name="from" value="<?php echo htmlspecialchars($period==='custom'?$from:date('Y-m-01')); ?>" class="form-control form-control-sm" style="width:130px;">
         <span style="color:#9ca3af;font-size:12px;">to</span>
         <input type="date" name="to" value="<?php echo htmlspecialchars($period==='custom'?$to:date('Y-m-d')); ?>" class="form-control form-control-sm" style="width:130px;">
         <button type="submit" class="btn btn-secondary btn-sm">Go</button>
     </form>
 
+    <!-- Year dropdown — shown on pages that set $showYearPicker = true -->
+    <?php if ($showYearPicker): ?>
+    <div style="margin-left:auto;display:flex;align-items:center;gap:6px;">
+        <label style="font-size:11px;color:#6b7280;white-space:nowrap;margin:0;">Year:</label>
+        <select class="form-control form-control-sm" style="width:90px;font-size:12px;"
+                onchange="location='<?php echo $reportBase; ?>?period=<?php echo $period; ?>&year='+this.value">
+            <?php for ($y = (int)date('Y'); $y >= (int)date('Y') - 9; $y--): ?>
+                <option value="<?php echo $y; ?>" <?php echo $y === $selectedYear ? 'selected' : ''; ?>>
+                    <?php echo $y; ?>
+                </option>
+            <?php endfor; ?>
+        </select>
+    </div>
+    <?php else: ?>
     <span style="margin-left:auto;font-size:11px;color:#9ca3af;">
         <?php echo date('d M Y', strtotime($from)); ?> – <?php echo date('d M Y', strtotime($to)); ?>
     </span>
+    <?php endif; ?>
 </div>
 
 <!-- Chart.js (loaded once via flag) -->
@@ -127,6 +148,33 @@ function buildTogglePills(granularities, active) {
         ).join('') +
     '</span>';
 }
+
+/**
+ * Shared Chart.js plugin: draws the value on top of each bar (vertical bars only).
+ * Usage: add `plugins:[topLabelPlugin]` to any bar chart config.
+ */
+const topLabelPlugin = {
+    id: 'topLabel',
+    afterDatasetsDraw(chart) {
+        const { ctx } = chart;
+        chart.data.datasets.forEach((dataset, di) => {
+            // Only draw on the last dataset (avoids duplicates in stacked charts)
+            if (di !== chart.data.datasets.length - 1) return;
+            chart.getDatasetMeta(di).data.forEach((bar, i) => {
+                // For stacked charts, show the total across all datasets
+                const total = chart.data.datasets.reduce((s, ds) => s + (Number(ds.data[i]) || 0), 0);
+                if (!total) return;
+                ctx.save();
+                ctx.font = 'bold 10px Inter,sans-serif';
+                ctx.fillStyle = '#374151';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'bottom';
+                ctx.fillText(total.toLocaleString(), bar.x, bar.y - 2);
+                ctx.restore();
+            });
+        });
+    }
+};
 </script>
 <style>
 /* Per-chart granularity toggle pills */

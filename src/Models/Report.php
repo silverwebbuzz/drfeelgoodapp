@@ -11,21 +11,22 @@ class Report extends BaseModel {
 
     // ── helpers ──────────────────────────────────────────────────────────────
 
-    /** Return [from, to] for a named period relative to today */
-    public static function periodDates(string $period): array {
+    /** Return [from, to] for a named period relative to today.
+     *  $year is used when period='year' so selecting a past year works correctly. */
+    public static function periodDates(string $period, int $year = 0): array {
         $today = date('Y-m-d');
+        $y     = $year > 0 ? $year : (int)date('Y');
         switch ($period) {
             case 'today':
                 return [$today, $today];
             case 'week':
-                // Mon–Sun of current ISO week
                 $mon = date('Y-m-d', strtotime('monday this week'));
                 $sun = date('Y-m-d', strtotime('sunday this week'));
                 return [$mon, $sun];
             case 'month':
                 return [date('Y-m-01'), date('Y-m-t')];
             case 'year':
-                return [date('Y-01-01'), date('Y-12-31')];
+                return ["{$y}-01-01", "{$y}-12-31"];
             default:
                 return [$today, $today];
         }
