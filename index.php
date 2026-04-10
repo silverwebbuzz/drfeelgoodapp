@@ -73,6 +73,7 @@ use App\Controllers\AuthController;
 use App\Controllers\PatientController;
 use App\Controllers\MedicineController;
 use App\Controllers\AppointmentController;
+use App\Controllers\ReportController;
 
 // Check session timeout
 AuthController::checkSessionTimeout();
@@ -380,6 +381,43 @@ switch ($route) {
         (new App\Models\Appointment($db))->removeClosedDate($id);
         echo json_encode(['success' => true]);
         exit;
+
+    // ── Reports ────────────────────────────────────────────────────────────────
+
+    case 'reports/income':
+        AuthController::requireLogin();
+        $reportController = new ReportController($db);
+        $reportData = $reportController->income($_GET);
+        require __DIR__ . '/views/reports/income.php';
+        break;
+
+    case 'reports/patients':
+        AuthController::requireLogin();
+        $reportController = new ReportController($db);
+        $reportData = $reportController->patients($_GET);
+        require __DIR__ . '/views/reports/patients.php';
+        break;
+
+    case 'reports/queue':
+        AuthController::requireLogin();
+        $reportController = new ReportController($db);
+        $reportData = $reportController->queueOps($_GET);
+        require __DIR__ . '/views/reports/queue.php';
+        break;
+
+    case 'reports/medicines':
+        AuthController::requireLogin();
+        $reportController = new ReportController($db);
+        $reportData = $reportController->medicines($_GET);
+        require __DIR__ . '/views/reports/medicines.php';
+        break;
+
+    case 'reports/productivity':
+        AuthController::requireLogin();
+        $reportController = new ReportController($db);
+        $reportData = $reportController->productivity($_GET);
+        require __DIR__ . '/views/reports/productivity.php';
+        break;
 
     default:
         error_log("404 - Route not found: '{$route}'");

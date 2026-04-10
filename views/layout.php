@@ -51,6 +51,23 @@
                                 <span>Queue</span>
                             </a>
                         </li>
+                        <?php
+                        $onReports = strpos($_SERVER['REQUEST_URI'], '/reports') !== false;
+                        ?>
+                        <li class="has-submenu <?php echo $onReports ? 'open' : ''; ?>">
+                            <a href="#" class="<?php echo $onReports ? 'active' : ''; ?>" onclick="toggleSubmenu(this);return false;">
+                                <i class="fas fa-chart-bar"></i>
+                                <span>Reports</span>
+                                <i class="fas fa-chevron-down submenu-arrow" style="margin-left:auto;font-size:10px;"></i>
+                            </a>
+                            <ul class="submenu">
+                                <li><a href="/reports/income" class="<?php echo strpos($_SERVER['REQUEST_URI'],'/reports/income')!==false?'active':''; ?>"><i class="fas fa-rupee-sign"></i> Income</a></li>
+                                <li><a href="/reports/patients" class="<?php echo strpos($_SERVER['REQUEST_URI'],'/reports/patients')!==false?'active':''; ?>"><i class="fas fa-users"></i> Patients</a></li>
+                                <li><a href="/reports/queue" class="<?php echo strpos($_SERVER['REQUEST_URI'],'/reports/queue')!==false?'active':''; ?>"><i class="fas fa-list-ol"></i> Queue / Ops</a></li>
+                                <li><a href="/reports/medicines" class="<?php echo strpos($_SERVER['REQUEST_URI'],'/reports/medicines')!==false?'active':''; ?>"><i class="fas fa-pills"></i> Medicines</a></li>
+                                <li><a href="/reports/productivity" class="<?php echo strpos($_SERVER['REQUEST_URI'],'/reports/productivity')!==false?'active':''; ?>"><i class="fas fa-stethoscope"></i> Productivity</a></li>
+                            </ul>
+                        </li>
                         <li>
                             <a href="/clinic-settings" class="<?php echo (strpos($_SERVER['REQUEST_URI'], 'clinic-settings') !== false) ? 'active' : ''; ?>">
                                 <i class="fas fa-cog"></i>
@@ -69,5 +86,20 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <style>
+    /* Sidebar submenu */
+    .sidebar-menu .has-submenu > a { display:flex; align-items:center; gap:10px; }
+    .sidebar-menu .submenu { list-style:none; padding:0; margin:0; overflow:hidden; max-height:0; transition:max-height .25s ease; }
+    .sidebar-menu .has-submenu.open .submenu { max-height:300px; }
+    .sidebar-menu .submenu li a { display:flex; align-items:center; gap:8px; padding:6px 12px 6px 36px; font-size:12px; color:var(--gray-600); text-decoration:none; border-radius:5px; transition:.15s; }
+    .sidebar-menu .submenu li a:hover, .sidebar-menu .submenu li a.active { background:var(--primary-light,#eff6ff); color:var(--primary); }
+    .submenu-arrow { transition:transform .25s; }
+    .has-submenu.open .submenu-arrow { transform:rotate(180deg); }
+    </style>
+    <script>
+    function toggleSubmenu(el) {
+        el.closest('.has-submenu').classList.toggle('open');
+    }
+    </script>
 </body>
 </html>
