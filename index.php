@@ -225,8 +225,16 @@ switch ($route) {
         AuthController::requireLogin();
         $patientController  = new PatientController($db);
         $apptController     = new AppointmentController($db);
-        $recentPatients     = $patientController->getRecent(5);
+        $reportModel        = new App\Models\Report($db);
+        $recentPatients     = $patientController->getRecent(10);
         $todayQueueData     = $apptController->getQueue(date('Y-m-d'));
+        // Live stats
+        $dashStats = [
+            'total_patients'   => (int)(new App\Models\Patient($db))->getTotalCount(),
+            'total_reports'    => (int)$reportModel->count(),
+            'new_this_month'   => (int)count($reportModel->newPatientsByDay(date('Y-m-01'), date('Y-m-d'))),
+            'completed_today'  => (int)($todayQueueData['stats']['completed'] ?? 0),
+        ];
         require __DIR__ . '/views/dashboard.php';
         break;
 
