@@ -150,13 +150,22 @@ textarea.r-input { resize:vertical; }
 .h-meds { font-size:0.88rem; color:var(--gray-800); font-weight:500; margin-bottom:2px; }
 .h-amt { font-size:0.8rem; color:var(--gray-500); }
 .h-num { float:right; font-size:0.72rem; color:var(--gray-400); }
-.h-edit-btn {
+.h-action-btns {
     display:none; position:absolute; right:10px; bottom:10px;
+    gap:5px;
+}
+.h-item:hover .h-action-btns { display:flex; }
+.h-edit-btn {
     font-size:0.72rem; padding:2px 8px; border-radius:3px;
     border:1px solid var(--gray-300); background:white;
     color:var(--gray-500); cursor:pointer;
 }
-.h-item:hover .h-edit-btn { display:inline-block; }
+.h-inv-btn {
+    font-size:0.72rem; padding:2px 8px; border-radius:3px;
+    border:1px solid #d1fae5; background:#f0fdf4;
+    color:#16a34a; cursor:pointer; text-decoration:none;
+    display:inline-flex; align-items:center; gap:3px;
+}
 .h-edit-form {
     display:none; margin-top:8px; padding-top:8px;
     border-top:1px solid var(--gray-200);
@@ -478,9 +487,14 @@ $apptId    = (int)($_GET['appt'] ?? 0);
                         <?php if(!empty($r['amt'])&&$r['amt']>0): ?>
                         <div class="h-amt">₹<?php echo htmlspecialchars($r['amt']); ?></div>
                         <?php endif; ?>
-                        <button class="h-edit-btn" onclick="toggleHistEdit(<?php echo $r['id']; ?>)">
-                            <i class="fas fa-pen"></i> Edit
-                        </button>
+                        <div class="h-action-btns">
+                            <a href="/invoice/<?php echo $r['id']; ?>" target="_blank" class="h-inv-btn">
+                                <i class="fas fa-file-invoice"></i> Invoice
+                            </a>
+                            <button class="h-edit-btn" onclick="toggleHistEdit(<?php echo $r['id']; ?>)">
+                                <i class="fas fa-pen"></i> Edit
+                            </button>
+                        </div>
                         <div class="h-edit-form" id="hedit-<?php echo $r['id']; ?>">
                             <div class="h-edit-row">
                                 <input type="date" class="h-edit-input" id="he-date-<?php echo $r['id']; ?>"

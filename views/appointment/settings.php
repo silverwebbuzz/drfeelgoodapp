@@ -143,6 +143,54 @@ ob_start();
 </div>
 
 <div class="settings-section">
+    <h3><i class="fas fa-file-invoice" style="color:var(--primary);margin-right:6px;"></i> Invoice / Billing Settings</h3>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
+        <div>
+            <label class="form-label">Doctor Name <span style="color:#9ca3af;font-weight:400;">(appears on invoice)</span></label>
+            <input type="text" name="inv_doctor_name" class="form-control" value="<?php echo htmlspecialchars($s['inv_doctor_name'] ?? ''); ?>" placeholder="Dr. Full Name">
+        </div>
+        <div>
+            <label class="form-label">Qualification <span style="color:#9ca3af;font-weight:400;">(e.g. MBBS, MD)</span></label>
+            <input type="text" name="inv_qualification" class="form-control" value="<?php echo htmlspecialchars($s['inv_qualification'] ?? ''); ?>" placeholder="MBBS, MD">
+        </div>
+        <div>
+            <label class="form-label">Clinic Phone</label>
+            <input type="text" name="inv_phone" class="form-control" value="<?php echo htmlspecialchars($s['inv_phone'] ?? $s['clinic_phone'] ?? ''); ?>" placeholder="+91 ...">
+        </div>
+        <div>
+            <label class="form-label">Clinic Email <span style="color:#9ca3af;font-weight:400;">(optional)</span></label>
+            <input type="text" name="inv_email" class="form-control" value="<?php echo htmlspecialchars($s['inv_email'] ?? ''); ?>" placeholder="clinic@example.com">
+        </div>
+    </div>
+    <div style="margin-bottom:10px;">
+        <label class="form-label">Clinic Address <span style="color:#9ca3af;font-weight:400;">(full address for invoice header)</span></label>
+        <textarea name="inv_address" class="form-control" rows="2" placeholder="Street, City, State – PIN"><?php echo htmlspecialchars($s['inv_address'] ?? ''); ?></textarea>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
+        <div>
+            <label class="form-label" style="display:flex;align-items:center;gap:8px;">
+                <input type="checkbox" name="inv_show_pan" value="1" <?php echo ($s['inv_show_pan'] ?? '0') === '1' ? 'checked' : ''; ?>>
+                Show PAN / Tax Number on Invoice
+            </label>
+            <input type="text" name="inv_pan" class="form-control" style="margin-top:6px;"
+                value="<?php echo htmlspecialchars($s['inv_pan'] ?? ''); ?>" placeholder="ABCDE1234F">
+        </div>
+        <div>
+            <label class="form-label" style="display:flex;align-items:center;gap:8px;">
+                <input type="checkbox" name="inv_gst_enabled" value="1" id="gstToggle" <?php echo ($s['inv_gst_enabled'] ?? '0') === '1' ? 'checked' : ''; ?>>
+                Enable GST on Invoice
+            </label>
+            <div style="display:grid;grid-template-columns:1fr 80px;gap:8px;margin-top:6px;">
+                <input type="text" name="inv_gst_number" class="form-control"
+                    value="<?php echo htmlspecialchars($s['inv_gst_number'] ?? ''); ?>" placeholder="GST Number">
+                <input type="number" name="inv_gst_rate" class="form-control"
+                    value="<?php echo htmlspecialchars($s['inv_gst_rate'] ?? '18'); ?>" placeholder="%" min="0" max="100">
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="settings-section">
     <h3><i class="fas fa-ban" style="color:var(--primary);margin-right:6px;"></i> Closed / Holiday Dates</h3>
     <div style="font-size:12px;color:#6b7280;margin-bottom:10px;">
         Dates marked here will show no slots on the booking page.

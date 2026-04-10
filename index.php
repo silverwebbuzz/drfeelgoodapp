@@ -427,6 +427,28 @@ switch ($route) {
         require __DIR__ . '/views/reports/productivity.php';
         break;
 
+    // ── Invoice ───────────────────────────────────────────────────────────────
+    case (preg_match('/^invoice\/(\d+)$/', $route, $matches) ? true : false):
+        AuthController::requireLogin();
+        $reportId = (int)$matches[1];
+        // Fetch the progress report
+        $reportModel = new App\Models\Report($db);
+        $report = $reportModel->getById($reportId);
+        if (!$report) {
+            http_response_code(404);
+            require __DIR__ . '/views/error/404.php';
+            break;
+        }
+        // Fetch the patient
+        $patientController = new PatientController($db);
+        $patientResp = $patientController->getDetail($report['p_id']);
+        $patient = $patientResp['patient'] ?? null;
+        // Fetch clinic/invoice settings
+        $settingModel = new App\Models\Setting($db);
+        $s = $settingModel->getAllSettings();
+        require __DIR__ . '/views/invoice.php';
+        break;
+
     default:
         error_log("404 - Route not found: '{$route}'");
         http_response_code(404);

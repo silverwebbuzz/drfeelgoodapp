@@ -209,10 +209,14 @@ class AppointmentController {
                 'max_per_slot','clinic_name','clinic_phone','consultation_fee',
                 'booking_days_ahead',
                 'extended_morning_end','extended_evening_end',
+                // Invoice settings
+                'inv_doctor_name','inv_qualification','inv_phone','inv_email','inv_address',
+                'inv_show_pan','inv_pan',
+                'inv_gst_enabled','inv_gst_number','inv_gst_rate',
             ];
             $clean = array_intersect_key($data, array_flip($allowed));
             // Checkboxes not sent when off — set to 0
-            foreach (['mon_sat_morning_on','mon_sat_evening_on','sunday_on'] as $cb) {
+            foreach (['mon_sat_morning_on','mon_sat_evening_on','sunday_on','inv_show_pan','inv_gst_enabled'] as $cb) {
                 if (!isset($clean[$cb])) $clean[$cb] = '0';
             }
             $this->settingModel->setMany($clean);
