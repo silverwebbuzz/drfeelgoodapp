@@ -87,6 +87,49 @@ function dashFmtName($f, $l) {
         </div>
     </div>
 
+    <!-- TODAY'S APPOINTMENTS SECTION -->
+    <?php
+    $todayQueue = $todayQueueData['queue'] ?? [];
+    $todayStats = $todayQueueData['stats'] ?? [];
+    $queue   = $todayQueue;   // required by _queue_table.php
+    $compact = true;
+    $tableId = 'dashQueueTable';
+    ?>
+    <div class="row mb-24">
+        <div class="col-lg-12">
+            <div class="card">
+                <div class="card-header" style="display:flex;align-items:center;justify-content:space-between;">
+                    <span><i class="fas fa-calendar-day"></i> Today's Appointments</span>
+                    <div style="display:flex;align-items:center;gap:12px;">
+                        <!-- mini stats -->
+                        <span style="font-size:12px;color:#6b7280;">
+                            <span style="color:#d97706;font-weight:700;"><?php echo (int)($todayStats['waiting'] ?? 0); ?></span> waiting &nbsp;
+                            <span style="color:#2563eb;font-weight:700;"><?php echo (int)($todayStats['in_consultation'] ?? 0); ?></span> in consult &nbsp;
+                            <span style="color:#16a34a;font-weight:700;"><?php echo (int)($todayStats['completed'] ?? 0); ?></span> done
+                        </span>
+                        <a href="/queue" class="btn btn-secondary btn-sm"><i class="fas fa-list"></i> Full Queue</a>
+                        <a href="/walkin" class="btn btn-primary btn-sm"><i class="fas fa-plus"></i> Walk-in</a>
+                    </div>
+                </div>
+                <div class="card-body" style="padding:0;">
+                    <style>
+                    .token-badge { display:inline-block; width:32px; height:32px; border-radius:50%; background:var(--primary); color:#fff; font-weight:700; font-size:12px; line-height:32px; text-align:center; }
+                    .queue-row td { vertical-align:middle; }
+                    .status-btns .btn { padding:3px 8px; font-size:11px; }
+                    .queue-row[data-status="in_consultation"] { background:#eff6ff; }
+                    .queue-row[data-status="completed"] { opacity:.75; }
+                    </style>
+                    <?php require __DIR__ . '/appointment/_queue_table.php'; ?>
+                </div>
+                <?php if (!empty($todayQueue)): ?>
+                <div style="padding:10px 16px;text-align:right;border-top:1px solid #f3f4f6;">
+                    <a href="/queue" style="font-size:12px;color:var(--primary);text-decoration:none;"><i class="fas fa-arrow-right"></i> View full queue</a>
+                </div>
+                <?php endif; ?>
+            </div>
+        </div>
+    </div>
+
     <!-- RECENT PATIENTS SECTION -->
     <div class="row mb-24">
         <div class="col-lg-12">

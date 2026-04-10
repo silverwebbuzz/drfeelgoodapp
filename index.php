@@ -222,8 +222,10 @@ switch ($route) {
 
     case 'dashboard':
         AuthController::requireLogin();
-        $patientController = new PatientController($db);
-        $recentPatients = $patientController->getRecent(5);
+        $patientController  = new PatientController($db);
+        $apptController     = new AppointmentController($db);
+        $recentPatients     = $patientController->getRecent(5);
+        $todayQueueData     = $apptController->getQueue(date('Y-m-d'));
         require __DIR__ . '/views/dashboard.php';
         break;
 
