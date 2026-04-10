@@ -66,6 +66,15 @@ $periodLabel = rPeriodLabel($period, $from, $to);
 @media(max-width:768px){
     .report-grid-4,.report-grid-3 { grid-template-columns:1fr 1fr; }
     .report-grid-2 { grid-template-columns:1fr; }
+    .report-period-bar { gap:6px; }
+    .period-btn { padding:4px 10px; font-size:11px; }
+}
+@media(max-width:480px){
+    .report-grid-4,.report-grid-3 { grid-template-columns:1fr 1fr; }
+    .stat-box .sv { font-size:20px; }
+    /* Custom range stacks on small screens */
+    .report-period-bar form { flex-wrap:wrap; gap:4px; }
+    .report-period-bar form input[type=date] { width:100% !important; }
 }
 </style>
 

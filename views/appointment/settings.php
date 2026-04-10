@@ -4,10 +4,15 @@ $s = $clinicSettings ?? [];
 ob_start();
 ?>
 <style>
-.settings-section { background:#fff; border:1px solid #e5e7eb; border-radius:8px; padding:16px 20px; margin-bottom:14px; }
+.settings-section { background:#fff; border:1px solid #e5e7eb; border-radius:8px; padding:14px 16px; margin-bottom:12px; }
 .settings-section h3 { font-size:13px; font-weight:700; margin:0 0 12px; padding-bottom:8px; border-bottom:1px solid #f3f4f6; color:#374151; }
 .session-grid { display:grid; grid-template-columns:auto 1fr 1fr; gap:8px; align-items:center; }
 .session-grid label { font-size:12px; color:#6b7280; }
+.settings-2col { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+@media(max-width:600px){
+    .settings-2col { grid-template-columns:1fr; }
+    .session-grid { grid-template-columns:auto 1fr; }
+}
 </style>
 
 <div class="page-header" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
@@ -20,7 +25,7 @@ ob_start();
 
 <div class="settings-section">
     <h3><i class="fas fa-hospital" style="color:var(--primary);margin-right:6px;"></i> Clinic Info</h3>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+    <div class="settings-2col">
         <div>
             <label class="form-label">Clinic Name</label>
             <input type="text" name="clinic_name" class="form-control" value="<?php echo htmlspecialchars($s['clinic_name'] ?? 'Dr. Feelgood'); ?>">
@@ -62,7 +67,7 @@ ob_start();
             <input type="checkbox" name="mon_sat_morning_on" value="1" id="morningOn" <?php echo ($s['mon_sat_morning_on'] ?? '1') === '1' ? 'checked' : ''; ?>>
             <strong>Morning Session</strong>
         </label>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;padding-left:20px;">
+        <div class="settings-2col" style="padding-left:20px;">
             <div>
                 <label class="form-label">Start</label>
                 <input type="time" name="mon_sat_morning_start" class="form-control" value="<?php echo htmlspecialchars($s['mon_sat_morning_start'] ?? '09:30'); ?>">
@@ -79,7 +84,7 @@ ob_start();
             <input type="checkbox" name="mon_sat_evening_on" value="1" id="eveningOn" <?php echo ($s['mon_sat_evening_on'] ?? '1') === '1' ? 'checked' : ''; ?>>
             <strong>Evening Session</strong>
         </label>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;padding-left:20px;">
+        <div class="settings-2col" style="padding-left:20px;">
             <div>
                 <label class="form-label">Start</label>
                 <input type="time" name="mon_sat_evening_start" class="form-control" value="<?php echo htmlspecialchars($s['mon_sat_evening_start'] ?? '16:30'); ?>">
@@ -116,7 +121,7 @@ ob_start();
         These extended end times are only visible in the admin walk-in form — never on the public booking page.
         Useful when doctor allows last-minute patients beyond normal hours.
     </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+    <div class="settings-2col">
         <div>
             <label class="form-label">Morning Extended End <span style="color:#9ca3af;font-weight:400;">(after normal morning end)</span></label>
             <input type="time" name="extended_morning_end" class="form-control" value="<?php echo htmlspecialchars($s['extended_morning_end'] ?? '14:30'); ?>">

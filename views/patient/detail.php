@@ -38,8 +38,8 @@ function fmtName($f, $l) {
 <style>
 /* ── Header ── */
 .pt-header {
-    display:flex; align-items:center; gap:16px;
-    padding:14px 20px; background:white; border-radius:8px;
+    display:flex; align-items:center; gap:12px; flex-wrap:wrap;
+    padding:12px 16px; background:white; border-radius:8px;
     box-shadow:var(--shadow-sm); margin-bottom:14px;
 }
 .pt-avatar {
@@ -109,10 +109,12 @@ textarea.field-edit-input { resize:vertical; min-height:70px; font-weight:400; }
 
 /* ── Workspace ── */
 .workspace {
-    display:grid; grid-template-columns:1fr 370px;
+    display:grid; grid-template-columns:1fr 340px;
     gap:14px; align-items:start;
 }
-@media(max-width:1024px){ .workspace{grid-template-columns:1fr;} }
+@media(max-width:900px){ .workspace{grid-template-columns:1fr;} }
+/* On mobile, history panel loses sticky — just flows naturally */
+@media(max-width:900px){ .history-panel { position:static; } }
 
 /* ── Add report form ── */
 .report-form-card .card-header { background:var(--primary); color:white; }
@@ -171,7 +173,8 @@ textarea.r-input { resize:vertical; }
     border-top:1px solid var(--gray-200);
 }
 .h-edit-form.open { display:block; }
-.h-edit-row { display:grid; grid-template-columns:1fr 100px; gap:8px; margin-bottom:6px; }
+.h-edit-row { display:grid; grid-template-columns:1fr 90px; gap:8px; margin-bottom:6px; }
+@media(max-width:480px){ .h-edit-row { grid-template-columns:1fr; } }
 .h-edit-input {
     width:100%; padding:5px 8px; font-size:0.85rem;
     border:1px solid var(--primary); border-radius:4px;

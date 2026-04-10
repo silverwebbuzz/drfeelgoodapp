@@ -4,6 +4,8 @@ ob_start();
 ?>
 <style>
 .walkin-wrap { max-width:640px; margin:0 auto; }
+.walkin-2col { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+@media(max-width:540px){ .walkin-2col { grid-template-columns:1fr; } }
 .search-result-item { padding:7px 12px; cursor:pointer; border-bottom:1px solid #f3f4f6; font-size:12px; }
 .search-result-item:hover { background:#f0f4ff; }
 #patientResults { border:1px solid #d1d5db; border-radius:6px; background:#fff; max-height:200px; overflow-y:auto; display:none; position:relative; z-index:10; }
@@ -12,6 +14,7 @@ ob_start();
 .slot-section { margin-top:6px; }
 .slot-session-lbl { font-size:10px; font-weight:700; color:#9ca3af; text-transform:uppercase; letter-spacing:.5px; margin:10px 0 5px; display:flex; align-items:center; gap:5px; }
 .slot-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:6px; }
+@media(max-width:400px){ .slot-grid { grid-template-columns:repeat(3,1fr); } }
 .slot-pill { padding:7px 4px; border:2px solid #e5e7eb; border-radius:7px; text-align:center; cursor:pointer; font-size:11px; font-weight:600; color:#374151; background:#fff; transition:.15s; }
 .slot-pill:hover { border-color:#93c5fd; background:#eff6ff; }
 .slot-pill.selected { border-color:var(--primary); background:var(--primary); color:#fff; }
@@ -45,7 +48,7 @@ ob_start();
     </div>
 
     <!-- Name + Phone for unregistered -->
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;" class="mb-3">
+    <div class="walkin-2col mb-3">
         <div id="nameRow">
             <label class="form-label">Patient Name</label>
             <input type="text" name="patient_name" id="patientNameInput" class="form-control" placeholder="Full name">
@@ -57,7 +60,7 @@ ob_start();
     </div>
 
     <!-- Date + Follow-up -->
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;" class="mb-3">
+    <div class="walkin-2col mb-3">
         <div>
             <label class="form-label">Date</label>
             <input type="date" name="appt_date" id="apptDate" class="form-control" value="<?php echo date('Y-m-d'); ?>">

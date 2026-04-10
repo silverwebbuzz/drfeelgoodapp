@@ -26,25 +26,25 @@ $compact     = true;
 $tableId     = 'dashQueueTable';
 ?>
 <style>
-.dash-stat-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-bottom:20px; }
-.dash-stat { background:#fff; border:1px solid #e5e7eb; border-radius:12px; padding:16px 18px; display:flex; align-items:center; gap:14px; }
-.dash-stat-icon { width:46px; height:46px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:18px; flex-shrink:0; }
+.dash-stat-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:16px; }
+.dash-stat { background:#fff; border:1px solid #e5e7eb; border-radius:10px; padding:14px 16px; display:flex; align-items:center; gap:12px; }
+.dash-stat-icon { width:42px; height:42px; border-radius:9px; display:flex; align-items:center; justify-content:center; font-size:17px; flex-shrink:0; }
 .dash-stat-icon.blue   { background:#eff6ff; color:#2563eb; }
 .dash-stat-icon.green  { background:#f0fdf4; color:#16a34a; }
 .dash-stat-icon.yellow { background:#fffbeb; color:#d97706; }
 .dash-stat-icon.purple { background:#f5f3ff; color:#7c3aed; }
-.dash-stat-val  { font-size:24px; font-weight:800; line-height:1; color:#111827; }
+.dash-stat-val  { font-size:22px; font-weight:800; line-height:1; color:#111827; }
 .dash-stat-lbl  { font-size:11px; color:#6b7280; margin-top:3px; }
-.dash-stat-sub  { font-size:11px; color:#9ca3af; margin-top:2px; }
+.dash-stat-sub  { font-size:10px; color:#9ca3af; margin-top:2px; }
 
 /* Quick actions */
 .qa-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
-.qa-btn { display:flex; align-items:center; gap:12px; padding:13px 15px; border-radius:10px;
+.qa-btn { display:flex; align-items:center; gap:10px; padding:12px 14px; border-radius:10px;
           border:1.5px solid #e5e7eb; background:#fff; text-decoration:none; color:#374151;
           font-weight:600; font-size:13px; transition:.15s; }
 .qa-btn:hover { border-color:var(--primary); background:#eff6ff; color:var(--primary); text-decoration:none; }
-.qa-btn .qa-icon { width:36px; height:36px; border-radius:8px; display:flex; align-items:center;
-                   justify-content:center; font-size:15px; flex-shrink:0; }
+.qa-btn .qa-icon { width:34px; height:34px; border-radius:8px; display:flex; align-items:center;
+                   justify-content:center; font-size:14px; flex-shrink:0; }
 .qa-btn .qa-sub { font-size:11px; color:#9ca3af; font-weight:400; margin-top:1px; }
 
 @media(max-width:900px){
@@ -52,6 +52,11 @@ $tableId     = 'dashQueueTable';
     .qa-grid { grid-template-columns:1fr 1fr; }
 }
 @media(max-width:540px){
+    .dash-stat-grid { grid-template-columns:1fr 1fr; }
+    .qa-grid { grid-template-columns:1fr 1fr; }
+    .dash-stat-val { font-size:18px; }
+}
+@media(max-width:360px){
     .dash-stat-grid { grid-template-columns:1fr; }
     .qa-grid { grid-template-columns:1fr; }
 }
@@ -115,13 +120,13 @@ $tableId     = 'dashQueueTable';
 
 <!-- TODAY'S APPOINTMENTS -->
 <div class="card" style="margin-bottom:20px;">
-    <div class="card-header" style="display:flex;align-items:center;justify-content:space-between;">
+    <div class="card-header" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
         <span>
             <i class="fas fa-calendar-day"></i> Today's Queue
             <span style="font-size:11px;color:#9ca3af;margin-left:6px;"><?php echo date('d M Y'); ?></span>
         </span>
-        <div style="display:flex;align-items:center;gap:10px;">
-            <span style="font-size:12px;color:#6b7280;">
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+            <span style="font-size:12px;color:#6b7280;white-space:nowrap;">
                 <span style="color:#f59e0b;font-weight:700;"><?php echo (int)($todayStats['waiting'] ?? 0); ?></span> waiting &nbsp;
                 <span style="color:#2563eb;font-weight:700;"><?php echo (int)($todayStats['in_consultation'] ?? 0); ?></span> in consult &nbsp;
                 <span style="color:#16a34a;font-weight:700;"><?php echo (int)($todayStats['completed'] ?? 0); ?></span> done

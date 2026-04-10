@@ -50,6 +50,9 @@ function fmtName($fname, $lname) {
                 >
             </div>
         </div>
+        <a href="/patient/create" class="btn btn-primary btn-sm" style="white-space:nowrap;">
+            <i class="fas fa-user-plus"></i> New Patient
+        </a>
     </div>
 
     <!-- TABLE WRAPPER -->

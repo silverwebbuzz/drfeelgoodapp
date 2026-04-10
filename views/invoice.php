@@ -69,21 +69,21 @@ $patientAddress = invFmt($patient['address'] ?? null, '');
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body {
-    font-family: 'Segoe UI', Arial, sans-serif;
+    font-family: Arial, sans-serif;
     font-size: 13px;
-    color: #1f2937;
-    background: #f3f4f6;
+    color: #000;
+    background: #e5e5e5;
 }
 
 /* Print wrapper */
 .inv-page {
-    width: 794px;          /* A4 width at 96dpi */
-    min-height: 1123px;    /* A4 height at 96dpi */
+    width: 794px;
+    min-height: 1123px;
     margin: 20px auto;
     background: #fff;
     padding: 40px 44px;
     position: relative;
-    box-shadow: 0 4px 24px rgba(0,0,0,.10);
+    box-shadow: 0 2px 8px rgba(0,0,0,.15);
 }
 
 /* ── Header ── */
@@ -91,205 +91,115 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
-    padding-bottom: 20px;
-    border-bottom: 2px solid #1d4ed8;
-    margin-bottom: 22px;
+    padding-bottom: 14px;
+    border-bottom: 2px solid #000;
+    margin-bottom: 20px;
 }
-.inv-clinic-name {
-    font-size: 22px;
-    font-weight: 800;
-    color: #1d4ed8;
-    line-height: 1.1;
-}
-.inv-qualification {
-    font-size: 12px;
-    color: #6b7280;
-    margin-top: 2px;
-}
-.inv-clinic-contact {
-    font-size: 11px;
-    color: #6b7280;
-    margin-top: 6px;
-    line-height: 1.7;
-}
-.inv-meta {
-    text-align: right;
-}
-.inv-number {
-    font-size: 18px;
-    font-weight: 800;
-    color: #1d4ed8;
-}
-.inv-meta-row {
-    font-size: 11px;
-    color: #6b7280;
-    margin-top: 4px;
-}
-.inv-meta-row strong { color: #374151; }
+.inv-clinic-name { font-size: 20px; font-weight: 800; color: #000; line-height: 1.1; }
+.inv-qualification { font-size: 12px; color: #333; margin-top: 2px; }
+.inv-clinic-contact { font-size: 11px; color: #333; margin-top: 6px; line-height: 1.7; }
+.inv-meta { text-align: right; }
+.inv-number { font-size: 16px; font-weight: 800; color: #000; }
+.inv-meta-row { font-size: 11px; color: #333; margin-top: 4px; }
+.inv-meta-row strong { color: #000; }
 
 /* ── Two-column info row ── */
 .inv-info-row {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 16px;
-    margin-bottom: 22px;
+    gap: 14px;
+    margin-bottom: 20px;
 }
-.inv-box {
-    border: 1px solid #e5e7eb;
-    border-radius: 8px;
-    padding: 12px 14px;
-}
+.inv-box { border: 1px solid #000; padding: 10px 12px; }
 .inv-box-title {
-    font-size: 10px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: .6px;
-    color: #9ca3af;
-    margin-bottom: 6px;
+    font-size: 10px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: .6px; color: #000; margin-bottom: 5px;
+    border-bottom: 1px solid #ccc; padding-bottom: 4px;
 }
-.inv-box-name {
-    font-size: 15px;
-    font-weight: 700;
-    color: #111827;
-    margin-bottom: 3px;
-}
-.inv-box-detail {
-    font-size: 11px;
-    color: #6b7280;
-    line-height: 1.7;
-}
+.inv-box-name { font-size: 14px; font-weight: 700; color: #000; margin-bottom: 3px; }
+.inv-box-detail { font-size: 11px; color: #222; line-height: 1.7; }
 
 /* ── Items table ── */
-.inv-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-bottom: 20px;
-    font-size: 12px;
-}
+.inv-table { width: 100%; border-collapse: collapse; margin-bottom: 0; font-size: 12px; }
 .inv-table thead th {
-    background: #1d4ed8;
+    background: #000;
     color: #fff;
-    padding: 8px 12px;
-    font-weight: 600;
+    padding: 7px 10px;
+    font-weight: 700;
     text-align: left;
     font-size: 11px;
     text-transform: uppercase;
     letter-spacing: .4px;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
 }
 .inv-table thead th:last-child { text-align: right; }
-.inv-table tbody td {
-    padding: 9px 12px;
-    border-bottom: 1px solid #f3f4f6;
-    vertical-align: middle;
-}
+.inv-table tbody td { padding: 8px 10px; border-bottom: 1px solid #ccc; vertical-align: middle; }
 .inv-table tbody tr:last-child td { border-bottom: none; }
-.inv-table tbody td:last-child { text-align: right; font-weight: 600; }
-.inv-table tfoot td {
-    padding: 7px 12px;
-    font-size: 12px;
-}
-.inv-table tfoot tr.subtotal td { border-top: 1px solid #e5e7eb; }
+.inv-table tbody td:last-child { text-align: right; font-weight: 700; }
+.inv-table tfoot td { padding: 6px 10px; font-size: 12px; }
+.inv-table tfoot tr.subtotal td { border-top: 1px solid #999; }
 .inv-table tfoot tr.total-row td {
-    font-size: 14px;
-    font-weight: 800;
-    border-top: 2px solid #1d4ed8;
-    color: #1d4ed8;
-    padding-top: 10px;
+    font-size: 14px; font-weight: 800; color: #000;
+    border-top: 2px solid #000; padding-top: 8px;
 }
 .inv-table tfoot td:last-child { text-align: right; }
 
-/* ── Medicines list in table ── */
-.med-pill {
+/* ── Medicines ── */
+.med-list { font-size: 12px; color: #000; margin-top: 3px; }
+
+/* ── Divider before totals ── */
+.inv-totals-wrap { border: 1px solid #000; margin-bottom: 20px; }
+
+/* ── Tax info row ── */
+.inv-tax-row { font-size: 11px; color: #333; margin-bottom: 16px; display: flex; gap: 20px; flex-wrap: wrap; }
+.inv-tax-row span strong { color: #000; }
+
+/* ── PAID stamp ── */
+.inv-paid {
     display: inline-block;
-    background: #eff6ff;
-    color: #1d4ed8;
-    border-radius: 12px;
-    padding: 2px 9px;
-    font-size: 11px;
-    margin: 2px 3px 2px 0;
-    font-weight: 500;
+    border: 2px solid #000;
+    padding: 1px 10px;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 1px;
+    margin-top: 4px;
 }
 
 /* ── Footer ── */
 .inv-footer {
     position: absolute;
-    bottom: 32px;
-    left: 44px;
-    right: 44px;
-    border-top: 1px solid #e5e7eb;
-    padding-top: 12px;
+    bottom: 32px; left: 44px; right: 44px;
+    border-top: 1px solid #000;
+    padding-top: 10px;
     display: flex;
     justify-content: space-between;
     align-items: flex-end;
 }
-.inv-footer-note {
-    font-size: 10px;
-    color: #9ca3af;
-}
-.inv-signature {
-    text-align: center;
-}
-.inv-signature-line {
-    width: 140px;
-    border-top: 1px solid #374151;
-    margin-bottom: 4px;
-}
-.inv-signature-label {
-    font-size: 10px;
-    color: #6b7280;
-}
+.inv-footer-note { font-size: 10px; color: #444; }
+.inv-signature { text-align: center; }
+.inv-signature-line { width: 140px; border-top: 1px solid #000; margin-bottom: 4px; }
+.inv-signature-label { font-size: 10px; color: #222; }
 
-/* ── Tax info row ── */
-.inv-tax-row {
-    font-size: 11px;
-    color: #6b7280;
-    margin-bottom: 18px;
-    display: flex;
-    gap: 20px;
-    flex-wrap: wrap;
-}
-.inv-tax-row span strong { color: #374151; }
-
-/* ── Print button ── */
+/* ── Print bar ── */
 .print-bar {
-    display: flex;
-    justify-content: center;
-    gap: 10px;
-    padding: 12px 0 0;
-    margin-bottom: 8px;
+    display: flex; justify-content: center; gap: 10px;
+    padding: 12px 0 0; margin-bottom: 8px;
 }
 .print-btn {
-    padding: 8px 28px;
-    background: #1d4ed8;
-    color: #fff;
-    border: none;
-    border-radius: 6px;
-    font-size: 13px;
-    font-weight: 600;
-    cursor: pointer;
+    padding: 8px 28px; background: #000; color: #fff;
+    border: none; font-size: 13px; font-weight: 600; cursor: pointer;
 }
-.print-btn:hover { background: #1e40af; }
+.print-btn:hover { background: #333; }
 .close-btn {
-    padding: 8px 18px;
-    background: #fff;
-    color: #374151;
-    border: 1px solid #d1d5db;
-    border-radius: 6px;
-    font-size: 13px;
-    font-weight: 600;
-    cursor: pointer;
+    padding: 8px 18px; background: #fff; color: #000;
+    border: 1px solid #000; font-size: 13px; font-weight: 600; cursor: pointer;
 }
 
-/* ── Print media ── */
 @media print {
     body { background: #fff; }
     .print-bar { display: none !important; }
-    .inv-page {
-        margin: 0;
-        box-shadow: none;
-        padding: 24px 28px;
-        min-height: unset;
-    }
+    .inv-page { margin: 0; box-shadow: none; padding: 24px 28px; min-height: unset; }
 }
 </style>
 </head>
@@ -330,9 +240,7 @@ body {
         <div class="inv-meta">
             <div class="inv-number"><?php echo htmlspecialchars($invoiceNo); ?></div>
             <div class="inv-meta-row"><strong>Date:</strong> <?php echo $visitDate; ?></div>
-            <div class="inv-meta-row" style="margin-top:2px;">
-                <span style="background:#dcfce7;color:#166534;border-radius:20px;padding:2px 10px;font-size:10px;font-weight:700;">PAID</span>
-            </div>
+            <div style="margin-top:6px;"><span class="inv-paid">PAID</span></div>
         </div>
     </div>
 
@@ -402,11 +310,7 @@ body {
                 <td>2</td>
                 <td>
                     <strong>Medicines Prescribed</strong>
-                    <div style="margin-top:4px;">
-                        <?php foreach ($medicines as $med): ?>
-                            <span class="med-pill"><?php echo htmlspecialchars($med); ?></span>
-                        <?php endforeach; ?>
-                    </div>
+                    <div class="med-list"><?php echo htmlspecialchars(implode(', ', $medicines)); ?></div>
                     <div style="font-size:10px;color:#9ca3af;margin-top:4px;">For reference only — dispensed separately</div>
                 </td>
                 <td style="color:#9ca3af;font-weight:400;">—</td>
