@@ -129,16 +129,26 @@ class Patient extends BaseModel {
         $parts = explode(' ', trim($name), 2);
         $fname = $parts[0] ?? $name;
         $lname = $parts[1] ?? '';
-        // patient_id is INT — use timestamp-based unique number
+
+        // Insert with patient_id = 0 as placeholder, then update to match auto-increment id
         $data = [
-            'patient_id' => (int)(date('ymd') . rand(10, 99)),
+            'patient_id' => 0,
             'fname'      => $fname,
             'lname'      => $lname,
             'contact_no' => $phone,
             'dor'        => date('Y-m-d'),
         ];
         if ($chief !== '') $data['chief'] = $chief;
-        return $this->insert($data);
+
+        $id = $this->insert($data); // gets MySQL auto-increment id
+
+        // Update patient_id to match the row id — guaranteed unique, no collision
+        $this->query(
+            "UPDATE {$this->table} SET patient_id = ? WHERE id = ?",
+            [$id, $id]
+        );
+
+        return $id;
     }
 
     public function create($data) {
