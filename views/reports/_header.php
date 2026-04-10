@@ -63,7 +63,7 @@ $showYearPicker  = $showYearPicker ?? false;
     <div style="margin-left:auto;display:flex;align-items:center;gap:6px;">
         <label style="font-size:11px;color:#6b7280;white-space:nowrap;margin:0;">Year:</label>
         <select class="form-control form-control-sm" style="width:90px;font-size:12px;"
-                onchange="location='<?php echo $reportBase; ?>?period=<?php echo $period; ?>&year='+this.value">
+                onchange="location='<?php echo $reportBase; ?>?period=year&year='+this.value">
             <?php for ($y = (int)date('Y'); $y >= (int)date('Y') - 9; $y--): ?>
                 <option value="<?php echo $y; ?>" <?php echo $y === $selectedYear ? 'selected' : ''; ?>>
                     <?php echo $y; ?>
