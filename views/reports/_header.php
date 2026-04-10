@@ -2,25 +2,64 @@
 /**
  * Shared report header partial.
  * Requires: $reportData (array with 'period','from','to','year'), $reportTitle, $reportIcon, $reportBase
- * Optional: $showYearPicker = true (default false) — shows year dropdown in period bar
+ * Optional: $showYearPicker = true — enables year select inside the "This Year" button
  */
-$period          = $reportData['period'] ?? 'week';
-$from            = $reportData['from']   ?? date('Y-m-d');
-$to              = $reportData['to']     ?? date('Y-m-d');
-$selectedYear    = (int)($reportData['year'] ?? date('Y'));
-$showYearPicker  = $showYearPicker ?? false;
+$period         = $reportData['period'] ?? 'week';
+$from           = $reportData['from']   ?? date('Y-m-d');
+$to             = $reportData['to']     ?? date('Y-m-d');
+$selectedYear   = (int)($reportData['year'] ?? date('Y'));
+$showYearPicker = $showYearPicker ?? false;
+
+/**
+ * Returns a compact, human-readable period label for chart subtitles.
+ * Examples:
+ *   year,  2025           → "Year 2025"
+ *   month, 2026-04-01..30 → "April 2026"
+ *   week,  2026-04-07..13 → "7–13 Apr 2026"
+ *   today, 2026-04-10     → "10 Apr 2026"
+ *   custom, any range     → "1 Apr – 25 Apr 2026" or "1 Apr 2025 – 25 Apr 2026"
+ */
+function rPeriodLabel(string $period, string $from, string $to): string {
+    switch ($period) {
+        case 'year':
+            return 'Year ' . date('Y', strtotime($from));
+        case 'month':
+            return date('F Y', strtotime($from));
+        case 'week':
+            $f = date('j M', strtotime($from));
+            $t = date('j M Y', strtotime($to));
+            return $f . ' – ' . $t;
+        case 'today':
+            return date('j F Y', strtotime($from));
+        default: // custom
+            $fy = date('Y', strtotime($from));
+            $ty = date('Y', strtotime($to));
+            if ($fy === $ty) {
+                return date('j M', strtotime($from)) . ' – ' . date('j M Y', strtotime($to));
+            }
+            return date('j M Y', strtotime($from)) . ' – ' . date('j M Y', strtotime($to));
+    }
+}
+
+$periodLabel = rPeriodLabel($period, $from, $to);
 ?>
 <style>
 /* ── Report shared styles ──────────────────────────────────────── */
 .report-period-bar { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:18px; }
-.period-btn { padding:5px 14px; border:2px solid #e5e7eb; border-radius:20px; background:#fff; font-size:12px; font-weight:600; color:#6b7280; cursor:pointer; transition:.15s; text-decoration:none; }
+.period-btn { padding:5px 14px; border:2px solid #e5e7eb; border-radius:20px; background:#fff; font-size:12px; font-weight:600; color:#6b7280; cursor:pointer; transition:.15s; text-decoration:none; white-space:nowrap; }
 .period-btn:hover { border-color:#93c5fd; color:var(--primary); }
 .period-btn.active { border-color:var(--primary); background:var(--primary); color:#fff; }
+/* Year btn: active state bleeds into the inline select */
+.year-btn.active a { color:#fff; }
+.year-btn.active select { color:#fff; border-left-color:rgba(255,255,255,.3); }
+.year-btn.active select option { color:#374151; background:#fff; }
+.border-primary { border-color:var(--primary) !important; }
 .stat-box { background:#fff; border:1px solid #e5e7eb; border-radius:10px; padding:14px 18px; }
 .stat-box .sv { font-size:26px; font-weight:800; line-height:1; }
 .stat-box .sl { font-size:11px; color:#6b7280; margin-top:3px; }
 .chart-card { background:#fff; border:1px solid #e5e7eb; border-radius:10px; padding:16px; margin-bottom:16px; }
-.chart-card h6 { font-size:12px; font-weight:700; color:#374151; margin-bottom:12px; text-transform:uppercase; letter-spacing:.5px; }
+.chart-card h6 { font-size:12px; font-weight:700; color:#374151; margin-bottom:2px; text-transform:uppercase; letter-spacing:.5px; }
+.chart-period { font-size:11px; color:#9ca3af; font-weight:400; margin-bottom:12px; display:block; }
 .report-grid-4 { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:16px; }
 .report-grid-3 { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-bottom:16px; }
 .report-grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:16px; }
@@ -36,46 +75,75 @@ $showYearPicker  = $showYearPicker ?? false;
     </h1>
 </div>
 
-<!-- Period picker -->
+<!--
+  Period picker — three mutually exclusive modes, no URL conflicts:
+  1. Quick buttons: Today / This Week / This Month  → period=today|week|month  (no year param)
+  2. This Year button + inline year select           → period=year&year=YYYY
+  3. Custom range toggle                             → period=custom&from=&to=  (no year param)
+  Active mode is highlighted; other modes are inactive/collapsed.
+-->
 <div class="report-period-bar">
-    <?php
-    $periods = ['today'=>'Today','week'=>'This Week','month'=>'This Month','year'=>'This Year'];
-    foreach ($periods as $key => $label):
-        $active = ($period === $key) ? 'active' : '';
-        // Always carry year param so switching period doesn't reset the year
-        $href = $reportBase . '?period=' . $key . '&year=' . $selectedYear;
-    ?>
-        <a href="<?php echo $href; ?>" class="period-btn <?php echo $active; ?>"><?php echo $label; ?></a>
-    <?php endforeach; ?>
 
-    <!-- Custom range -->
-    <form method="GET" action="<?php echo $reportBase; ?>" style="display:flex;align-items:center;gap:6px;margin-left:4px;">
-        <input type="hidden" name="period" value="custom">
-        <input type="hidden" name="year" value="<?php echo $selectedYear; ?>">
-        <input type="date" name="from" value="<?php echo htmlspecialchars($period==='custom'?$from:date('Y-m-01')); ?>" class="form-control form-control-sm" style="width:130px;">
-        <span style="color:#9ca3af;font-size:12px;">to</span>
-        <input type="date" name="to" value="<?php echo htmlspecialchars($period==='custom'?$to:date('Y-m-d')); ?>" class="form-control form-control-sm" style="width:130px;">
-        <button type="submit" class="btn btn-secondary btn-sm">Go</button>
-    </form>
+    <!-- Quick buttons -->
+    <a href="<?php echo $reportBase; ?>?period=today"
+       class="period-btn <?php echo $period==='today'?'active':''; ?>">Today</a>
 
-    <!-- Year dropdown — shown on pages that set $showYearPicker = true -->
-    <?php if ($showYearPicker): ?>
-    <div style="margin-left:auto;display:flex;align-items:center;gap:6px;">
-        <label style="font-size:11px;color:#6b7280;white-space:nowrap;margin:0;">Year:</label>
-        <select class="form-control form-control-sm" style="width:90px;font-size:12px;"
-                onchange="location='<?php echo $reportBase; ?>?period=year&year='+this.value">
+    <a href="<?php echo $reportBase; ?>?period=week"
+       class="period-btn <?php echo $period==='week'?'active':''; ?>">This Week</a>
+
+    <a href="<?php echo $reportBase; ?>?period=month"
+       class="period-btn <?php echo $period==='month'?'active':''; ?>">This Month</a>
+
+    <!-- This Year button with inline year select — only these two share the year param -->
+    <span class="period-btn year-btn <?php echo $period==='year'?'active':''; ?>"
+          style="display:inline-flex;align-items:center;gap:0;padding:0;overflow:hidden;">
+        <a href="<?php echo $reportBase; ?>?period=year&year=<?php echo $selectedYear; ?>"
+           style="padding:5px 8px 5px 14px;color:inherit;text-decoration:none;display:block;">
+            This Year
+        </a>
+        <?php if ($showYearPicker): ?>
+        <select onchange="location='<?php echo $reportBase; ?>?period=year&year='+this.value"
+                style="border:none;border-left:1px solid #e5e7eb;background:transparent;font-size:12px;
+                       font-weight:600;color:<?php echo $period==='year'?'#fff':'#6b7280'; ?>;
+                       padding:5px 6px 5px 4px;cursor:pointer;outline:none;appearance:auto;">
             <?php for ($y = (int)date('Y'); $y >= (int)date('Y') - 9; $y--): ?>
-                <option value="<?php echo $y; ?>" <?php echo $y === $selectedYear ? 'selected' : ''; ?>>
+                <option value="<?php echo $y; ?>" <?php echo $y===$selectedYear?'selected':''; ?>
+                        style="color:#374151;background:#fff;">
                     <?php echo $y; ?>
                 </option>
             <?php endfor; ?>
         </select>
-    </div>
-    <?php else: ?>
-    <span style="margin-left:auto;font-size:11px;color:#9ca3af;">
-        <?php echo date('d M Y', strtotime($from)); ?> – <?php echo date('d M Y', strtotime($to)); ?>
+        <?php endif; ?>
     </span>
-    <?php endif; ?>
+
+    <!-- Divider -->
+    <span style="color:#e5e7eb;font-size:16px;margin:0 2px;">|</span>
+
+    <!-- Custom range — always visible, activates on submit -->
+    <form method="GET" action="<?php echo $reportBase; ?>"
+          style="display:flex;align-items:center;gap:5px;">
+        <input type="hidden" name="period" value="custom">
+        <input type="date" name="from"
+               value="<?php echo htmlspecialchars($period==='custom' ? $from : date('Y-m-01')); ?>"
+               class="form-control form-control-sm <?php echo $period==='custom'?'border-primary':''; ?>"
+               style="width:125px;font-size:12px;">
+        <span style="color:#9ca3af;font-size:11px;">→</span>
+        <input type="date" name="to"
+               value="<?php echo htmlspecialchars($period==='custom' ? $to : date('Y-m-d')); ?>"
+               class="form-control form-control-sm <?php echo $period==='custom'?'border-primary':''; ?>"
+               style="width:125px;font-size:12px;">
+        <button type="submit"
+                class="btn btn-sm <?php echo $period==='custom'?'btn-primary':'btn-secondary'; ?>">
+            <?php echo $period==='custom' ? 'Custom ✓' : 'Go'; ?>
+        </button>
+    </form>
+
+    <!-- Active range label — right side -->
+    <span style="margin-left:auto;font-size:11px;color:#9ca3af;white-space:nowrap;">
+        <i class="fas fa-calendar-alt" style="margin-right:3px;"></i>
+        <?php echo $periodLabel; ?>
+    </span>
+
 </div>
 
 <!-- Chart.js (loaded once via flag) -->

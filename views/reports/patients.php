@@ -62,6 +62,7 @@ $monthVals   = json_encode($mCounts);
 <!-- New registrations trend with toggle -->
 <div class="chart-card">
     <h6><i class="fas fa-chart-line"></i> New Patient Registrations <span id="regPills"></span></h6>
+    <span class="chart-period"><?php echo $periodLabel; ?></span>
     <canvas id="chartReg" height="80"></canvas>
 </div>
 <script>
@@ -92,7 +93,8 @@ $monthVals   = json_encode($mCounts);
 
     <!-- Gender doughnut -->
     <div class="chart-card">
-        <h6><i class="fas fa-venus-mars"></i> Gender Distribution (All Time)</h6>
+        <h6><i class="fas fa-venus-mars"></i> Gender Distribution</h6>
+        <span class="chart-period">All Time</span>
         <?php
         $genderMap   = ['M'=>'Male','F'=>'Female',''=>'Unknown'];
         $genderTotal = array_sum(array_column($gender, 'count'));
@@ -145,7 +147,8 @@ $monthVals   = json_encode($mCounts);
     <!-- Age groups with counts on bars -->
     <?php if (!empty($ageGroups)): ?>
     <div class="chart-card">
-        <h6><i class="fas fa-chart-bar"></i> Age Groups (All Time)</h6>
+        <h6><i class="fas fa-chart-bar"></i> Age Groups</h6>
+        <span class="chart-period">All Time</span>
         <canvas id="chartAge" height="140"></canvas>
         <!-- Counts summary row -->
         <div style="display:flex;justify-content:space-around;margin-top:10px;flex-wrap:wrap;gap:6px;">
@@ -188,7 +191,8 @@ $monthVals   = json_encode($mCounts);
 <!-- Top complaints -->
 <?php if (!empty($complaints)): ?>
 <div class="chart-card" style="overflow-x:auto;">
-    <h6><i class="fas fa-notes-medical"></i> Top Chief Complaints (All Time)</h6>
+    <h6><i class="fas fa-notes-medical"></i> Top Chief Complaints</h6>
+    <span class="chart-period">All Time</span>
     <?php $maxC = (int)($complaints[0]['count'] ?? 1); ?>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px 24px;">
     <?php foreach ($complaints as $c): ?>

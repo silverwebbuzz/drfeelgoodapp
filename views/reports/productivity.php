@@ -57,6 +57,7 @@ $monthVals   = json_encode($mVals);
 <!-- Patients seen chart with toggle -->
 <div class="chart-card">
     <h6><i class="fas fa-chart-bar"></i> Patients Seen <span id="seenPills"></span></h6>
+    <span class="chart-period"><?php echo $periodLabel; ?></span>
     <canvas id="chartSeen" height="80"></canvas>
 </div>
 <script>
@@ -88,6 +89,7 @@ $monthVals   = json_encode($mVals);
     <?php if (!empty($consultTrend)): ?>
     <div class="chart-card">
         <h6><i class="fas fa-stopwatch"></i> Avg Consultation Time (min)</h6>
+        <span class="chart-period"><?php echo $periodLabel; ?></span>
         <canvas id="chartConsult" height="120"></canvas>
     </div>
     <script>
@@ -113,6 +115,7 @@ $monthVals   = json_encode($mVals);
     <?php if (!empty($busyDays)): ?>
     <div class="chart-card">
         <h6><i class="fas fa-calendar-week"></i> Load by Day of Week</h6>
+        <span class="chart-period"><?php echo $periodLabel; ?></span>
         <canvas id="chartDow" height="120"></canvas>
     </div>
     <script>

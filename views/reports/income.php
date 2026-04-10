@@ -12,7 +12,7 @@ $byMonth = $reportData['byMonth'] ?? [];
 $period  = $reportData['period']  ?? 'week';
 $year    = $reportData['year']    ?? date('Y');
 
-$showYearPicker = true;
+$showYearPicker = true; // enables inline year select inside "This Year" button
 require __DIR__ . '/_header.php';
 
 function rFmt($n) { return '₹' . number_format((float)$n, 0); }
@@ -53,6 +53,7 @@ $monthVals   = json_encode($monthTotals);
 <!-- Revenue trend chart with toggle -->
 <div class="chart-card">
     <h6><i class="fas fa-chart-bar"></i> Revenue Trend <span id="revenuePills"></span></h6>
+    <span class="chart-period"><?php echo $periodLabel; ?></span>
     <canvas id="chartRevenue" height="80"></canvas>
 </div>
 <script>
@@ -96,6 +97,7 @@ $monthVals   = json_encode($monthTotals);
     <?php if (!empty($byWeek)): ?>
     <div class="chart-card" style="overflow-x:auto;">
         <h6><i class="fas fa-table"></i> Weekly Breakdown</h6>
+        <span class="chart-period"><?php echo $periodLabel; ?></span>
         <table class="table" style="margin:0;font-size:12px;">
             <thead><tr><th>Week of</th><th style="text-align:right;">Revenue</th><th style="text-align:right;">Visits</th></tr></thead>
             <tbody>
@@ -113,7 +115,8 @@ $monthVals   = json_encode($monthTotals);
 
     <!-- Monthly bar chart — full year, driven by year dropdown -->
     <div class="chart-card">
-        <h6><i class="fas fa-calendar-alt"></i> Monthly Revenue — <?php echo $year; ?></h6>
+        <h6><i class="fas fa-calendar-alt"></i> Monthly Revenue</h6>
+        <span class="chart-period">Year <?php echo $year; ?></span>
         <canvas id="chartMonth" height="120"></canvas>
         <script>
         (function(){

@@ -53,6 +53,7 @@ $monthVals   = json_encode($mVals);
 <!-- Prescription activity trend with toggle -->
 <div class="chart-card">
     <h6><i class="fas fa-chart-line"></i> Prescription Activity <span id="rxPills"></span></h6>
+    <span class="chart-period"><?php echo $periodLabel; ?></span>
     <canvas id="chartRx" height="70"></canvas>
 </div>
 <script>
@@ -85,6 +86,7 @@ $monthVals   = json_encode($mVals);
     <?php if (!empty($topMeds)): ?>
     <div class="chart-card">
         <h6><i class="fas fa-chart-bar"></i> Top Medicines by Count</h6>
+        <span class="chart-period"><?php echo $periodLabel; ?></span>
         <canvas id="chartMeds" height="<?php echo min(count($topMeds) * 22, 300); ?>"></canvas>
     </div>
     <script>
@@ -113,6 +115,7 @@ $monthVals   = json_encode($mVals);
     <?php if (!empty($topMeds)): ?>
     <div class="chart-card" style="overflow-x:auto;">
         <h6><i class="fas fa-table"></i> Ranked List</h6>
+        <span class="chart-period"><?php echo $periodLabel; ?></span>
         <table class="table" style="margin:0;font-size:12px;">
             <thead><tr><th>#</th><th>Medicine</th><th style="text-align:right;">Count</th><th style="text-align:right;">Share</th></tr></thead>
             <tbody>

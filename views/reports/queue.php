@@ -71,6 +71,7 @@ $monthCan    = json_encode($mCan);
 <!-- Appointments stacked chart with toggle -->
 <div class="chart-card">
     <h6><i class="fas fa-chart-bar"></i> Appointment Breakdown <span id="apptPills"></span></h6>
+    <span class="chart-period"><?php echo $periodLabel; ?></span>
     <canvas id="chartAppt" height="80"></canvas>
 </div>
 <script>
@@ -106,6 +107,7 @@ $monthCan    = json_encode($mCan);
     <?php if (!empty($busyDays)): ?>
     <div class="chart-card">
         <h6><i class="fas fa-calendar-week"></i> Busiest Days of Week</h6>
+        <span class="chart-period"><?php echo $periodLabel; ?></span>
         <canvas id="chartDow" height="120"></canvas>
     </div>
     <script>
@@ -129,6 +131,7 @@ $monthCan    = json_encode($mCan);
     <?php if (!empty($busySlots)): ?>
     <div class="chart-card" style="overflow-x:auto;">
         <h6><i class="fas fa-clock"></i> Top Time Slots</h6>
+        <span class="chart-period"><?php echo $periodLabel; ?></span>
         <?php
         function to12r($t){ [$h,$m]=explode(':',$t); $h=(int)$h; return ($h%12?:12).':'.str_pad($m,2,'0',STR_PAD_LEFT).' '.($h<12?'AM':'PM'); }
         $maxS = (int)($busySlots[0]['total'] ?? 1);
@@ -153,6 +156,7 @@ $monthCan    = json_encode($mCan);
 <?php if (!empty($consultTime['sample_count'])): ?>
 <div class="chart-card" style="max-width:500px;">
     <h6><i class="fas fa-stopwatch"></i> Consultation Duration</h6>
+    <span class="chart-period"><?php echo $periodLabel; ?></span>
     <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;text-align:center;">
         <div><div style="font-size:22px;font-weight:800;color:#2563eb;"><?php echo $consultTime['avg_minutes']; ?> min</div><div style="font-size:11px;color:#9ca3af;">Average</div></div>
         <div><div style="font-size:22px;font-weight:800;color:#16a34a;"><?php echo $consultTime['min_minutes']; ?> min</div><div style="font-size:11px;color:#9ca3af;">Shortest</div></div>
