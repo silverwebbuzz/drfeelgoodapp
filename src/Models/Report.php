@@ -291,19 +291,95 @@ class Report extends BaseModel {
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
+    /** Prescriptions per week for a range */
+    public function prescriptionsByWeek(string $from, string $to): array {
+        $sql = "SELECT YEARWEEK(date,1) as yw, MIN(date) as week_start, COUNT(*) as prescriptions
+                FROM {$this->table}
+                WHERE date BETWEEN ? AND ?
+                AND medicins IS NOT NULL AND TRIM(medicins) != ''
+                GROUP BY yw ORDER BY yw ASC";
+        $stmt = $this->query($sql, [$from, $to]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    /** Prescriptions per month for a year */
+    public function prescriptionsByMonth(int $year): array {
+        $sql = "SELECT DATE_FORMAT(date,'%Y-%m') as month, COUNT(*) as prescriptions
+                FROM {$this->table}
+                WHERE YEAR(date) = ?
+                AND medicins IS NOT NULL AND TRIM(medicins) != ''
+                GROUP BY month ORDER BY month ASC";
+        $stmt = $this->query($sql, [$year]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
     // ══════════════════════════════════════════════════════════════════════════
     // DOCTOR PRODUCTIVITY
     // ══════════════════════════════════════════════════════════════════════════
 
     /** Patients seen per day */
     public function patientsSeen(string $from, string $to): array {
-        $sql = "SELECT
-                    appt_date as day,
-                    COUNT(*) as seen
+        $sql = "SELECT appt_date as day, COUNT(*) as seen
+                FROM appointments
+                WHERE appt_date BETWEEN ? AND ? AND status='completed'
+                GROUP BY appt_date ORDER BY appt_date ASC";
+        $stmt = $this->query($sql, [$from, $to]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    /** Patients seen per week */
+    public function patientsSeenByWeek(string $from, string $to): array {
+        $sql = "SELECT YEARWEEK(appt_date,1) as yw, MIN(appt_date) as week_start, COUNT(*) as seen
+                FROM appointments
+                WHERE appt_date BETWEEN ? AND ? AND status='completed'
+                GROUP BY yw ORDER BY yw ASC";
+        $stmt = $this->query($sql, [$from, $to]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    /** Patients seen per month for a year */
+    public function patientsSeenByMonth(int $year): array {
+        $sql = "SELECT DATE_FORMAT(appt_date,'%Y-%m') as month, COUNT(*) as seen
+                FROM appointments
+                WHERE YEAR(appt_date)=? AND status='completed'
+                GROUP BY month ORDER BY month ASC";
+        $stmt = $this->query($sql, [$year]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    /** Appointments per week */
+    public function appointmentsByWeek(string $from, string $to): array {
+        $sql = "SELECT YEARWEEK(appt_date,1) as yw, MIN(appt_date) as week_start,
+                    COUNT(*) as total,
+                    SUM(status='completed') as completed,
+                    SUM(status='no_show') as no_show,
+                    SUM(status='cancelled') as cancelled
                 FROM appointments
                 WHERE appt_date BETWEEN ? AND ?
-                AND status = 'completed'
-                GROUP BY appt_date ORDER BY appt_date ASC";
+                GROUP BY yw ORDER BY yw ASC";
+        $stmt = $this->query($sql, [$from, $to]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    /** Appointments per month for a year */
+    public function appointmentsByMonth(int $year): array {
+        $sql = "SELECT DATE_FORMAT(appt_date,'%Y-%m') as month,
+                    COUNT(*) as total,
+                    SUM(status='completed') as completed,
+                    SUM(status='no_show') as no_show,
+                    SUM(status='cancelled') as cancelled
+                FROM appointments
+                WHERE YEAR(appt_date)=?
+                GROUP BY month ORDER BY month ASC";
+        $stmt = $this->query($sql, [$year]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    /** New patients by week */
+    public function newPatientsByWeek(string $from, string $to): array {
+        $sql = "SELECT YEARWEEK(dor,1) as yw, MIN(dor) as week_start, COUNT(*) as count
+                FROM patient WHERE dor BETWEEN ? AND ?
+                GROUP BY yw ORDER BY yw ASC";
         $stmt = $this->query($sql, [$from, $to]);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }

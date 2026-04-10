@@ -7,14 +7,30 @@ ob_start();
 
 $summary = $reportData['summary'] ?? [];
 $byDay   = $reportData['byDay']   ?? [];
-$byMonth = $reportData['byMonth'] ?? [];
 $byWeek  = $reportData['byWeek']  ?? [];
+$byMonth = $reportData['byMonth'] ?? [];
 $period  = $reportData['period']  ?? 'week';
 $year    = $reportData['year']    ?? date('Y');
 
 require __DIR__ . '/_header.php';
 
 function rFmt($n) { return '₹' . number_format((float)$n, 0); }
+
+// Default chart granularity matches page period
+$defaultG = in_array($period, ['today','week']) ? 'day' : ($period === 'month' ? 'week' : 'month');
+
+// Build JS datasets
+$dayLabels   = json_encode(array_column($byDay,   'day'));
+$dayVals     = json_encode(array_map(fn($r)=>(int)$r['total'], $byDay));
+
+$weekLabels  = json_encode(array_map(fn($r)=>date('d M', strtotime($r['week_start'])), $byWeek));
+$weekVals    = json_encode(array_map(fn($r)=>(int)$r['total'], $byWeek));
+
+$allMonths   = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+$monthTotals = array_fill(0, 12, 0);
+foreach ($byMonth as $r) { $monthTotals[(int)explode('-',$r['month'])[1]-1] = (int)$r['total']; }
+$monthLabels = json_encode($allMonths);
+$monthVals   = json_encode($monthTotals);
 ?>
 
 <!-- Summary cards -->
@@ -33,24 +49,21 @@ function rFmt($n) { return '₹' . number_format((float)$n, 0); }
     </div>
 </div>
 
-<!-- Daily / period chart -->
-<?php if (!empty($byDay)): ?>
+<!-- Revenue trend chart with toggle -->
 <div class="chart-card">
-    <h6><i class="fas fa-chart-bar"></i> Revenue — Day by Day</h6>
-    <canvas id="chartDay" height="80"></canvas>
+    <h6><i class="fas fa-chart-bar"></i> Revenue Trend <span id="revenuePills"></span></h6>
+    <canvas id="chartRevenue" height="80"></canvas>
 </div>
 <script>
 (function(){
-    const labels = <?php echo json_encode(array_column($byDay,'day')); ?>;
-    const totals = <?php echo json_encode(array_map(fn($r)=>(int)$r['total'], $byDay)); ?>;
-    const ctx = document.getElementById('chartDay').getContext('2d');
-    new Chart(ctx, {
+    const ctx = document.getElementById('chartRevenue').getContext('2d');
+    const chart = new Chart(ctx, {
         type: 'bar',
         data: {
-            labels,
+            labels: [],
             datasets: [{
                 label: 'Revenue (₹)',
-                data: totals,
+                data: [],
                 backgroundColor: CHART_COLORS.primary + 'bb',
                 borderColor: CHART_COLORS.primary,
                 borderWidth: 1,
@@ -60,53 +73,24 @@ function rFmt($n) { return '₹' . number_format((float)$n, 0); }
         options: {
             responsive: true,
             plugins: { legend: { display: false } },
-            scales: {
-                y: { beginAtZero:true, ticks:{ callback: v => '₹'+v.toLocaleString() } }
-            }
+            scales: { y: { beginAtZero:true, ticks:{ callback: v => '₹'+v.toLocaleString() } } }
         }
     });
+
+    const datasets = {
+        day:   { labels: <?php echo $dayLabels; ?>,   values: <?php echo $dayVals; ?> },
+        week:  { labels: <?php echo $weekLabels; ?>,  values: <?php echo $weekVals; ?> },
+        month: { labels: <?php echo $monthLabels; ?>, values: <?php echo $monthVals; ?> },
+    };
+
+    document.getElementById('revenuePills').outerHTML = buildTogglePills(['day','week','month'], '<?php echo $defaultG; ?>');
+    chartToggle('chartRevenue', datasets, '<?php echo $defaultG; ?>');
 })();
 </script>
-<?php endif; ?>
 
 <div class="report-grid-2">
-    <!-- Monthly bar chart -->
-    <?php if (!empty($byMonth)): ?>
-    <div class="chart-card">
-        <h6><i class="fas fa-calendar-alt"></i> Monthly Revenue — <?php echo $year; ?></h6>
-        <canvas id="chartMonth" height="120"></canvas>
-    </div>
-    <script>
-    (function(){
-        const allMonths = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-        const raw = <?php echo json_encode($byMonth); ?>;
-        const totals = Array(12).fill(0);
-        raw.forEach(r => { const m = parseInt(r.month.split('-')[1])-1; totals[m] = parseInt(r.total); });
-        const ctx = document.getElementById('chartMonth').getContext('2d');
-        new Chart(ctx, {
-            type: 'bar',
-            data: {
-                labels: allMonths,
-                datasets: [{
-                    label: 'Revenue (₹)',
-                    data: totals,
-                    backgroundColor: CHART_COLORS.green + 'bb',
-                    borderColor: CHART_COLORS.green,
-                    borderWidth: 1,
-                    borderRadius: 4,
-                }]
-            },
-            options: {
-                responsive: true,
-                plugins: { legend: { display:false } },
-                scales: { y: { beginAtZero:true, ticks:{ callback: v => '₹'+v.toLocaleString() } } }
-            }
-        });
-    })();
-    </script>
-    <?php endif; ?>
 
-    <!-- Weekly table -->
+    <!-- Weekly breakdown table -->
     <?php if (!empty($byWeek)): ?>
     <div class="chart-card" style="overflow-x:auto;">
         <h6><i class="fas fa-table"></i> Weekly Breakdown</h6>
@@ -124,13 +108,34 @@ function rFmt($n) { return '₹' . number_format((float)$n, 0); }
         </table>
     </div>
     <?php endif; ?>
+
+    <!-- Monthly bar chart — always shows full year -->
+    <div class="chart-card">
+        <h6><i class="fas fa-calendar-alt"></i> Monthly Revenue — <?php echo $year; ?></h6>
+        <canvas id="chartMonth" height="120"></canvas>
+    </div>
+    <script>
+    (function(){
+        new Chart(document.getElementById('chartMonth'), {
+            type: 'bar',
+            data: {
+                labels: <?php echo $monthLabels; ?>,
+                datasets: [{ label:'Revenue (₹)', data: <?php echo $monthVals; ?>,
+                    backgroundColor:CHART_COLORS.green+'bb', borderColor:CHART_COLORS.green, borderWidth:1, borderRadius:4 }]
+            },
+            options: { responsive:true, plugins:{legend:{display:false}},
+                scales:{ y:{ beginAtZero:true, ticks:{ callback: v=>'₹'+v.toLocaleString() } } } }
+        });
+    })();
+    </script>
+
 </div>
 
-<!-- Yearly year selector -->
+<!-- Year selector -->
 <div style="font-size:12px;color:#9ca3af;margin-top:4px;">
-    View by year:
+    View monthly by year:
     <?php for ($y = date('Y'); $y >= date('Y')-4; $y--): ?>
-        <a href="<?php echo $reportBase; ?>?period=<?php echo $reportData['period']??'week'; ?>&year=<?php echo $y; ?>"
+        <a href="<?php echo $reportBase; ?>?period=<?php echo $period; ?>&year=<?php echo $y; ?>"
            style="margin:0 4px;<?php echo $y===$year?'font-weight:700;color:var(--primary)':'color:var(--gray-500)'; ?>">
             <?php echo $y; ?>
         </a>

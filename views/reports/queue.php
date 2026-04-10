@@ -6,18 +6,46 @@ $reportBase  = '/reports/queue';
 ob_start();
 
 $byDay       = $reportData['byDay']       ?? [];
+$byWeek      = $reportData['byWeek']      ?? [];
+$byMonth     = $reportData['byMonth']     ?? [];
 $consultTime = $reportData['consultTime'] ?? [];
 $busyDays    = $reportData['busyDays']    ?? [];
 $busySlots   = $reportData['busySlots']   ?? [];
 $noShow      = $reportData['noShow']      ?? [];
+$period      = $reportData['period']      ?? 'week';
+$year        = $reportData['year']        ?? date('Y');
 
 require __DIR__ . '/_header.php';
 
 $total     = (int)($noShow['total']     ?? 0);
 $completed = (int)($noShow['completed'] ?? 0);
 $nsCount   = (int)($noShow['no_show']   ?? 0);
-$canCount  = (int)($noShow['cancelled'] ?? 0);
 $nsRate    = $total > 0 ? round($nsCount/$total*100, 1) : 0;
+$defaultG  = in_array($period, ['today','week']) ? 'day' : ($period === 'month' ? 'week' : 'month');
+
+// Build label/value arrays for each granularity
+$dayLabels  = json_encode(array_column($byDay,  'day'));
+$dayComp    = json_encode(array_map(fn($r)=>(int)$r['completed'], $byDay));
+$dayNS      = json_encode(array_map(fn($r)=>(int)$r['no_show'],   $byDay));
+$dayCan     = json_encode(array_map(fn($r)=>(int)$r['cancelled'], $byDay));
+
+$weekLabels = json_encode(array_map(fn($r)=>date('d M', strtotime($r['week_start'])), $byWeek));
+$weekComp   = json_encode(array_map(fn($r)=>(int)$r['completed'], $byWeek));
+$weekNS     = json_encode(array_map(fn($r)=>(int)$r['no_show'],   $byWeek));
+$weekCan    = json_encode(array_map(fn($r)=>(int)$r['cancelled'], $byWeek));
+
+$allMonths  = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+$mComp = $mNS = $mCan = array_fill(0,12,0);
+foreach ($byMonth as $r) {
+    $i = (int)explode('-',$r['month'])[1]-1;
+    $mComp[$i] = (int)$r['completed'];
+    $mNS[$i]   = (int)$r['no_show'];
+    $mCan[$i]  = (int)$r['cancelled'];
+}
+$monthLabels = json_encode($allMonths);
+$monthComp   = json_encode($mComp);
+$monthNS     = json_encode($mNS);
+$monthCan    = json_encode($mCan);
 ?>
 
 <!-- Summary cards -->
@@ -40,37 +68,36 @@ $nsRate    = $total > 0 ? round($nsCount/$total*100, 1) : 0;
     </div>
 </div>
 
-<!-- Daily appointments chart -->
-<?php if (!empty($byDay)): ?>
+<!-- Appointments stacked chart with toggle -->
 <div class="chart-card">
-    <h6><i class="fas fa-chart-bar"></i> Daily Appointments</h6>
-    <canvas id="chartDay" height="80"></canvas>
+    <h6><i class="fas fa-chart-bar"></i> Appointment Breakdown <span id="apptPills"></span></h6>
+    <canvas id="chartAppt" height="80"></canvas>
 </div>
 <script>
 (function(){
-    const labels    = <?php echo json_encode(array_column($byDay,'day')); ?>;
-    const completed = <?php echo json_encode(array_map(fn($r)=>(int)$r['completed'], $byDay)); ?>;
-    const noShow    = <?php echo json_encode(array_map(fn($r)=>(int)$r['no_show'], $byDay)); ?>;
-    const cancelled = <?php echo json_encode(array_map(fn($r)=>(int)$r['cancelled'], $byDay)); ?>;
-    new Chart(document.getElementById('chartDay'), {
+    const chart = new Chart(document.getElementById('chartAppt'), {
         type: 'bar',
-        data: {
-            labels,
-            datasets: [
-                { label:'Completed', data:completed, backgroundColor:CHART_COLORS.green+'cc', borderRadius:3 },
-                { label:'No Show',   data:noShow,    backgroundColor:CHART_COLORS.red+'cc',   borderRadius:3 },
-                { label:'Cancelled', data:cancelled, backgroundColor:CHART_COLORS.gray+'cc',  borderRadius:3 },
-            ]
-        },
-        options: {
+        data: { labels:[], datasets:[
+            { label:'Completed', data:[], backgroundColor:CHART_COLORS.green+'cc', borderRadius:3 },
+            { label:'No Show',   data:[], backgroundColor:CHART_COLORS.red+'cc',   borderRadius:3 },
+            { label:'Cancelled', data:[], backgroundColor:CHART_COLORS.gray+'cc',  borderRadius:3 },
+        ]},
+        options:{
             responsive:true,
-            scales: { x:{ stacked:true }, y:{ stacked:true, beginAtZero:true, ticks:{precision:0} } },
-            plugins: { legend:{ position:'bottom' } }
+            scales:{ x:{stacked:true}, y:{stacked:true,beginAtZero:true,ticks:{precision:0}} },
+            plugins:{ legend:{position:'bottom'} }
         }
     });
+
+    const datasets = {
+        day:   { labels:<?php echo $dayLabels;  ?>, values:[<?php echo $dayComp;  ?>,<?php echo $dayNS;  ?>,<?php echo $dayCan;  ?>] },
+        week:  { labels:<?php echo $weekLabels; ?>, values:[<?php echo $weekComp; ?>,<?php echo $weekNS; ?>,<?php echo $weekCan; ?>] },
+        month: { labels:<?php echo $monthLabels;?>, values:[<?php echo $monthComp;?>,<?php echo $monthNS;?>,<?php echo $monthCan;?>] },
+    };
+    document.getElementById('apptPills').outerHTML = buildTogglePills(['day','week','month'], '<?php echo $defaultG; ?>');
+    chartToggle('chartAppt', datasets, '<?php echo $defaultG; ?>');
 })();
 </script>
-<?php endif; ?>
 
 <div class="report-grid-2">
 
@@ -120,7 +147,7 @@ $nsRate    = $total > 0 ? round($nsCount/$total*100, 1) : 0;
 
 </div>
 
-<!-- Consult time card -->
+<!-- Consult time summary -->
 <?php if (!empty($consultTime['sample_count'])): ?>
 <div class="chart-card" style="max-width:500px;">
     <h6><i class="fas fa-stopwatch"></i> Consultation Duration</h6>

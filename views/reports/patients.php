@@ -6,18 +6,34 @@ $reportBase  = '/reports/patients';
 ob_start();
 
 $byDay        = $reportData['byDay']        ?? [];
+$byWeek       = $reportData['byWeek']       ?? [];
 $byMonth      = $reportData['byMonth']      ?? [];
 $gender       = $reportData['gender']       ?? [];
 $ageGroups    = $reportData['ageGroups']    ?? [];
 $complaints   = $reportData['complaints']   ?? [];
 $newReturning = $reportData['newReturning'] ?? [];
+$period       = $reportData['period']       ?? 'week';
 $year         = $reportData['year']         ?? date('Y');
 
 require __DIR__ . '/_header.php';
 
-$newPts  = (int)($newReturning['new_patients']       ?? 0);
-$retPts  = (int)($newReturning['returning_patients'] ?? 0);
+$newPts   = (int)($newReturning['new_patients']       ?? 0);
+$retPts   = (int)($newReturning['returning_patients'] ?? 0);
 $totalPts = $newPts + $retPts;
+$defaultG = in_array($period, ['today','week']) ? 'day' : ($period === 'month' ? 'week' : 'month');
+
+// JS dataset prep
+$dayLabels  = json_encode(array_column($byDay,  'day'));
+$dayVals    = json_encode(array_map(fn($r)=>(int)$r['count'], $byDay));
+
+$weekLabels = json_encode(array_map(fn($r)=>date('d M', strtotime($r['week_start'])), $byWeek));
+$weekVals   = json_encode(array_map(fn($r)=>(int)$r['count'], $byWeek));
+
+$allMonths  = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+$mCounts    = array_fill(0, 12, 0);
+foreach ($byMonth as $r) { $mCounts[(int)explode('-',$r['month'])[1]-1] = (int)$r['count']; }
+$monthLabels = json_encode($allMonths);
+$monthVals   = json_encode($mCounts);
 ?>
 
 <!-- Summary cards -->
@@ -42,69 +58,62 @@ $totalPts = $newPts + $retPts;
     </div>
 </div>
 
+<!-- New registrations trend with toggle -->
+<div class="chart-card">
+    <h6><i class="fas fa-chart-line"></i> New Patient Registrations <span id="regPills"></span></h6>
+    <canvas id="chartReg" height="80"></canvas>
+</div>
+<script>
+(function(){
+    const ctx = document.getElementById('chartReg').getContext('2d');
+    const chart = new Chart(ctx, {
+        type: 'line',
+        data: { labels:[], datasets:[{
+            label:'New Patients', data:[],
+            borderColor:CHART_COLORS.primary,
+            backgroundColor: makeGradient(ctx, CHART_COLORS.primary),
+            fill:true, tension:0.4, pointRadius:3,
+        }]},
+        options:{ responsive:true, plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true,ticks:{precision:0}}} }
+    });
+
+    const datasets = {
+        day:   { labels: <?php echo $dayLabels; ?>,   values: <?php echo $dayVals; ?> },
+        week:  { labels: <?php echo $weekLabels; ?>,  values: <?php echo $weekVals; ?> },
+        month: { labels: <?php echo $monthLabels; ?>, values: <?php echo $monthVals; ?> },
+    };
+    document.getElementById('regPills').outerHTML = buildTogglePills(['day','week','month'], '<?php echo $defaultG; ?>');
+    chartToggle('chartReg', datasets, '<?php echo $defaultG; ?>');
+})();
+</script>
+
 <div class="report-grid-2">
 
-    <!-- New registrations by day chart -->
-    <?php if (!empty($byDay)): ?>
+    <!-- Gender doughnut — no toggle needed, all-time data -->
     <div class="chart-card">
-        <h6><i class="fas fa-chart-line"></i> New Registrations — Day by Day</h6>
-        <canvas id="chartDay" height="120"></canvas>
-    </div>
-    <script>
-    (function(){
-        const labels = <?php echo json_encode(array_column($byDay,'day')); ?>;
-        const counts = <?php echo json_encode(array_map(fn($r)=>(int)$r['count'], $byDay)); ?>;
-        const ctx = document.getElementById('chartDay').getContext('2d');
-        new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels,
-                datasets: [{
-                    label: 'New Patients',
-                    data: counts,
-                    borderColor: CHART_COLORS.primary,
-                    backgroundColor: makeGradient(ctx, CHART_COLORS.primary),
-                    fill: true,
-                    tension: 0.4,
-                    pointRadius: 3,
-                }]
-            },
-            options: { responsive:true, plugins:{ legend:{display:false} }, scales:{ y:{ beginAtZero:true, ticks:{ precision:0 } } } }
-        });
-    })();
-    </script>
-    <?php endif; ?>
-
-    <!-- Gender + New vs Returning doughnut -->
-    <div class="chart-card">
-        <h6><i class="fas fa-venus-mars"></i> Gender Distribution</h6>
+        <h6><i class="fas fa-venus-mars"></i> Gender Distribution (All Time)</h6>
         <canvas id="chartGender" height="120"></canvas>
     </div>
     <script>
     (function(){
         const raw = <?php echo json_encode($gender); ?>;
         const labelMap = { 'M':'Male','F':'Female','':'Unknown' };
-        const labels = raw.map(r => labelMap[r.gender] || r.gender || 'Unknown');
-        const data   = raw.map(r => parseInt(r.count));
         new Chart(document.getElementById('chartGender'), {
             type: 'doughnut',
             data: {
-                labels,
-                datasets: [{ data, backgroundColor:[CHART_COLORS.primary,CHART_COLORS.red,CHART_COLORS.gray], borderWidth:2 }]
+                labels: raw.map(r => labelMap[r.gender] || r.gender || 'Unknown'),
+                datasets: [{ data: raw.map(r=>parseInt(r.count)),
+                    backgroundColor:[CHART_COLORS.primary,CHART_COLORS.red,CHART_COLORS.gray], borderWidth:2 }]
             },
-            options: { responsive:true, plugins:{ legend:{ position:'bottom' } } }
+            options:{ responsive:true, plugins:{legend:{position:'bottom'}} }
         });
     })();
     </script>
 
-</div>
-
-<div class="report-grid-2">
-
-    <!-- Age groups bar -->
+    <!-- Age groups — no toggle, all-time -->
     <?php if (!empty($ageGroups)): ?>
     <div class="chart-card">
-        <h6><i class="fas fa-chart-bar"></i> Age Groups</h6>
+        <h6><i class="fas fa-chart-bar"></i> Age Groups (All Time)</h6>
         <canvas id="chartAge" height="120"></canvas>
     </div>
     <script>
@@ -114,67 +123,43 @@ $totalPts = $newPts + $retPts;
             type: 'bar',
             data: {
                 labels: raw.map(r=>r.age_group),
-                datasets: [{ label:'Patients', data: raw.map(r=>parseInt(r.count)),
-                    backgroundColor: CHART_COLORS.purple+'bb', borderColor:CHART_COLORS.purple, borderWidth:1, borderRadius:4 }]
+                datasets:[{ label:'Patients', data:raw.map(r=>parseInt(r.count)),
+                    backgroundColor:CHART_COLORS.purple+'bb', borderColor:CHART_COLORS.purple, borderWidth:1, borderRadius:4 }]
             },
-            options: { responsive:true, plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true,ticks:{precision:0}}} }
+            options:{ responsive:true, plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true,ticks:{precision:0}}} }
         });
     })();
     </script>
     <?php endif; ?>
 
-    <!-- Top complaints -->
-    <?php if (!empty($complaints)): ?>
-    <div class="chart-card" style="overflow-x:auto;">
-        <h6><i class="fas fa-notes-medical"></i> Top Chief Complaints</h6>
-        <?php $maxC = (int)($complaints[0]['count'] ?? 1); ?>
-        <?php foreach ($complaints as $i => $c): ?>
-        <div style="margin-bottom:7px;">
-            <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:2px;">
-                <span><?php echo htmlspecialchars(ucfirst($c['chief'])); ?></span>
-                <span style="font-weight:700;"><?php echo (int)$c['count']; ?></span>
-            </div>
-            <div style="background:#f3f4f6;border-radius:4px;height:6px;">
-                <div style="background:var(--primary);height:6px;border-radius:4px;width:<?php echo round($c['count']/$maxC*100); ?>%;"></div>
-            </div>
+</div>
+
+<!-- Top complaints -->
+<?php if (!empty($complaints)): ?>
+<div class="chart-card" style="overflow-x:auto;">
+    <h6><i class="fas fa-notes-medical"></i> Top Chief Complaints (All Time)</h6>
+    <?php $maxC = (int)($complaints[0]['count'] ?? 1); ?>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px 24px;">
+    <?php foreach ($complaints as $c): ?>
+    <div style="margin-bottom:5px;">
+        <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:2px;">
+            <span><?php echo htmlspecialchars(ucfirst($c['chief'])); ?></span>
+            <span style="font-weight:700;"><?php echo (int)$c['count']; ?></span>
         </div>
-        <?php endforeach; ?>
+        <div style="background:#f3f4f6;border-radius:4px;height:6px;">
+            <div style="background:var(--primary);height:6px;border-radius:4px;width:<?php echo round($c['count']/$maxC*100); ?>%;"></div>
+        </div>
     </div>
-    <?php endif; ?>
-
+    <?php endforeach; ?>
+    </div>
 </div>
-
-<!-- Monthly registrations -->
-<?php if (!empty($byMonth)): ?>
-<div class="chart-card">
-    <h6><i class="fas fa-calendar-alt"></i> Monthly Registrations — <?php echo $year; ?></h6>
-    <canvas id="chartMonth" height="70"></canvas>
-</div>
-<script>
-(function(){
-    const allMonths = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-    const raw = <?php echo json_encode($byMonth); ?>;
-    const counts = Array(12).fill(0);
-    raw.forEach(r => { counts[parseInt(r.month.split('-')[1])-1] = parseInt(r.count); });
-    const ctx = document.getElementById('chartMonth').getContext('2d');
-    new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels: allMonths,
-            datasets: [{ label:'New Patients', data:counts,
-                backgroundColor:CHART_COLORS.green+'bb', borderColor:CHART_COLORS.green, borderWidth:1, borderRadius:4 }]
-        },
-        options: { responsive:true, plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true,ticks:{precision:0}}} }
-    });
-})();
-</script>
 <?php endif; ?>
 
 <!-- Year selector -->
-<div style="font-size:12px;color:#9ca3af;margin-top:4px;">
-    View by year:
+<div style="font-size:12px;color:#9ca3af;margin-top:8px;">
+    View monthly by year:
     <?php for ($y = date('Y'); $y >= date('Y')-4; $y--): ?>
-        <a href="<?php echo $reportBase; ?>?period=<?php echo $reportData['period']??'week'; ?>&year=<?php echo $y; ?>"
+        <a href="<?php echo $reportBase; ?>?period=<?php echo $period; ?>&year=<?php echo $y; ?>"
            style="margin:0 4px;<?php echo $y===$year?'font-weight:700;color:var(--primary)':'color:var(--gray-500)'; ?>">
             <?php echo $y; ?>
         </a>

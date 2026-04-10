@@ -10,13 +10,11 @@ class ReportController {
         $this->model = new Report($db);
     }
 
-    /** Parse & validate period / custom dates from request params */
     private function resolveDates(array $params): array {
         $period = $params['period'] ?? 'week';
         if ($period === 'custom') {
             $from = $params['from'] ?? date('Y-m-d');
             $to   = $params['to']   ?? date('Y-m-d');
-            // Ensure from <= to
             if ($from > $to) [$from, $to] = [$to, $from];
         } else {
             [$from, $to] = Report::periodDates($period);
@@ -24,71 +22,76 @@ class ReportController {
         return [$period, $from, $to];
     }
 
-    // ── Income ────────────────────────────────────────────────────────────────
-
     public function income(array $params = []): array {
         [$period, $from, $to] = $this->resolveDates($params);
         $year = (int)($params['year'] ?? date('Y'));
 
-        $summary    = $this->model->incomeSummary($from, $to);
-        $byDay      = $this->model->incomeByDay($from, $to);
-        $byMonth    = $this->model->incomeByMonth($year);
-        $byWeek     = $this->model->incomeByWeek($from, $to);
-
-        return compact('period', 'from', 'to', 'year', 'summary', 'byDay', 'byMonth', 'byWeek');
+        return [
+            'period'  => $period, 'from' => $from, 'to' => $to, 'year' => $year,
+            'summary' => $this->model->incomeSummary($from, $to),
+            'byDay'   => $this->model->incomeByDay($from, $to),
+            'byWeek'  => $this->model->incomeByWeek($from, $to),
+            'byMonth' => $this->model->incomeByMonth($year),
+        ];
     }
-
-    // ── Patient Analytics ─────────────────────────────────────────────────────
 
     public function patients(array $params = []): array {
         [$period, $from, $to] = $this->resolveDates($params);
         $year = (int)($params['year'] ?? date('Y'));
 
-        $byDay         = $this->model->newPatientsByDay($from, $to);
-        $byMonth       = $this->model->newPatientsByMonth($year);
-        $gender        = $this->model->genderSplit();
-        $ageGroups     = $this->model->ageGroups();
-        $complaints    = $this->model->topComplaints(10);
-        $newReturning  = $this->model->newVsReturning($from, $to);
-
-        return compact('period', 'from', 'to', 'year', 'byDay', 'byMonth', 'gender', 'ageGroups', 'complaints', 'newReturning');
+        return [
+            'period'       => $period, 'from' => $from, 'to' => $to, 'year' => $year,
+            'byDay'        => $this->model->newPatientsByDay($from, $to),
+            'byWeek'       => $this->model->newPatientsByWeek($from, $to),
+            'byMonth'      => $this->model->newPatientsByMonth($year),
+            'gender'       => $this->model->genderSplit(),
+            'ageGroups'    => $this->model->ageGroups(),
+            'complaints'   => $this->model->topComplaints(10),
+            'newReturning' => $this->model->newVsReturning($from, $to),
+        ];
     }
-
-    // ── Queue / Operations ────────────────────────────────────────────────────
 
     public function queueOps(array $params = []): array {
         [$period, $from, $to] = $this->resolveDates($params);
+        $year = (int)($params['year'] ?? date('Y'));
 
-        $byDay       = $this->model->appointmentsByDay($from, $to);
-        $consultTime = $this->model->avgConsultTime($from, $to);
-        $busyDays    = $this->model->busyDays($from, $to);
-        $busySlots   = $this->model->busySlots($from, $to);
-        $noShow      = $this->model->noShowRate($from, $to);
-
-        return compact('period', 'from', 'to', 'byDay', 'consultTime', 'busyDays', 'busySlots', 'noShow');
+        return [
+            'period'      => $period, 'from' => $from, 'to' => $to, 'year' => $year,
+            'byDay'       => $this->model->appointmentsByDay($from, $to),
+            'byWeek'      => $this->model->appointmentsByWeek($from, $to),
+            'byMonth'     => $this->model->appointmentsByMonth($year),
+            'consultTime' => $this->model->avgConsultTime($from, $to),
+            'busyDays'    => $this->model->busyDays($from, $to),
+            'busySlots'   => $this->model->busySlots($from, $to),
+            'noShow'      => $this->model->noShowRate($from, $to),
+        ];
     }
-
-    // ── Medicines ─────────────────────────────────────────────────────────────
 
     public function medicines(array $params = []): array {
         [$period, $from, $to] = $this->resolveDates($params);
+        $year = (int)($params['year'] ?? date('Y'));
 
-        $topMeds    = $this->model->topMedicines($from, $to, 15);
-        $byDay      = $this->model->prescriptionsByDay($from, $to);
-
-        return compact('period', 'from', 'to', 'topMeds', 'byDay');
+        return [
+            'period'  => $period, 'from' => $from, 'to' => $to, 'year' => $year,
+            'topMeds' => $this->model->topMedicines($from, $to, 15),
+            'byDay'   => $this->model->prescriptionsByDay($from, $to),
+            'byWeek'  => $this->model->prescriptionsByWeek($from, $to),
+            'byMonth' => $this->model->prescriptionsByMonth($year),
+        ];
     }
-
-    // ── Doctor Productivity ───────────────────────────────────────────────────
 
     public function productivity(array $params = []): array {
         [$period, $from, $to] = $this->resolveDates($params);
+        $year = (int)($params['year'] ?? date('Y'));
 
-        $summary      = $this->model->productivitySummary($from, $to);
-        $byDay        = $this->model->patientsSeen($from, $to);
-        $consultTrend = $this->model->consultTimeTrend($from, $to);
-        $busyDays     = $this->model->busyDays($from, $to);
-
-        return compact('period', 'from', 'to', 'summary', 'byDay', 'consultTrend', 'busyDays');
+        return [
+            'period'       => $period, 'from' => $from, 'to' => $to, 'year' => $year,
+            'summary'      => $this->model->productivitySummary($from, $to),
+            'byDay'        => $this->model->patientsSeen($from, $to),
+            'byWeek'       => $this->model->patientsSeenByWeek($from, $to),
+            'byMonth'      => $this->model->patientsSeenByMonth($year),
+            'consultTrend' => $this->model->consultTimeTrend($from, $to),
+            'busyDays'     => $this->model->busyDays($from, $to),
+        ];
     }
 }
