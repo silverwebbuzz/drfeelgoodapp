@@ -145,6 +145,31 @@ class Appointment extends BaseModel {
         return $stmt->fetch(PDO::FETCH_ASSOC);
     }
 
+    /** Appointments for a date range (week / month view) */
+    public function getByRange($from, $to) {
+        $sql = "SELECT a.*, p.fname, p.lname, p.contact_no
+                FROM {$this->table} a
+                LEFT JOIN patient p ON a.patient_id = p.id
+                WHERE a.appt_date BETWEEN ? AND ?
+                ORDER BY a.appt_date ASC, a.token_number ASC, a.slot_time ASC";
+        $stmt = $this->query($sql, [$from, $to]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    /** Stats for a date range */
+    public function rangeStats($from, $to) {
+        $sql = "SELECT
+                    COUNT(*) as total,
+                    SUM(status='waiting') as waiting,
+                    SUM(status='in_consultation') as in_consultation,
+                    SUM(status='completed') as completed,
+                    SUM(status='cancelled') as cancelled,
+                    SUM(status='no_show') as no_show
+                FROM {$this->table} WHERE appt_date BETWEEN ? AND ?";
+        $stmt = $this->query($sql, [$from, $to]);
+        return $stmt->fetch(PDO::FETCH_ASSOC);
+    }
+
     /** Recent appointments list for history */
     public function getRecent($limit = 50) {
         $limit = (int)$limit;

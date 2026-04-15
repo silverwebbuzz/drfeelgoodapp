@@ -72,8 +72,8 @@
 
                         <li>
                             <a href="/queue" class="<?php echo (strpos($uri, 'queue') !== false || strpos($uri, 'walkin') !== false) ? 'active' : ''; ?>">
-                                <i class="fas fa-list-ol"></i>
-                                <span>Queue</span>
+                                <i class="fas fa-calendar-check"></i>
+                                <span>Appointments</span>
                             </a>
                         </li>
 

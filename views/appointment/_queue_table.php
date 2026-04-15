@@ -166,11 +166,11 @@ if (empty($__queueJsLoaded)):
 <script>
 function callPatient(id, patientId) {
     doStatus(id, 'in_consultation', function(data) {
-        location.href = data.redirect || '/queue';
+        location.href = data.redirect || (location.href);
     });
 }
 function finishConsult(id) {
-    doStatus(id, 'completed', function() { location.href = '/queue'; });
+    doStatus(id, 'completed', function() { location.reload(); });
 }
 function setStatus(id, status) {
     doStatus(id, status, function() { location.reload(); });

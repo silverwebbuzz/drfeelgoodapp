@@ -122,7 +122,7 @@ $tableId     = 'dashQueueTable';
 <div class="card" style="margin-bottom:20px;">
     <div class="card-header" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
         <span>
-            <i class="fas fa-calendar-day"></i> Today's Queue
+            <i class="fas fa-calendar-check"></i> Today's Appointments
             <span style="font-size:11px;color:#9ca3af;margin-left:6px;"><?php echo date('d M Y'); ?></span>
         </span>
         <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
@@ -131,7 +131,7 @@ $tableId     = 'dashQueueTable';
                 <span style="color:#2563eb;font-weight:700;"><?php echo (int)($todayStats['in_consultation'] ?? 0); ?></span> in consult &nbsp;
                 <span style="color:#16a34a;font-weight:700;"><?php echo (int)($todayStats['completed'] ?? 0); ?></span> done
             </span>
-            <a href="/queue" class="btn btn-secondary btn-sm"><i class="fas fa-expand-alt"></i> Full Queue</a>
+            <a href="/queue" class="btn btn-secondary btn-sm"><i class="fas fa-expand-alt"></i> All Appointments</a>
             <a href="/walkin" class="btn btn-primary btn-sm"><i class="fas fa-plus"></i> Walk-in</a>
         </div>
     </div>
@@ -148,7 +148,7 @@ $tableId     = 'dashQueueTable';
     <?php if (!empty($todayQueue)): ?>
     <div style="padding:10px 16px;text-align:right;border-top:1px solid #f3f4f6;">
         <a href="/queue" style="font-size:12px;color:var(--primary);text-decoration:none;">
-            <i class="fas fa-arrow-right"></i> View full queue
+            <i class="fas fa-arrow-right"></i> View all appointments
         </a>
     </div>
     <?php endif; ?>
@@ -164,7 +164,7 @@ $tableId     = 'dashQueueTable';
                 <div class="qa-icon" style="background:#eff6ff;color:#2563eb;"><i class="fas fa-ticket-alt"></i></div>
                 <div>
                     <div>Walk-in Token</div>
-                    <div class="qa-sub">Add patient to today's queue</div>
+                    <div class="qa-sub">Add patient to today's appointments</div>
                 </div>
             </a>
 
@@ -185,10 +185,10 @@ $tableId     = 'dashQueueTable';
             </a>
 
             <a href="/queue" class="qa-btn">
-                <div class="qa-icon" style="background:#fdf4ff;color:#9333ea;"><i class="fas fa-list-ol"></i></div>
+                <div class="qa-icon" style="background:#fdf4ff;color:#9333ea;"><i class="fas fa-calendar-check"></i></div>
                 <div>
-                    <div>Today's Queue</div>
-                    <div class="qa-sub">Manage appointments</div>
+                    <div>Appointments</div>
+                    <div class="qa-sub">Today's queue &amp; schedule</div>
                 </div>
             </a>
 

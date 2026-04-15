@@ -16,12 +16,28 @@ class AppointmentController {
         $this->patientModel = new Patient($db);
     }
 
-    /** Today's queue page data */
-    public function getQueue($date = null) {
-        $date  = $date ?? date('Y-m-d');
+    /** Appointments page data — supports today / week / month views */
+    public function getQueue($date = null, $view = 'today') {
+        $today = date('Y-m-d');
+        if ($view === 'week') {
+            $from  = date('Y-m-d', strtotime('monday this week'));
+            $to    = date('Y-m-d', strtotime('sunday this week'));
+            $queue = $this->apptModel->getByRange($from, $to);
+            $stats = $this->apptModel->rangeStats($from, $to);
+            return ['success'=>true, 'queue'=>$queue, 'stats'=>$stats, 'date'=>$today, 'view'=>'week', 'from'=>$from, 'to'=>$to];
+        }
+        if ($view === 'month') {
+            $from  = date('Y-m-01');
+            $to    = date('Y-m-t');
+            $queue = $this->apptModel->getByRange($from, $to);
+            $stats = $this->apptModel->rangeStats($from, $to);
+            return ['success'=>true, 'queue'=>$queue, 'stats'=>$stats, 'date'=>$today, 'view'=>'month', 'from'=>$from, 'to'=>$to];
+        }
+        // Default: today (also handles explicit date nav)
+        $date  = $date ?? $today;
         $queue = $this->apptModel->getByDate($date);
         $stats = $this->apptModel->todayStats($date);
-        return ['success' => true, 'queue' => $queue, 'stats' => $stats, 'date' => $date];
+        return ['success'=>true, 'queue'=>$queue, 'stats'=>$stats, 'date'=>$date, 'view'=>'today', 'from'=>$date, 'to'=>$date];
     }
 
     /** Create walk-in token (receptionist) */

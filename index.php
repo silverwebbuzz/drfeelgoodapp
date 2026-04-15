@@ -296,8 +296,9 @@ switch ($route) {
     case 'queue':
         AuthController::requireLogin();
         $apptController = new AppointmentController($db);
+        $view = $_GET['view'] ?? 'today';
         $date = $_GET['date'] ?? null;
-        $queueData = $apptController->getQueue($date);
+        $queueData = $apptController->getQueue($date, $view);
         require __DIR__ . '/views/appointment/queue.php';
         break;
 
