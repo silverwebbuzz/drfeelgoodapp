@@ -107,11 +107,11 @@ $tableId     = 'dashQueueTable';
             <div class="dash-stat-lbl">Seen Today</div>
             <div class="dash-stat-sub">
                 <?php
-                $waiting = (int)($todayStats['waiting'] ?? 0);
-                $inCons  = (int)($todayStats['in_consultation'] ?? 0);
-                echo $waiting + $inCons > 0
-                    ? ($waiting + $inCons) . ' still pending'
-                    : 'Queue clear';
+                $waiting  = (int)($todayStats['waiting'] ?? 0);
+                $arrived  = (int)($todayStats['arrived'] ?? 0);
+                $inCons   = (int)($todayStats['in_consultation'] ?? 0);
+                $pending  = $waiting + $arrived + $inCons;
+                echo $pending > 0 ? $pending . ' still pending' : 'Queue clear';
                 ?>
             </div>
         </div>
@@ -128,8 +128,9 @@ $tableId     = 'dashQueueTable';
         <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
             <span style="font-size:12px;color:#6b7280;white-space:nowrap;">
                 <span style="color:#f59e0b;font-weight:700;"><?php echo (int)($todayStats['waiting'] ?? 0); ?></span> waiting &nbsp;
+                <span style="color:#16a34a;font-weight:700;"><?php echo (int)($todayStats['arrived'] ?? 0); ?></span> in clinic &nbsp;
                 <span style="color:#2563eb;font-weight:700;"><?php echo (int)($todayStats['in_consultation'] ?? 0); ?></span> in consult &nbsp;
-                <span style="color:#16a34a;font-weight:700;"><?php echo (int)($todayStats['completed'] ?? 0); ?></span> done
+                <span style="color:#9ca3af;font-weight:700;"><?php echo (int)($todayStats['completed'] ?? 0); ?></span> done
             </span>
             <a href="/queue" class="btn btn-secondary btn-sm"><i class="fas fa-expand-alt"></i> All Appointments</a>
             <a href="/walkin" class="btn btn-primary btn-sm"><i class="fas fa-plus"></i> Walk-in</a>
