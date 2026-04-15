@@ -287,49 +287,37 @@ body {
     <table class="inv-table">
         <thead>
             <tr>
-                <th style="width:40px;">#</th>
                 <th>Description</th>
                 <th style="width:120px;text-align:right;">Amount</th>
             </tr>
         </thead>
         <tbody>
-            <!-- Consultation fee -->
             <tr>
-                <td>1</td>
                 <td>
-                    <strong>Consultation Fee</strong>
+                    <strong>Consultation</strong>
                     <div style="font-size:11px;color:#6b7280;margin-top:2px;">
                         Visit on <?php echo $visitDate; ?>
                     </div>
+                    <?php if (!empty($medicines)): ?>
+                    <div class="med-list" style="margin-top:5px;"><?php echo htmlspecialchars(implode(', ', $medicines)); ?></div>
+                    <?php endif; ?>
                 </td>
                 <td>&#8377;<?php echo number_format($baseAmt, 2); ?></td>
             </tr>
-            <!-- Medicines row if any -->
-            <?php if (!empty($medicines)): ?>
-            <tr>
-                <td>2</td>
-                <td>
-                    <strong>Medicines Prescribed</strong>
-                    <div class="med-list"><?php echo htmlspecialchars(implode(', ', $medicines)); ?></div>
-                    <div style="font-size:10px;color:#9ca3af;margin-top:4px;">For reference only — dispensed separately</div>
-                </td>
-                <td style="color:#9ca3af;font-weight:400;">—</td>
-            </tr>
-            <?php endif; ?>
         </tbody>
         <tfoot>
             <tr class="subtotal">
-                <td colspan="2" style="text-align:right;color:#6b7280;">Subtotal</td>
+                <td style="text-align:right;color:#6b7280;">Subtotal</td>
                 <td>&#8377;<?php echo number_format($baseAmt, 2); ?></td>
             </tr>
             <?php if ($gstEnabled && $gstAmt > 0): ?>
             <tr>
-                <td colspan="2" style="text-align:right;color:#6b7280;">GST (<?php echo $gstRate; ?>%)</td>
+                <td style="text-align:right;color:#6b7280;">GST (<?php echo $gstRate; ?>%)</td>
                 <td>&#8377;<?php echo number_format($gstAmt, 2); ?></td>
             </tr>
             <?php endif; ?>
             <tr class="total-row">
-                <td colspan="2" style="text-align:right;">Total</td>
+                <td style="text-align:right;">Total</td>
                 <td>&#8377;<?php echo number_format($totalAmt, 2); ?></td>
             </tr>
         </tfoot>
