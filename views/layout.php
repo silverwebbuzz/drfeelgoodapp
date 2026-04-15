@@ -12,7 +12,7 @@
 <body>
     <?php
     // Make role available throughout layout
-    $layoutRole = $_SESSION['role'] ?? 'doctor';
+    $layoutRole = (isset($_SESSION['role']) && $_SESSION['role'] !== '') ? $_SESSION['role'] : 'doctor';
     $isDoctor     = $layoutRole === 'doctor';
     $isAsstDoctor = $layoutRole === 'asst_doctor';
     $isReception  = $layoutRole === 'reception';

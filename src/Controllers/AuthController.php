@@ -32,7 +32,8 @@ class AuthController {
         $_SESSION['username']  = $user['username'];
         $_SESSION['email']     = $user['email'];
         $_SESSION['fullname']  = User::getFullName($user);
-        $_SESSION['role']      = $user['role'] ?? 'doctor';
+        // Fall back to 'doctor' if role column doesn't exist yet or is null/empty
+        $_SESSION['role']      = (isset($user['role']) && $user['role'] !== '') ? $user['role'] : 'doctor';
         $_SESSION['logged_in'] = true;
         $_SESSION['login_time']= time();
 
@@ -52,7 +53,8 @@ class AuthController {
     }
 
     public static function getRole(): string {
-        return $_SESSION['role'] ?? 'doctor';
+        $r = $_SESSION['role'] ?? '';
+        return ($r !== '') ? $r : 'doctor';
     }
 
     /** Returns true if current user has at least the given role level */
