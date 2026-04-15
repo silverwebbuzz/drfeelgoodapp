@@ -10,6 +10,15 @@
     <link href="/css/datatable.css" rel="stylesheet">
 </head>
 <body>
+    <?php
+    // Make role available throughout layout
+    $layoutRole = $_SESSION['role'] ?? 'doctor';
+    $isDoctor     = $layoutRole === 'doctor';
+    $isAsstDoctor = $layoutRole === 'asst_doctor';
+    $isReception  = $layoutRole === 'reception';
+    $canReports   = $isDoctor || $isAsstDoctor;
+    $uri = $_SERVER['REQUEST_URI'];
+    ?>
     <div class="app-wrapper">
 
         <!-- HEADER -->
@@ -24,9 +33,12 @@
                 </a>
             </div>
             <div class="header-user">
-                <span class="header-username">
+                <span class="header-username" style="display:flex;align-items:center;gap:6px;">
                     <i class="fas fa-user-circle"></i>
                     <?php echo htmlspecialchars($_SESSION['fullname'] ?? $_SESSION['username'] ?? 'User'); ?>
+                    <span style="font-size:10px;background:var(--primary-light);color:var(--primary);border-radius:10px;padding:1px 8px;font-weight:700;">
+                        <?php echo htmlspecialchars(\App\Models\User::roleLabel($layoutRole)); ?>
+                    </span>
                 </span>
                 <a href="/logout" class="btn btn-secondary btn-sm">
                     <i class="fas fa-sign-out-alt"></i>
@@ -43,25 +55,30 @@
             <aside class="app-sidebar" id="appSidebar">
                 <nav>
                     <ul class="sidebar-menu">
+
                         <li>
-                            <a href="/dashboard" class="<?php echo strpos($_SERVER['REQUEST_URI'], 'dashboard') !== false ? 'active' : ''; ?>">
+                            <a href="/dashboard" class="<?php echo strpos($uri, 'dashboard') !== false ? 'active' : ''; ?>">
                                 <i class="fas fa-th-large"></i>
                                 <span>Dashboard</span>
                             </a>
                         </li>
+
                         <li>
-                            <a href="/patients" class="<?php echo strpos($_SERVER['REQUEST_URI'], 'patient') !== false && strpos($_SERVER['REQUEST_URI'], 'reports') === false ? 'active' : ''; ?>">
+                            <a href="/patients" class="<?php echo strpos($uri, 'patient') !== false && strpos($uri, 'reports') === false ? 'active' : ''; ?>">
                                 <i class="fas fa-users"></i>
                                 <span>Patients</span>
                             </a>
                         </li>
+
                         <li>
-                            <a href="/queue" class="<?php echo (strpos($_SERVER['REQUEST_URI'], 'queue') !== false || strpos($_SERVER['REQUEST_URI'], 'walkin') !== false) ? 'active' : ''; ?>">
+                            <a href="/queue" class="<?php echo (strpos($uri, 'queue') !== false || strpos($uri, 'walkin') !== false) ? 'active' : ''; ?>">
                                 <i class="fas fa-list-ol"></i>
                                 <span>Queue</span>
                             </a>
                         </li>
-                        <?php $onReports = strpos($_SERVER['REQUEST_URI'], '/reports') !== false; ?>
+
+                        <?php if ($canReports): ?>
+                        <?php $onReports = strpos($uri, '/reports') !== false; ?>
                         <li class="has-submenu <?php echo $onReports ? 'open' : ''; ?>">
                             <a href="#" class="<?php echo $onReports ? 'active' : ''; ?>" onclick="toggleSubmenu(this);return false;">
                                 <i class="fas fa-chart-bar"></i>
@@ -69,19 +86,30 @@
                                 <i class="fas fa-chevron-down submenu-arrow"></i>
                             </a>
                             <ul class="submenu">
-                                <li><a href="/reports/income"      class="<?php echo strpos($_SERVER['REQUEST_URI'],'/reports/income')!==false?'active':''; ?>"><i class="fas fa-rupee-sign"></i> Income</a></li>
-                                <li><a href="/reports/patients"    class="<?php echo strpos($_SERVER['REQUEST_URI'],'/reports/patients')!==false?'active':''; ?>"><i class="fas fa-users"></i> Patients</a></li>
-                                <li><a href="/reports/queue"       class="<?php echo strpos($_SERVER['REQUEST_URI'],'/reports/queue')!==false?'active':''; ?>"><i class="fas fa-list-ol"></i> Queue / Ops</a></li>
-                                <li><a href="/reports/medicines"   class="<?php echo strpos($_SERVER['REQUEST_URI'],'/reports/medicines')!==false?'active':''; ?>"><i class="fas fa-pills"></i> Medicines</a></li>
-                                <li><a href="/reports/productivity"class="<?php echo strpos($_SERVER['REQUEST_URI'],'/reports/productivity')!==false?'active':''; ?>"><i class="fas fa-stethoscope"></i> Productivity</a></li>
+                                <li><a href="/reports/income"      class="<?php echo strpos($uri,'/reports/income')!==false?'active':''; ?>"><i class="fas fa-rupee-sign"></i> Income</a></li>
+                                <li><a href="/reports/patients"    class="<?php echo strpos($uri,'/reports/patients')!==false?'active':''; ?>"><i class="fas fa-users"></i> Patients</a></li>
+                                <li><a href="/reports/queue"       class="<?php echo strpos($uri,'/reports/queue')!==false?'active':''; ?>"><i class="fas fa-list-ol"></i> Queue / Ops</a></li>
+                                <li><a href="/reports/medicines"   class="<?php echo strpos($uri,'/reports/medicines')!==false?'active':''; ?>"><i class="fas fa-pills"></i> Medicines</a></li>
+                                <li><a href="/reports/productivity"class="<?php echo strpos($uri,'/reports/productivity')!==false?'active':''; ?>"><i class="fas fa-stethoscope"></i> Productivity</a></li>
                             </ul>
                         </li>
+                        <?php endif; ?>
+
+                        <?php if ($isDoctor): ?>
                         <li>
-                            <a href="/clinic-settings" class="<?php echo strpos($_SERVER['REQUEST_URI'], 'clinic-settings') !== false ? 'active' : ''; ?>">
+                            <a href="/users" class="<?php echo strpos($uri, '/users') !== false ? 'active' : ''; ?>">
+                                <i class="fas fa-users-cog"></i>
+                                <span>Users</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="/clinic-settings" class="<?php echo strpos($uri, 'clinic-settings') !== false ? 'active' : ''; ?>">
                                 <i class="fas fa-cog"></i>
                                 <span>Settings</span>
                             </a>
                         </li>
+                        <?php endif; ?>
+
                     </ul>
                 </nav>
             </aside>

@@ -192,6 +192,7 @@ $tableId     = 'dashQueueTable';
                 </div>
             </a>
 
+            <?php if (in_array($_SESSION['role'] ?? 'doctor', ['doctor','asst_doctor'])): ?>
             <a href="/reports/income" class="qa-btn">
                 <div class="qa-icon" style="background:#fff7ed;color:#ea580c;"><i class="fas fa-chart-bar"></i></div>
                 <div>
@@ -199,7 +200,9 @@ $tableId     = 'dashQueueTable';
                     <div class="qa-sub">Income, patients & more</div>
                 </div>
             </a>
+            <?php endif; ?>
 
+            <?php if (($_SESSION['role'] ?? 'doctor') === 'doctor'): ?>
             <a href="/clinic-settings" class="qa-btn">
                 <div class="qa-icon" style="background:#f1f5f9;color:#475569;"><i class="fas fa-cog"></i></div>
                 <div>
@@ -207,6 +210,7 @@ $tableId     = 'dashQueueTable';
                     <div class="qa-sub">Slots, holidays, clinic info</div>
                 </div>
             </a>
+            <?php endif; ?>
 
         </div>
     </div>

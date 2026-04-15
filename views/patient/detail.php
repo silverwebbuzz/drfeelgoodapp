@@ -398,10 +398,13 @@ $apptId    = (int)($_GET['appt'] ?? 0);
     </div><!-- /infoBody -->
 </div>
 
-<!-- ── WORKSPACE ── -->
-<div class="workspace">
+<?php $viewerRole = $_SESSION['role'] ?? 'doctor'; $canVisit = in_array($viewerRole, ['doctor','asst_doctor']); ?>
 
-    <!-- LEFT: Add Report -->
+<!-- ── WORKSPACE ── -->
+<div class="workspace" style="<?php echo $canVisit ? '' : 'grid-template-columns:1fr;'; ?>">
+
+    <!-- LEFT: Add Report (doctor + asst_doctor only) -->
+    <?php if ($canVisit): ?>
     <div class="card report-form-card">
         <div class="card-header">
             <i class="fas fa-plus-circle"></i> Add Today's Visit
@@ -472,6 +475,7 @@ $apptId    = (int)($_GET['appt'] ?? 0);
             </div>
         </div>
     </div>
+    <?php endif; // canVisit ?>
 
     <!-- RIGHT: History -->
     <div class="history-panel">
@@ -490,6 +494,7 @@ $apptId    = (int)($_GET['appt'] ?? 0);
                         <?php if(!empty($r['amt'])&&$r['amt']>0): ?>
                         <div class="h-amt">₹<?php echo htmlspecialchars($r['amt']); ?></div>
                         <?php endif; ?>
+                        <?php if ($canVisit): ?>
                         <div class="h-action-btns">
                             <a href="/invoice/<?php echo $r['id']; ?>" target="_blank" class="h-inv-btn">
                                 <i class="fas fa-file-invoice"></i> Invoice
@@ -498,6 +503,7 @@ $apptId    = (int)($_GET['appt'] ?? 0);
                                 <i class="fas fa-pen"></i> Edit
                             </button>
                         </div>
+                        <?php endif; ?>
                         <div class="h-edit-form" id="hedit-<?php echo $r['id']; ?>">
                             <div class="h-edit-row">
                                 <input type="date" class="h-edit-input" id="he-date-<?php echo $r['id']; ?>"

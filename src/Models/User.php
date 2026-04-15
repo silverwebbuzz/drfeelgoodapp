@@ -1,112 +1,144 @@
 <?php
-/**
- * User Model
- * Handles user/doctor authentication and profile
- */
-
 namespace App\Models;
+
+use PDO;
 
 class User extends BaseModel {
     protected $table = 'user';
 
-    /**
-     * Get user by email
-     */
+    const ROLES = [
+        'doctor'      => 'Doctor',
+        'asst_doctor' => 'Asst. Doctor',
+        'reception'   => 'Reception',
+    ];
+
+    // ── Lookups ───────────────────────────────────────────────────────────────
+
     public function getByEmail($email) {
-        $sql = "SELECT * FROM {$this->table} WHERE email = ?";
-        $stmt = $this->query($sql, [$email]);
-        return $stmt->fetch(\PDO::FETCH_ASSOC);
+        $stmt = $this->query("SELECT * FROM {$this->table} WHERE email = ?", [$email]);
+        return $stmt->fetch(PDO::FETCH_ASSOC);
     }
 
-    /**
-     * Get user by username
-     */
     public function getByUsername($username) {
-        $sql = "SELECT * FROM {$this->table} WHERE username = ?";
-        $stmt = $this->query($sql, [$username]);
-        return $stmt->fetch(\PDO::FETCH_ASSOC);
+        $stmt = $this->query("SELECT * FROM {$this->table} WHERE username = ?", [$username]);
+        return $stmt->fetch(PDO::FETCH_ASSOC);
     }
 
-    /**
-     * Validate login credentials
-     * Supports both plain text (legacy) and hashed passwords
-     */
+    /** All users ordered by role then name */
+    public function getAll($limit = null, $offset = 0) {
+        $stmt = $this->query(
+            "SELECT id, fname, mname, lname, username, email, contact_no, role, is_active
+             FROM {$this->table}
+             ORDER BY FIELD(role,'doctor','asst_doctor','reception'), fname"
+        );
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    // ── Auth ──────────────────────────────────────────────────────────────────
+
     public function validateLogin($username, $password) {
         $user = $this->getByUsername($username);
+        if (!$user) return false;
 
-        if (!$user) {
-            return false;
-        }
+        // Block inactive accounts
+        if (isset($user['is_active']) && (int)$user['is_active'] === 0) return false;
 
-        // Check password - plain text first (legacy system), then try hash
-        if ($password === $user['password']) {
-            // Plain text match (legacy old system)
-            unset($user['password']); // Don't return password
-            return $user;
-        }
+        // Plain-text legacy check first, then bcrypt
+        $ok = ($password === $user['password'])
+            || password_verify($password, $user['password']);
 
-        // Try password_verify for hashed passwords
-        if (password_verify($password, $user['password'])) {
-            unset($user['password']); // Don't return password
-            return $user;
-        }
+        if (!$ok) return false;
 
-        return false;
+        unset($user['password']);
+        return $user;
     }
 
-    /**
-     * Create new user
-     */
+    // ── CRUD ──────────────────────────────────────────────────────────────────
+
     public function create($data) {
-        $requiredFields = ['fname', 'username', 'email', 'password', 'contact_no'];
-
-        foreach ($requiredFields as $field) {
-            if (empty($data[$field] ?? null)) {
-                throw new \Exception("Field '{$field}' is required");
-            }
+        $required = ['fname', 'username', 'email', 'password', 'contact_no'];
+        foreach ($required as $f) {
+            if (empty($data[$f] ?? null))
+                throw new \Exception("Field '{$f}' is required");
         }
 
-        // Hash password
-        $data['password'] = password_hash($data['password'], PASSWORD_BCRYPT);
+        if ($this->getByUsername($data['username']))
+            throw new \Exception("Username '{$data['username']}' is already taken");
 
-        // Set default values
-        $data['mname'] = $data['mname'] ?? '';
-        $data['lname'] = $data['lname'] ?? '';
-        $data['dob'] = $data['dob'] ?? date('Y-m-d');
-        $data['gender'] = $data['gender'] ?? 'M';
-        $data['address'] = $data['address'] ?? '';
-        $data['city'] = $data['city'] ?? '';
-        $data['state'] = $data['state'] ?? '';
-        $data['country'] = $data['country'] ?? '';
-        $data['zip'] = $data['zip'] ?? '';
+        if ($this->getByEmail($data['email']))
+            throw new \Exception("Email '{$data['email']}' is already registered");
 
-        return $this->insert($data);
+        if (!array_key_exists($data['role'] ?? '', self::ROLES))
+            throw new \Exception("Invalid role");
+
+        $insert = [
+            'fname'      => $data['fname'],
+            'mname'      => $data['mname'] ?? '',
+            'lname'      => $data['lname'] ?? '',
+            'username'   => $data['username'],
+            'email'      => $data['email'],
+            'contact_no' => $data['contact_no'],
+            'role'       => $data['role'],
+            'is_active'  => 1,
+            'password'   => password_hash($data['password'], PASSWORD_BCRYPT),
+            'dob'        => $data['dob']     ?? date('Y-m-d'),
+            'gender'     => $data['gender']  ?? 'M',
+            'address'    => $data['address'] ?? '',
+            'city'       => $data['city']    ?? '',
+            'state'      => $data['state']   ?? '',
+            'country'    => $data['country'] ?? '',
+            'zip'        => $data['zip']     ?? '',
+        ];
+
+        return $this->insert($insert);
     }
 
-    /**
-     * Update user password
-     */
-    public function updatePassword($id, $newPassword) {
-        $hashedPassword = password_hash($newPassword, PASSWORD_BCRYPT);
-        $this->update($id, ['password' => $hashedPassword]);
+    public function updateUser($id, $data, $currentUserId) {
+        $clean = [];
+
+        foreach (['fname','mname','lname','email','contact_no'] as $f) {
+            if (isset($data[$f])) $clean[$f] = trim($data[$f]);
+        }
+
+        // Role — doctor cannot demote themselves
+        if (isset($data['role']) && (int)$id !== (int)$currentUserId) {
+            if (!array_key_exists($data['role'], self::ROLES))
+                throw new \Exception("Invalid role");
+            $clean['role'] = $data['role'];
+        }
+
+        // Active status — same guard
+        if (isset($data['is_active']) && (int)$id !== (int)$currentUserId) {
+            $clean['is_active'] = (int)(bool)$data['is_active'];
+        }
+
+        // Password change (optional)
+        if (!empty($data['new_password'])) {
+            if (strlen($data['new_password']) < 6)
+                throw new \Exception("Password must be at least 6 characters");
+            $clean['password'] = password_hash($data['new_password'], PASSWORD_BCRYPT);
+        }
+
+        if (empty($clean)) throw new \Exception("Nothing to update");
+
+        $this->update($id, $clean);
         return true;
     }
 
-    /**
-     * Update user profile
-     */
-    public function updateProfile($id, $data) {
-        // Don't allow updating sensitive fields
-        unset($data['id'], $data['password'], $data['username']);
-
-        $this->update($id, $data);
+    public function deleteUser($id, $currentUserId) {
+        if ((int)$id === (int)$currentUserId)
+            throw new \Exception("You cannot delete your own account");
+        $this->delete($id);
         return true;
     }
 
-    /**
-     * Get user full name
-     */
+    // ── Helpers ───────────────────────────────────────────────────────────────
+
     public static function getFullName($user) {
-        return trim("{$user['fname']} {$user['mname']} {$user['lname']}");
+        return trim("{$user['fname']} " . ($user['mname'] ? "{$user['mname']} " : '') . "{$user['lname']}");
+    }
+
+    public static function roleLabel($role) {
+        return self::ROLES[$role] ?? ucfirst($role);
     }
 }

@@ -136,7 +136,56 @@ switch ($route) {
         $authController->logout();
         break;
 
-    // Patient routes
+    // ── User management (Doctor only) ─────────────────────────────────────────
+
+    case 'users':
+        AuthController::requireRole('doctor');
+        $userModel = new App\Models\User($db);
+        $users = $userModel->getAll();
+        require __DIR__ . '/views/users/list.php';
+        break;
+
+    case 'api/users/create':
+        AuthController::requireRole('doctor');
+        header('Content-Type: application/json');
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') { echo json_encode(['success'=>false]); exit; }
+        try {
+            $userModel = new App\Models\User($db);
+            $newId = $userModel->create($_POST);
+            echo json_encode(['success'=>true,'message'=>'User created successfully','id'=>$newId]);
+        } catch (\Exception $e) {
+            echo json_encode(['success'=>false,'message'=>$e->getMessage()]);
+        }
+        exit;
+
+    case (preg_match('/^api\/users\/(\d+)\/update$/', $route, $matches) ? true : false):
+        AuthController::requireRole('doctor');
+        header('Content-Type: application/json');
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') { echo json_encode(['success'=>false]); exit; }
+        try {
+            $userModel = new App\Models\User($db);
+            $userModel->updateUser($matches[1], $_POST, $_SESSION['user_id']);
+            echo json_encode(['success'=>true,'message'=>'User updated successfully']);
+        } catch (\Exception $e) {
+            echo json_encode(['success'=>false,'message'=>$e->getMessage()]);
+        }
+        exit;
+
+    case (preg_match('/^api\/users\/(\d+)\/delete$/', $route, $matches) ? true : false):
+        AuthController::requireRole('doctor');
+        header('Content-Type: application/json');
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') { echo json_encode(['success'=>false]); exit; }
+        try {
+            $userModel = new App\Models\User($db);
+            $userModel->deleteUser($matches[1], $_SESSION['user_id']);
+            echo json_encode(['success'=>true,'message'=>'User deleted']);
+        } catch (\Exception $e) {
+            echo json_encode(['success'=>false,'message'=>$e->getMessage()]);
+        }
+        exit;
+
+    // ── Patient routes ─────────────────────────────────────────────────────────
+
     case 'patients':
         AuthController::requireLogin();
         $patientController = new PatientController($db);
@@ -183,11 +232,11 @@ switch ($route) {
         exit;
 
     case (preg_match('/^api\/patient\/(\d+)\/report$/', $route, $matches) ? true : false):
-        AuthController::requireLogin();
+        // Only doctor + asst_doctor can add visit notes
+        AuthController::requireRole('doctor', 'asst_doctor');
         header('Content-Type: application/json');
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-            echo json_encode(['success' => false, 'message' => 'POST required']);
-            exit;
+            echo json_encode(['success' => false, 'message' => 'POST required']); exit;
         }
         $patientId = $matches[1];
         $patientController = new PatientController($db);
@@ -199,8 +248,7 @@ switch ($route) {
         AuthController::requireLogin();
         header('Content-Type: application/json');
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-            echo json_encode(['success' => false, 'message' => 'POST required']);
-            exit;
+            echo json_encode(['success' => false, 'message' => 'POST required']); exit;
         }
         $patientId = $matches[1];
         $patientController = new PatientController($db);
@@ -209,11 +257,11 @@ switch ($route) {
         exit;
 
     case (preg_match('/^api\/report\/(\d+)\/update$/', $route, $matches) ? true : false):
-        AuthController::requireLogin();
+        // Only doctor + asst_doctor can edit visit notes
+        AuthController::requireRole('doctor', 'asst_doctor');
         header('Content-Type: application/json');
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-            echo json_encode(['success' => false, 'message' => 'POST required']);
-            exit;
+            echo json_encode(['success' => false, 'message' => 'POST required']); exit;
         }
         $reportId = $matches[1];
         $patientController = new PatientController($db);
@@ -228,7 +276,6 @@ switch ($route) {
         $reportModel        = new App\Models\Report($db);
         $recentPatients     = $patientController->getRecent(10);
         $todayQueueData     = $apptController->getQueue(date('Y-m-d'));
-        // Live stats
         $dashStats = [
             'total_patients'   => (int)(new App\Models\Patient($db))->getTotalCount(),
             'total_reports'    => (int)$reportModel->count(),
@@ -254,7 +301,8 @@ switch ($route) {
         break;
 
     case 'clinic-settings':
-        AuthController::requireLogin();
+        // Only doctor can access settings
+        AuthController::requireRole('doctor');
         $apptController = new AppointmentController($db);
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $response = $apptController->saveSettings($_POST);
@@ -262,7 +310,6 @@ switch ($route) {
             echo json_encode($response);
             exit;
         }
-        // Load current settings for the form
         $settingModel = new App\Models\Setting($db);
         $clinicSettings = $settingModel->getAllSettings();
         require __DIR__ . '/views/appointment/settings.php';
@@ -272,8 +319,7 @@ switch ($route) {
         AuthController::requireLogin();
         header('Content-Type: application/json');
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-            echo json_encode(['success' => false, 'message' => 'POST required']);
-            exit;
+            echo json_encode(['success' => false, 'message' => 'POST required']); exit;
         }
         $apptController = new AppointmentController($db);
         $userId = $_SESSION['user_id'] ?? null;
@@ -285,19 +331,25 @@ switch ($route) {
         AuthController::requireLogin();
         header('Content-Type: application/json');
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-            echo json_encode(['success' => false, 'message' => 'POST required']);
+            echo json_encode(['success' => false, 'message' => 'POST required']); exit;
+        }
+        $apptId     = $matches[1];
+        $newStatus  = $_POST['status'] ?? '';
+        $role       = AuthController::getRole();
+        // Reception can only cancel — not call/finish
+        if ($role === 'reception' && !in_array($newStatus, ['cancelled'])) {
+            header('Content-Type: application/json');
+            echo json_encode(['success'=>false,'message'=>'Your role cannot perform this action']);
             exit;
         }
-        $apptId = $matches[1];
         $apptController = new AppointmentController($db);
-        $response = $apptController->updateStatus($apptId, $_POST['status'] ?? '');
+        $response = $apptController->updateStatus($apptId, $newStatus);
         echo json_encode($response);
         exit;
 
     case 'api/slots':
         header('Content-Type: application/json');
         $date = $_GET['date'] ?? date('Y-m-d');
-        // extended=1 only honoured for logged-in staff, never for public
         $extended = isset($_SESSION['user_id']) && ($_GET['extended'] ?? '0') === '1';
         $apptController = new AppointmentController($db);
         $response = $apptController->getAvailableSlots($date, $extended);
@@ -308,8 +360,7 @@ switch ($route) {
         // Public — no auth required
         header('Content-Type: application/json');
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-            echo json_encode(['success' => false, 'message' => 'POST required']);
-            exit;
+            echo json_encode(['success' => false, 'message' => 'POST required']); exit;
         }
         $apptController = new AppointmentController($db);
         $response = $apptController->createPrebooked($_POST);
@@ -321,8 +372,7 @@ switch ($route) {
         header('Content-Type: application/json');
         $phone = trim($_GET['phone'] ?? '');
         if ($phone === '') {
-            echo json_encode(['success' => false, 'message' => 'Phone required']);
-            exit;
+            echo json_encode(['success' => false, 'message' => 'Phone required']); exit;
         }
         $apptController = new AppointmentController($db);
         $response = $apptController->lookupByPhone($phone);
@@ -335,25 +385,19 @@ switch ($route) {
         $bookingDaysAhead = (int)$settingModel->get('booking_days_ahead', 15);
         $closedDatesRaw   = (new App\Models\Appointment($db))->getClosedDates();
         $closedDatesArr   = array_column($closedDatesRaw, 'date');
-
-        // Build list of unavailable dates (closed dates + days with no sessions configured)
         $unavailableDates = $closedDatesArr;
         for ($i = 0; $i < $bookingDaysAhead; $i++) {
             $d   = date('Y-m-d', strtotime("+{$i} days"));
-            $dow = (int)date('N', strtotime($d)); // 1=Mon, 7=Sun
+            $dow = (int)date('N', strtotime($d));
             $noSlots = false;
             if ($dow === 7) {
-                // Sunday
                 $noSlots = $settingModel->get('sunday_on', '1') !== '1';
             } else {
-                // Mon-Sat: no slots if both sessions are off
                 $morningOff = $settingModel->get('mon_sat_morning_on', '1') !== '1';
                 $eveningOff = $settingModel->get('mon_sat_evening_on', '1') !== '1';
                 $noSlots = $morningOff && $eveningOff;
             }
-            if ($noSlots && !in_array($d, $unavailableDates)) {
-                $unavailableDates[] = $d;
-            }
+            if ($noSlots && !in_array($d, $unavailableDates)) $unavailableDates[] = $d;
         }
         require __DIR__ . '/views/booking/index.php';
         break;
@@ -361,27 +405,25 @@ switch ($route) {
     case 'api/closed-dates':
         AuthController::requireLogin();
         header('Content-Type: application/json');
-        $apptController = new AppointmentController($db);
         $dates = (new App\Models\Appointment($db))->getClosedDates();
         echo json_encode(['success' => true, 'dates' => $dates]);
         exit;
 
     case 'api/closed-dates/add':
-        AuthController::requireLogin();
+        AuthController::requireRole('doctor');
         header('Content-Type: application/json');
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') { echo json_encode(['success'=>false]); exit; }
         $date   = $_POST['date']   ?? '';
         $reason = $_POST['reason'] ?? '';
         if (!$date || !preg_match('/^\d{4}-\d{2}-\d{2}$/', $date)) {
-            echo json_encode(['success'=>false,'message'=>'Invalid date']);
-            exit;
+            echo json_encode(['success'=>false,'message'=>'Invalid date']); exit;
         }
         (new App\Models\Appointment($db))->addClosedDate($date, $reason);
         echo json_encode(['success' => true]);
         exit;
 
     case 'api/closed-dates/remove':
-        AuthController::requireLogin();
+        AuthController::requireRole('doctor');
         header('Content-Type: application/json');
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') { echo json_encode(['success'=>false]); exit; }
         $id = (int)($_POST['id'] ?? 0);
@@ -390,48 +432,47 @@ switch ($route) {
         echo json_encode(['success' => true]);
         exit;
 
-    // ── Reports ────────────────────────────────────────────────────────────────
+    // ── Reports (doctor + asst_doctor only) ───────────────────────────────────
 
     case 'reports/income':
-        AuthController::requireLogin();
+        AuthController::requireRole('doctor', 'asst_doctor');
         $reportController = new ReportController($db);
         $reportData = $reportController->income($_GET);
         require __DIR__ . '/views/reports/income.php';
         break;
 
     case 'reports/patients':
-        AuthController::requireLogin();
+        AuthController::requireRole('doctor', 'asst_doctor');
         $reportController = new ReportController($db);
         $reportData = $reportController->patients($_GET);
         require __DIR__ . '/views/reports/patients.php';
         break;
 
     case 'reports/queue':
-        AuthController::requireLogin();
+        AuthController::requireRole('doctor', 'asst_doctor');
         $reportController = new ReportController($db);
         $reportData = $reportController->queueOps($_GET);
         require __DIR__ . '/views/reports/queue.php';
         break;
 
     case 'reports/medicines':
-        AuthController::requireLogin();
+        AuthController::requireRole('doctor', 'asst_doctor');
         $reportController = new ReportController($db);
         $reportData = $reportController->medicines($_GET);
         require __DIR__ . '/views/reports/medicines.php';
         break;
 
     case 'reports/productivity':
-        AuthController::requireLogin();
+        AuthController::requireRole('doctor', 'asst_doctor');
         $reportController = new ReportController($db);
         $reportData = $reportController->productivity($_GET);
         require __DIR__ . '/views/reports/productivity.php';
         break;
 
-    // ── Invoice ───────────────────────────────────────────────────────────────
+    // ── Invoice (doctor + asst_doctor only) ───────────────────────────────────
     case (preg_match('/^invoice\/(\d+)$/', $route, $matches) ? true : false):
-        AuthController::requireLogin();
+        AuthController::requireRole('doctor', 'asst_doctor');
         $reportId = (int)$matches[1];
-        // Fetch the progress report
         $reportModel = new App\Models\Report($db);
         $report = $reportModel->getById($reportId);
         if (!$report) {
@@ -439,11 +480,9 @@ switch ($route) {
             require __DIR__ . '/views/error/404.php';
             break;
         }
-        // Fetch the patient
         $patientController = new PatientController($db);
         $patientResp = $patientController->getDetail($report['p_id']);
         $patient = $patientResp['patient'] ?? null;
-        // Fetch clinic/invoice settings
         $settingModel = new App\Models\Setting($db);
         $s = $settingModel->getAllSettings();
         require __DIR__ . '/views/invoice.php';

@@ -33,8 +33,10 @@ if (!function_exists('qFmt')) {
     }
 }
 
-$compact      = $compact ?? false;         // compact mode: no filter tabs, smaller header
-$tableId      = $tableId ?? 'queueTable';  // unique table id to support multiple instances on one page
+$compact      = $compact ?? false;
+$tableId      = $tableId ?? 'queueTable';
+$qRole        = $_SESSION['role'] ?? 'doctor';
+$qCanConsult  = in_array($qRole, ['doctor', 'asst_doctor']); // can call/finish patients
 ?>
 
 <?php if (empty($queue)): ?>
@@ -102,16 +104,20 @@ $tableId      = $tableId ?? 'queueTable';  // unique table id to support multipl
             <td class="status-cell"><?php echo statusBadge($s); ?></td>
             <td class="status-btns">
                 <?php if ($s === 'waiting'): ?>
+                    <?php if ($qCanConsult): ?>
                     <button class="btn btn-primary btn-sm" onclick="callPatient(<?php echo $id; ?>, <?php echo $pid; ?>)">
                         <i class="fas fa-stethoscope"></i> <?php echo $compact ? '' : 'Call'; ?>
                     </button>
                     <button class="btn btn-danger btn-sm" onclick="setStatus(<?php echo $id; ?>,'no_show')" title="No Show">
                         <?php echo $compact ? '<i class="fas fa-user-slash"></i>' : 'No Show'; ?>
                     </button>
+                    <?php endif; ?>
                 <?php elseif ($s === 'in_consultation'): ?>
+                    <?php if ($qCanConsult): ?>
                     <button class="btn btn-success btn-sm" onclick="finishConsult(<?php echo $id; ?>)">
                         <i class="fas fa-check"></i> <?php echo $compact ? '' : 'Finish'; ?>
                     </button>
+                    <?php endif; ?>
                     <?php if ($pid): ?>
                     <a href="/patient/<?php echo $pid; ?>" class="btn btn-secondary btn-sm" title="View Patient">
                         <i class="fas fa-user"></i>
