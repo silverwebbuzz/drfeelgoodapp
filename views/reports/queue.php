@@ -16,12 +16,12 @@ $period      = $reportData['period']      ?? 'week';
 $year        = $reportData['year']        ?? date('Y');
 
 require __DIR__ . '/_header.php';
+// $defaultG and $availableG are set by _header.php
 
 $total     = (int)($noShow['total']     ?? 0);
 $completed = (int)($noShow['completed'] ?? 0);
 $nsCount   = (int)($noShow['no_show']   ?? 0);
 $nsRate    = $total > 0 ? round($nsCount/$total*100, 1) : 0;
-$defaultG  = in_array($period, ['today','week']) ? 'day' : ($period === 'month' ? 'week' : 'month');
 
 // Build label/value arrays for each granularity
 $dayLabels  = json_encode(array_column($byDay,  'day'));
@@ -96,7 +96,7 @@ $monthCan    = json_encode($mCan);
         week:  { labels:<?php echo $weekLabels; ?>, values:[<?php echo $weekComp; ?>,<?php echo $weekNS; ?>,<?php echo $weekCan; ?>] },
         month: { labels:<?php echo $monthLabels;?>, values:[<?php echo $monthComp;?>,<?php echo $monthNS;?>,<?php echo $monthCan;?>] },
     };
-    document.getElementById('apptPills').outerHTML = buildTogglePills(['day','week','month'], '<?php echo $defaultG; ?>');
+    document.getElementById('apptPills').outerHTML = buildTogglePills(<?php echo json_encode($availableG); ?>, '<?php echo $defaultG; ?>');
     chartToggle('chartAppt', datasets, '<?php echo $defaultG; ?>');
 })();
 </script>

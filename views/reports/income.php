@@ -14,11 +14,9 @@ $year    = $reportData['year']    ?? date('Y');
 
 $showYearPicker = true; // enables inline year select inside "This Year" button
 require __DIR__ . '/_header.php';
+// $defaultG and $availableG are set by _header.php
 
 function rFmt($n) { return '₹' . number_format((float)$n, 0); }
-
-// Default chart granularity matches page period
-$defaultG = in_array($period, ['today','week']) ? 'day' : ($period === 'month' ? 'week' : 'month');
 
 // Build JS datasets
 $dayLabels   = json_encode(array_column($byDay,   'day'));
@@ -86,7 +84,7 @@ $monthVals   = json_encode($monthTotals);
         month: { labels: <?php echo $monthLabels; ?>, values: <?php echo $monthVals; ?> },
     };
 
-    document.getElementById('revenuePills').outerHTML = buildTogglePills(['day','week','month'], '<?php echo $defaultG; ?>');
+    document.getElementById('revenuePills').outerHTML = buildTogglePills(<?php echo json_encode($availableG); ?>, '<?php echo $defaultG; ?>');
     chartToggle('chartRevenue', datasets, '<?php echo $defaultG; ?>');
 })();
 </script>

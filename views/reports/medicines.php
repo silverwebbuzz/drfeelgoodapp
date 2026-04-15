@@ -13,10 +13,10 @@ $period  = $reportData['period']  ?? 'week';
 $year    = $reportData['year']    ?? date('Y');
 
 require __DIR__ . '/_header.php';
+// $defaultG and $availableG are set by _header.php
 
 $totalPrescriptions = array_sum(array_column($topMeds, 'count'));
 $uniqueMeds = count($topMeds);
-$defaultG   = in_array($period, ['today','week']) ? 'day' : ($period === 'month' ? 'week' : 'month');
 
 // JS datasets for activity chart
 $dayLabels   = json_encode(array_column($byDay,  'day'));
@@ -75,7 +75,7 @@ $monthVals   = json_encode($mVals);
         week:  { labels:<?php echo $weekLabels;  ?>, values:<?php echo $weekVals;  ?> },
         month: { labels:<?php echo $monthLabels; ?>, values:<?php echo $monthVals; ?> },
     };
-    document.getElementById('rxPills').outerHTML = buildTogglePills(['day','week','month'], '<?php echo $defaultG; ?>');
+    document.getElementById('rxPills').outerHTML = buildTogglePills(<?php echo json_encode($availableG); ?>, '<?php echo $defaultG; ?>');
     chartToggle('chartRx', datasets, '<?php echo $defaultG; ?>');
 })();
 </script>

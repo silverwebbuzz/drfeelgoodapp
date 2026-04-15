@@ -25,7 +25,10 @@ class ReportController {
 
     public function income(array $params = []): array {
         [$period, $from, $to] = $this->resolveDates($params);
-        $year = (int)($params['year'] ?? date('Y'));
+        // For year selector: explicit param wins; otherwise derive from the resolved from-date
+        $year = isset($params['year']) && (int)$params['year'] > 0
+            ? (int)$params['year']
+            : (int)date('Y', strtotime($from));
 
         return [
             'period'  => $period, 'from' => $from, 'to' => $to, 'year' => $year,
@@ -38,7 +41,9 @@ class ReportController {
 
     public function patients(array $params = []): array {
         [$period, $from, $to] = $this->resolveDates($params);
-        $year = (int)($params['year'] ?? date('Y'));
+        $year = isset($params['year']) && (int)$params['year'] > 0
+            ? (int)$params['year']
+            : (int)date('Y', strtotime($from));
 
         return [
             'period'       => $period, 'from' => $from, 'to' => $to, 'year' => $year,
@@ -54,7 +59,9 @@ class ReportController {
 
     public function queueOps(array $params = []): array {
         [$period, $from, $to] = $this->resolveDates($params);
-        $year = (int)($params['year'] ?? date('Y'));
+        $year = isset($params['year']) && (int)$params['year'] > 0
+            ? (int)$params['year']
+            : (int)date('Y', strtotime($from));
 
         return [
             'period'      => $period, 'from' => $from, 'to' => $to, 'year' => $year,
@@ -70,7 +77,9 @@ class ReportController {
 
     public function medicines(array $params = []): array {
         [$period, $from, $to] = $this->resolveDates($params);
-        $year = (int)($params['year'] ?? date('Y'));
+        $year = isset($params['year']) && (int)$params['year'] > 0
+            ? (int)$params['year']
+            : (int)date('Y', strtotime($from));
 
         return [
             'period'  => $period, 'from' => $from, 'to' => $to, 'year' => $year,
@@ -83,7 +92,9 @@ class ReportController {
 
     public function productivity(array $params = []): array {
         [$period, $from, $to] = $this->resolveDates($params);
-        $year = (int)($params['year'] ?? date('Y'));
+        $year = isset($params['year']) && (int)$params['year'] > 0
+            ? (int)$params['year']
+            : (int)date('Y', strtotime($from));
 
         return [
             'period'       => $period, 'from' => $from, 'to' => $to, 'year' => $year,

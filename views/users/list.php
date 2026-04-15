@@ -108,7 +108,7 @@ $roleColors = [
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
             <div>
                 <label class="form-label">First Name *</label>
-                <input type="text" name="fname" id="fname" class="form-control" required>
+                <input type="text" name="fname" id="fname" class="form-control">
             </div>
             <div>
                 <label class="form-label">Last Name</label>
@@ -119,23 +119,23 @@ $roleColors = [
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
             <div>
                 <label class="form-label">Username *</label>
-                <input type="text" name="username" id="username" class="form-control" required autocomplete="off">
+                <input type="text" name="username" id="username" class="form-control" autocomplete="off">
             </div>
             <div>
                 <label class="form-label">Contact No. *</label>
-                <input type="text" name="contact_no" id="contact_no" class="form-control" required>
+                <input type="text" name="contact_no" id="contact_no" class="form-control">
             </div>
         </div>
 
         <div style="margin-bottom:10px;">
             <label class="form-label">Email *</label>
-            <input type="email" name="email" id="email" class="form-control" required>
+            <input type="email" name="email" id="email" class="form-control">
         </div>
 
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
             <div>
                 <label class="form-label">Role *</label>
-                <select name="role" id="role" class="form-control" required>
+                <select name="role" id="role" class="form-control">
                     <option value="doctor">Doctor</option>
                     <option value="asst_doctor">Asst. Doctor</option>
                     <option value="reception">Reception</option>
@@ -152,7 +152,13 @@ $roleColors = [
 
         <div style="margin-bottom:10px;">
             <label class="form-label" id="pwLabel">Password * <span style="font-weight:400;color:var(--gray-400);font-size:11px;">(min 6 chars)</span></label>
-            <input type="password" name="new_password" id="new_password" class="form-control" autocomplete="new-password">
+            <div style="position:relative;">
+                <input type="password" name="new_password" id="new_password" class="form-control" autocomplete="new-password" style="padding-right:38px;">
+                <button type="button" id="pwToggle" onclick="togglePw()" tabindex="-1"
+                    style="position:absolute;right:0;top:0;height:100%;width:36px;background:none;border:none;color:var(--gray-400);cursor:pointer;display:flex;align-items:center;justify-content:center;">
+                    <i class="fas fa-eye" id="pwEyeIcon"></i>
+                </button>
+            </div>
             <div id="pwHint" style="font-size:11px;color:var(--gray-400);margin-top:3px;display:none;">Leave blank to keep existing password</div>
         </div>
 
@@ -170,37 +176,59 @@ $roleColors = [
 
 <script>
 const modal = document.getElementById('userModal');
+let _isEdit = false;
+
+function resetPwEye() {
+    const inp = document.getElementById('new_password');
+    const ico = document.getElementById('pwEyeIcon');
+    inp.type = 'password';
+    ico.className = 'fas fa-eye';
+}
+
+function togglePw() {
+    const inp = document.getElementById('new_password');
+    const ico = document.getElementById('pwEyeIcon');
+    if (inp.type === 'password') {
+        inp.type = 'text';
+        ico.className = 'fas fa-eye-slash';
+    } else {
+        inp.type = 'password';
+        ico.className = 'fas fa-eye';
+    }
+}
 
 function openModal() {
+    _isEdit = false;
     document.getElementById('modalTitle').textContent = 'Add User';
     document.getElementById('userForm').reset();
     document.getElementById('userId').value = '';
     document.getElementById('pwLabel').innerHTML = 'Password * <span style="font-weight:400;color:var(--gray-400);font-size:11px;">(min 6 chars)</span>';
     document.getElementById('pwHint').style.display = 'none';
-    document.getElementById('new_password').required = true;
     document.getElementById('activeRow').style.display = 'none';
     document.getElementById('username').readOnly = false;
     document.getElementById('formErr').style.display = 'none';
+    resetPwEye();
     modal.style.display = 'flex';
 }
 
 function openEdit(u) {
+    _isEdit = true;
     document.getElementById('modalTitle').textContent = 'Edit User';
-    document.getElementById('userId').value   = u.id;
-    document.getElementById('fname').value    = u.fname   || '';
-    document.getElementById('lname').value    = u.lname   || '';
-    document.getElementById('username').value = u.username || '';
+    document.getElementById('userId').value      = u.id;
+    document.getElementById('fname').value       = u.fname      || '';
+    document.getElementById('lname').value       = u.lname      || '';
+    document.getElementById('username').value    = u.username   || '';
     document.getElementById('username').readOnly = true;
-    document.getElementById('email').value      = u.email      || '';
-    document.getElementById('contact_no').value = u.contact_no || '';
-    document.getElementById('role').value       = u.role       || 'doctor';
-    document.getElementById('is_active').value  = u.is_active  ?? 1;
-    document.getElementById('new_password').value    = '';
-    document.getElementById('new_password').required = false;
-    document.getElementById('pwLabel').innerHTML = 'New Password <span style="font-weight:400;color:var(--gray-400);font-size:11px;">(optional)</span>';
-    document.getElementById('pwHint').style.display = 'block';
+    document.getElementById('email').value       = u.email      || '';
+    document.getElementById('contact_no').value  = u.contact_no || '';
+    document.getElementById('role').value        = u.role       || 'doctor';
+    document.getElementById('is_active').value   = (u.is_active != null) ? u.is_active : 1;
+    document.getElementById('new_password').value = '';
+    document.getElementById('pwLabel').innerHTML = 'New Password <span style="font-weight:400;color:var(--gray-400);font-size:11px;">(optional — leave blank to keep current)</span>';
+    document.getElementById('pwHint').style.display = 'none';
     document.getElementById('activeRow').style.display = 'block';
     document.getElementById('formErr').style.display = 'none';
+    resetPwEye();
     modal.style.display = 'flex';
 }
 
@@ -209,12 +237,29 @@ modal.addEventListener('click', e => { if (e.target === modal) closeModal(); });
 
 document.getElementById('userForm').addEventListener('submit', function(e) {
     e.preventDefault();
-    const fd = new FormData(this);
-    const isEdit = !!fd.get('user_id');
-    const url = isEdit ? '/api/users/' + fd.get('user_id') + '/update' : '/api/users/create';
+
+    const errEl = document.getElementById('formErr');
+    errEl.style.display = 'none';
+
+    // JS-side validation
+    const fname    = document.getElementById('fname').value.trim();
+    const username = document.getElementById('username').value.trim();
+    const email    = document.getElementById('email').value.trim();
+    const contact  = document.getElementById('contact_no').value.trim();
+    const pw       = document.getElementById('new_password').value;
+
+    if (!fname)    { showFormErr('First name is required.');     return; }
+    if (!username) { showFormErr('Username is required.');        return; }
+    if (!email)    { showFormErr('Email is required.');           return; }
+    if (!contact)  { showFormErr('Contact number is required.');  return; }
+    if (!_isEdit && !pw) { showFormErr('Password is required.'); return; }
+    if (pw && pw.length < 6) { showFormErr('Password must be at least 6 characters.'); return; }
+
+    const fd  = new FormData(this);
+    const uid = fd.get('user_id');
+    const url = uid ? '/api/users/' + uid + '/update' : '/api/users/create';
 
     document.getElementById('submitBtn').disabled = true;
-    document.getElementById('formErr').style.display = 'none';
 
     fetch(url, { method:'POST', body: fd })
     .then(r => r.json())
@@ -225,17 +270,20 @@ document.getElementById('userForm').addEventListener('submit', function(e) {
             showAlert(data.message || 'Saved!', 'success');
             setTimeout(() => location.reload(), 800);
         } else {
-            const el = document.getElementById('formErr');
-            el.textContent = data.message || 'Error saving user';
-            el.style.display = 'block';
+            showFormErr(data.message || 'Error saving user.');
         }
     })
     .catch(() => {
         document.getElementById('submitBtn').disabled = false;
-        document.getElementById('formErr').textContent = 'Network error. Try again.';
-        document.getElementById('formErr').style.display = 'block';
+        showFormErr('Network error. Please try again.');
     });
 });
+
+function showFormErr(msg) {
+    const el = document.getElementById('formErr');
+    el.textContent = msg;
+    el.style.display = 'block';
+}
 
 function deleteUser(id, name) {
     if (!confirm('Delete user "' + name + '"? This cannot be undone.')) return;

@@ -134,7 +134,8 @@ switch ($route) {
     case 'logout':
         $authController = new AuthController($db);
         $authController->logout();
-        break;
+        header('Location: /login');
+        exit;
 
     // ── User management (Doctor only) ─────────────────────────────────────────
 
@@ -151,7 +152,12 @@ switch ($route) {
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') { echo json_encode(['success'=>false]); exit; }
         try {
             $userModel = new App\Models\User($db);
-            $newId = $userModel->create($_POST);
+            $createData = $_POST;
+            // Form sends 'new_password'; create() expects 'password'
+            if (isset($createData['new_password']) && $createData['new_password'] !== '') {
+                $createData['password'] = $createData['new_password'];
+            }
+            $newId = $userModel->create($createData);
             echo json_encode(['success'=>true,'message'=>'User created successfully','id'=>$newId]);
         } catch (\Exception $e) {
             echo json_encode(['success'=>false,'message'=>$e->getMessage()]);

@@ -42,6 +42,31 @@ function rPeriodLabel(string $period, string $from, string $to): string {
 }
 
 $periodLabel = rPeriodLabel($period, $from, $to);
+
+/**
+ * Determine which granularity pills to show and what the default granularity is.
+ * For custom ranges we restrict based on the span so the chart always has data.
+ *   ≤ 14 days  → Daily only
+ *   15–60 days → Daily + Weekly
+ *   > 60 days  → Daily + Weekly + Monthly
+ * For fixed periods the legacy rules apply.
+ */
+if ($period === 'custom') {
+    $spanDays = (int)round((strtotime($to) - strtotime($from)) / 86400) + 1;
+    if ($spanDays <= 14) {
+        $availableG = ['day'];
+        $defaultG   = 'day';
+    } elseif ($spanDays <= 60) {
+        $availableG = ['day', 'week'];
+        $defaultG   = 'day';
+    } else {
+        $availableG = ['day', 'week', 'month'];
+        $defaultG   = 'week';
+    }
+} else {
+    $availableG = ['day', 'week', 'month'];
+    $defaultG   = in_array($period, ['today', 'week']) ? 'day' : ($period === 'month' ? 'week' : 'month');
+}
 ?>
 <style>
 /* ── Report shared styles ──────────────────────────────────────── */

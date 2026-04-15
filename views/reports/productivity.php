@@ -15,8 +15,7 @@ $period       = $reportData['period']       ?? 'week';
 $year         = $reportData['year']         ?? date('Y');
 
 require __DIR__ . '/_header.php';
-
-$defaultG = in_array($period, ['today','week']) ? 'day' : ($period === 'month' ? 'week' : 'month');
+// $defaultG and $availableG are set by _header.php
 
 // Patients seen datasets
 $dayLabels   = json_encode(array_column($byDay,  'day'));
@@ -78,7 +77,7 @@ $monthVals   = json_encode($mVals);
         week:  { labels:<?php echo $weekLabels;  ?>, values:<?php echo $weekVals;  ?> },
         month: { labels:<?php echo $monthLabels; ?>, values:<?php echo $monthVals; ?> },
     };
-    document.getElementById('seenPills').outerHTML = buildTogglePills(['day','week','month'], '<?php echo $defaultG; ?>');
+    document.getElementById('seenPills').outerHTML = buildTogglePills(<?php echo json_encode($availableG); ?>, '<?php echo $defaultG; ?>');
     chartToggle('chartSeen', datasets, '<?php echo $defaultG; ?>');
 })();
 </script>

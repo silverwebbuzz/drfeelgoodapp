@@ -17,11 +17,11 @@ $year         = $reportData['year']         ?? date('Y');
 
 $showYearPicker = true;
 require __DIR__ . '/_header.php';
+// $defaultG and $availableG are set by _header.php
 
 $newPts   = (int)($newReturning['new_patients']       ?? 0);
 $retPts   = (int)($newReturning['returning_patients'] ?? 0);
 $totalPts = $newPts + $retPts;
-$defaultG = in_array($period, ['today','week']) ? 'day' : ($period === 'month' ? 'week' : 'month');
 
 // JS dataset prep
 $dayLabels  = json_encode(array_column($byDay,  'day'));
@@ -84,7 +84,7 @@ $monthVals   = json_encode($mCounts);
         week:  { labels: <?php echo $weekLabels; ?>,  values: <?php echo $weekVals; ?> },
         month: { labels: <?php echo $monthLabels; ?>, values: <?php echo $monthVals; ?> },
     };
-    document.getElementById('regPills').outerHTML = buildTogglePills(['day','week','month'], '<?php echo $defaultG; ?>');
+    document.getElementById('regPills').outerHTML = buildTogglePills(<?php echo json_encode($availableG); ?>, '<?php echo $defaultG; ?>');
     chartToggle('chartReg', datasets, '<?php echo $defaultG; ?>');
 })();
 </script>
