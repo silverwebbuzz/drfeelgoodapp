@@ -84,7 +84,7 @@ class AppointmentController {
 
     /** Update appointment status (AJAX) */
     public function updateStatus($id, $status) {
-        $allowed = ['waiting', 'in_consultation', 'completed', 'cancelled', 'no_show'];
+        $allowed = ['waiting', 'arrived', 'in_consultation', 'completed', 'cancelled', 'no_show'];
         if (!in_array($status, $allowed)) {
             return ['success' => false, 'message' => 'Invalid status'];
         }
@@ -93,15 +93,13 @@ class AppointmentController {
             $appt = $this->apptModel->getByIdFull($id);
 
             $redirect = null;
-            // Call → go to patient detail page (patient always exists now)
             if ($status === 'in_consultation') {
                 if (!empty($appt['patient_id'])) {
                     $redirect = '/patient/' . (int)$appt['patient_id'] . '?from=queue&appt=' . (int)$id;
                 } else {
-                    $redirect = '/queue'; // fallback: no patient record (very old data)
+                    $redirect = '/queue';
                 }
             }
-            // Completed → go back to queue
             if ($status === 'completed') {
                 $redirect = '/queue';
             }

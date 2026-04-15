@@ -113,10 +113,10 @@ class Appointment extends BaseModel {
 
     /** Update appointment status */
     public function updateStatus($id, $status) {
-        $now = date('Y-m-d H:i:s'); // IST — set by date_default_timezone_set in index.php
+        $now = date('Y-m-d H:i:s');
         $extra = [];
-        if ($status === 'in_consultation') $extra['called_at']    = $now; // Dr attended patient
-        if ($status === 'completed')       $extra['completed_at'] = $now; // Patient out
+        if ($status === 'in_consultation') $extra['called_at']    = $now; // Doctor called patient
+        if ($status === 'completed')       $extra['completed_at'] = $now; // Consultation done
         $data = array_merge(['status' => $status], $extra);
         $this->update($id, $data);
     }
@@ -135,7 +135,8 @@ class Appointment extends BaseModel {
     public function todayStats($date) {
         $sql = "SELECT
                     COUNT(*) as total,
-                    SUM(status='waiting') as waiting,
+                    SUM(status IN ('waiting','arrived')) as waiting,
+                    SUM(status='arrived') as arrived,
                     SUM(status='in_consultation') as in_consultation,
                     SUM(status='completed') as completed,
                     SUM(type='walkin') as walkins,

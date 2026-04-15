@@ -356,8 +356,8 @@ switch ($route) {
         $apptId     = $matches[1];
         $newStatus  = $_POST['status'] ?? '';
         $role       = AuthController::getRole();
-        // Reception can only cancel — not call/finish
-        if ($role === 'reception' && !in_array($newStatus, ['cancelled'])) {
+        // Reception can mark arrived, no_show, or cancel — but not call/finish
+        if ($role === 'reception' && !in_array($newStatus, ['arrived', 'no_show', 'cancelled'])) {
             header('Content-Type: application/json');
             echo json_encode(['success'=>false,'message'=>'Your role cannot perform this action']);
             exit;

@@ -31,7 +31,7 @@ $multiDay = ($view !== 'today');
 .appt-view-tab:hover { border-color:#93c5fd; color:var(--primary); text-decoration:none; }
 .appt-view-tab.active { border-color:var(--primary); background:var(--primary); color:#fff; }
 
-.queue-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-bottom:14px; }
+.queue-grid { display:grid; grid-template-columns:repeat(5,1fr); gap:10px; margin-bottom:14px; }
 .q-stat { background:#fff; border:1px solid #e5e7eb; border-radius:8px; padding:10px 14px; }
 .q-stat .val { font-size:22px; font-weight:700; line-height:1; }
 .q-stat .lbl { font-size:11px; color:#6b7280; margin-top:2px; }
@@ -43,10 +43,30 @@ $multiDay = ($view !== 'today');
 .queue-row td { vertical-align:middle; }
 .time-col { text-align:center; min-width:64px; }
 .time-col .tlabel { font-size:10px; color:#9ca3af; display:block; }
+.queue-row[data-status="arrived"]         { background:#f0fdf4; }
 .queue-row[data-status="in_consultation"] { background:#eff6ff; }
-.queue-row[data-status="completed"] { opacity:.75; }
+.queue-row[data-status="completed"]       { opacity:.75; }
+.queue-row[data-status="no_show"]         { opacity:.6; }
+.queue-row[data-status="cancelled"]       { opacity:.5; }
+
+/* Late arrival highlight — orange left border + warm tint */
+.queue-row.row-late                       { background:#fff7ed !important; border-left:3px solid #f97316; }
+
+/* Late / Overdue badge */
+.badge-late {
+    display:inline-block;
+    font-size:9px; font-weight:700;
+    background:#fff7ed; color:#c2410c;
+    border:1px solid #fed7aa;
+    border-radius:4px; padding:1px 6px;
+    letter-spacing:.3px; text-transform:uppercase;
+    white-space:nowrap;
+}
 .date-group-header td { background:#f9fafb; font-size:11px; font-weight:700; color:#6b7280; text-transform:uppercase; letter-spacing:.5px; padding:6px 14px; border-top:2px solid #e5e7eb; }
-@media(max-width:600px){
+@media(max-width:768px){
+    .queue-grid { grid-template-columns:repeat(3,1fr); }
+}
+@media(max-width:500px){
     .queue-grid { grid-template-columns:repeat(2,1fr); }
     .q-stat .val { font-size:18px; }
     .appt-view-tabs { flex-wrap:wrap; }
@@ -103,6 +123,10 @@ $multiDay = ($view !== 'today');
         <div class="val" style="color:#d97706;"><?php echo (int)($stats['waiting'] ?? 0); ?></div>
         <div class="lbl">Waiting</div>
     </div>
+    <div class="q-stat" style="border-color:#22c55e;">
+        <div class="val" style="color:#16a34a;"><?php echo (int)($stats['arrived'] ?? 0); ?></div>
+        <div class="lbl">In Clinic</div>
+    </div>
     <div class="q-stat" style="border-color:#3b82f6;">
         <div class="val" style="color:#2563eb;"><?php echo (int)($stats['in_consultation'] ?? 0); ?></div>
         <div class="lbl">In Consult</div>
@@ -137,6 +161,7 @@ $multiDay = ($view !== 'today');
         <ul class="nav nav-tabs" id="filterTabs-<?php echo $tableId; ?>" style="margin-bottom:10px;padding:0 8px;">
             <li class="nav-item"><a class="nav-link active" href="#" data-filter="all">All</a></li>
             <li class="nav-item"><a class="nav-link" href="#" data-filter="waiting">Waiting</a></li>
+            <li class="nav-item"><a class="nav-link" href="#" data-filter="arrived">Arrived</a></li>
             <li class="nav-item"><a class="nav-link" href="#" data-filter="in_consultation">In Consult</a></li>
             <li class="nav-item"><a class="nav-link" href="#" data-filter="completed">Completed</a></li>
             <li class="nav-item"><a class="nav-link" href="#" data-filter="cancelled">Cancelled</a></li>
@@ -161,12 +186,24 @@ $multiDay = ($view !== 'today');
             </thead>
             <tbody>
             <?php
+            $nowTime  = date('H:i');
+            $nowDate  = date('Y-m-d');
             $lastDate = null;
             foreach ($queue as $row):
                 $s   = $row['status'];
                 $id  = (int)$row['id'];
                 $pid = (int)($row['patient_id'] ?? 0);
                 $rowDate = $row['appt_date'] ?? '';
+
+                // Is this a late arrival?
+                // Prebooked, has a slot, arrived/waiting, slot time already passed today
+                $slotTime  = $row['slot_time'] ?? '';
+                $slotHHMM  = $slotTime ? substr($slotTime, 0, 5) : ''; // HH:MM
+                $isLate    = ($row['type'] === 'prebooked')
+                          && in_array($s, ['arrived', 'waiting'])
+                          && $slotHHMM !== ''
+                          && $rowDate === $nowDate
+                          && $slotHHMM < $nowTime;
 
                 // Date group separator for week/month view
                 if ($multiDay && $rowDate !== $lastDate):
@@ -176,7 +213,7 @@ $multiDay = ($view !== 'today');
                 <td colspan="11"><?php echo date('l, d M Y', strtotime($rowDate)); ?></td>
             </tr>
             <?php endif; ?>
-            <tr class="queue-row" data-status="<?php echo htmlspecialchars($s); ?>" data-id="<?php echo $id; ?>">
+            <tr class="queue-row <?php echo $isLate ? 'row-late' : ''; ?>" data-status="<?php echo htmlspecialchars($s); ?>" data-id="<?php echo $id; ?>">
                 <td><span class="token-badge"><?php echo (int)$row['token_number']; ?></span></td>
                 <?php if ($multiDay): ?>
                 <td style="font-size:12px;color:#6b7280;white-space:nowrap;"><?php echo date('d M', strtotime($rowDate)); ?></td>
@@ -197,12 +234,21 @@ $multiDay = ($view !== 'today');
                 <td><?php $ph=trim($row['patient_phone']??$row['contact_no']??''); echo $ph!==''?htmlspecialchars($ph):'<span style="color:#d1d5db;">—</span>'; ?></td>
                 <td>
                     <?php if ($row['type'] === 'walkin'): ?>
-                        <span class="badge bg-secondary">Walk-in</span>
+                        <span class="badge bg-secondary"><i class="fas fa-walking"></i> Walk-in</span>
                     <?php else: ?>
-                        <span class="badge bg-info">Pre-book</span>
+                        <span class="badge" style="background:#7c3aed;color:#fff;"><i class="fas fa-calendar-check"></i> Booked</span>
                     <?php endif; ?>
                 </td>
-                <td><?php echo $row['slot_time'] ? date('h:i A', strtotime($row['slot_time'])) : '<span style="color:#9ca3af;">—</span>'; ?></td>
+                <td>
+                    <?php if ($slotHHMM): ?>
+                        <?php echo date('h:i A', strtotime($slotHHMM)); ?>
+                        <?php if ($isLate): ?>
+                        <span class="badge-late"><i class="fas fa-clock"></i> Late</span>
+                        <?php endif; ?>
+                    <?php else: ?>
+                        <span style="color:#9ca3af;">—</span>
+                    <?php endif; ?>
+                </td>
                 <td class="time-col"><?php
                     $ca = $row['called_at'] ?? null;
                     echo ($ca && $ca !== '0000-00-00 00:00:00') ? '<span style="font-size:11px;">'.date('h:i A', strtotime($ca)).'</span>' : '<span style="color:#d1d5db;">—</span>';
@@ -213,22 +259,60 @@ $multiDay = ($view !== 'today');
                 ?></td>
                 <td><?php $cc=trim($row['chief_complaint']??''); echo $cc!==''?htmlspecialchars($cc):'<span style="color:#d1d5db;">—</span>'; ?></td>
                 <td class="status-cell"><?php
-                    $sMap = ['waiting'=>['warning','Waiting'],'in_consultation'=>['primary','In Consult'],'completed'=>['success','Completed'],'cancelled'=>['secondary','Cancelled'],'no_show'=>['danger','No Show']];
-                    [$cls,$lbl] = $sMap[$s] ?? ['secondary',ucfirst($s)];
-                    echo "<span class=\"badge bg-{$cls}\">{$lbl}</span>";
+                    $sMap = [
+                        'waiting'         => ['warning',  'Waiting'],
+                        'arrived'         => ['info',     'Arrived'],
+                        'in_consultation' => ['primary',  'In Consult'],
+                        'completed'       => ['success',  'Completed'],
+                        'cancelled'       => ['secondary','Cancelled'],
+                        'no_show'         => ['danger',   'No Show'],
+                    ];
+                    [$cls,$lbl] = $sMap[$s] ?? ['secondary', ucfirst($s)];
+                    if ($isLate && $s === 'arrived') {
+                        echo "<span class=\"badge bg-{$cls}\">Arrived</span> <span class=\"badge-late\"><i class=\"fas fa-clock\"></i> Late</span>";
+                    } elseif ($isLate && $s === 'waiting') {
+                        echo "<span class=\"badge bg-{$cls}\">Waiting</span> <span class=\"badge-late\"><i class=\"fas fa-clock\"></i> Overdue</span>";
+                    } else {
+                        echo "<span class=\"badge bg-{$cls}\">{$lbl}</span>";
+                    }
                 ?></td>
                 <td class="status-btns">
                     <?php
-                    $qRole = $_SESSION['role'] ?? 'doctor';
+                    $qRole       = $_SESSION['role'] ?? 'doctor';
                     $qCanConsult = in_array($qRole, ['doctor','asst_doctor']);
+                    $isWalkin    = ($row['type'] === 'walkin');
                     ?>
+
                     <?php if ($s === 'waiting'): ?>
+
+                        <?php if ($isWalkin): ?>
+                            
+                            <?php if ($qCanConsult): ?>
+                            <button class="btn btn-primary btn-sm" onclick="callPatient(<?php echo $id; ?>,<?php echo $pid; ?>)">
+                                <i class="fas fa-stethoscope"></i> Call
+                            </button>
+                            <?php endif; ?>
+
+                        <?php else: ?>
+                            
+                            <button class="btn btn-success btn-sm" onclick="setStatus(<?php echo $id; ?>,'arrived')" title="Mark patient as arrived">
+                                <i class="fas fa-check-circle"></i> Arrived
+                            </button>
+                            <button class="btn btn-danger btn-sm" onclick="setStatus(<?php echo $id; ?>,'no_show')" title="Patient did not come">
+                                <i class="fas fa-user-slash"></i> No Show
+                            </button>
+                        <?php endif; ?>
+
+                    <?php elseif ($s === 'arrived'): ?>
+                        
                         <?php if ($qCanConsult): ?>
-                        <button class="btn btn-primary btn-sm" onclick="callPatient(<?php echo $id; ?>, <?php echo $pid; ?>)">
+                        <button class="btn btn-primary btn-sm" onclick="callPatient(<?php echo $id; ?>,<?php echo $pid; ?>)">
                             <i class="fas fa-stethoscope"></i> Call
                         </button>
-                        <button class="btn btn-danger btn-sm" onclick="setStatus(<?php echo $id; ?>,'no_show')" title="No Show">No Show</button>
+                        <?php else: ?>
+                        <span style="color:#0ea5e9;font-size:11px;font-weight:600;"><i class="fas fa-clock"></i> Ready</span>
                         <?php endif; ?>
+
                     <?php elseif ($s === 'in_consultation'): ?>
                         <?php if ($qCanConsult): ?>
                         <button class="btn btn-success btn-sm" onclick="finishConsult(<?php echo $id; ?>)">
@@ -238,14 +322,24 @@ $multiDay = ($view !== 'today');
                         <?php if ($pid): ?>
                         <a href="/patient/<?php echo $pid; ?>" class="btn btn-secondary btn-sm" title="View Patient"><i class="fas fa-user"></i></a>
                         <?php endif; ?>
+
                     <?php elseif ($s === 'completed'): ?>
                         <span style="color:#9ca3af;font-size:11px;"><i class="fas fa-check-double"></i> Done</span>
+                        <?php if ($pid): ?>
+                        <a href="/patient/<?php echo $pid; ?>" class="btn btn-secondary btn-sm" title="View Patient"><i class="fas fa-user"></i></a>
+                        <?php endif; ?>
+
                     <?php else: ?>
                         <span style="color:#9ca3af;font-size:11px;"><?php echo htmlspecialchars(ucfirst(str_replace('_',' ',$s))); ?></span>
                     <?php endif; ?>
+
+                    
                     <?php if (!in_array($s, ['completed','cancelled','no_show'])): ?>
-                        <button class="btn btn-secondary btn-sm" onclick="setStatus(<?php echo $id; ?>,'cancelled')" title="Cancel"><i class="fas fa-times"></i></button>
+                    <button class="btn btn-secondary btn-sm" onclick="setStatus(<?php echo $id; ?>,'cancelled')" title="Cancel appointment">
+                        <i class="fas fa-times"></i>
+                    </button>
                     <?php endif; ?>
+
                 </td>
             </tr>
             <?php endforeach; ?>
