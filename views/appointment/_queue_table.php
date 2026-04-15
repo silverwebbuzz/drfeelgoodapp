@@ -57,9 +57,12 @@ $nowDate     = date('Y-m-d');
         <tr>
             <th style="width:42px;">#</th>
             <th>Patient</th>
+            <?php if (!$compact): ?><th>Phone</th><?php endif; ?>
             <th>Type</th>
             <th>Slot</th>
             <?php if (!$compact): ?>
+            <th style="min-width:60px;text-align:center;" title="Called in">In</th>
+            <th style="min-width:60px;text-align:center;" title="Done">Out</th>
             <th>Complaint</th>
             <?php endif; ?>
             <th>Status</th>
@@ -94,6 +97,13 @@ $nowDate     = date('Y-m-d');
                 <?php endif; ?>
             </td>
 
+            <?php if (!$compact): ?>
+            <td><?php
+                $ph = trim($row['patient_phone'] ?? $row['contact_no'] ?? '');
+                echo $ph !== '' ? htmlspecialchars($ph) : '<span style="color:#d1d5db;">—</span>';
+            ?></td>
+            <?php endif; ?>
+
             <td>
                 <?php if ($isWalkin): ?>
                     <span class="badge bg-secondary"><i class="fas fa-walking"></i> Walk-in</span>
@@ -112,6 +122,14 @@ $nowDate     = date('Y-m-d');
             </td>
 
             <?php if (!$compact): ?>
+            <td style="text-align:center;"><?php
+                $ca = $row['called_at'] ?? null;
+                echo ($ca && $ca !== '0000-00-00 00:00:00') ? '<span style="font-size:11px;">'.date('h:i A', strtotime($ca)).'</span>' : '<span style="color:#d1d5db;">—</span>';
+            ?></td>
+            <td style="text-align:center;"><?php
+                $cp = $row['completed_at'] ?? null;
+                echo ($cp && $cp !== '0000-00-00 00:00:00') ? '<span style="font-size:11px;">'.date('h:i A', strtotime($cp)).'</span>' : '<span style="color:#d1d5db;">—</span>';
+            ?></td>
             <td style="font-size:12px;color:#6b7280;"><?php echo qFmt($row['chief_complaint'] ?? ''); ?></td>
             <?php endif; ?>
 

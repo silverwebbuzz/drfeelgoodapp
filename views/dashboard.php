@@ -22,7 +22,7 @@ $stats       = $dashStats        ?? [];
 $todayQueue  = $todayQueueData['queue'] ?? [];
 $todayStats  = $todayQueueData['stats'] ?? [];
 $queue       = $todayQueue;
-$compact     = true;
+$compact     = false;
 $tableId     = 'dashQueueTable';
 ?>
 <style>
