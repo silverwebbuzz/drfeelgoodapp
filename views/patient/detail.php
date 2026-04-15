@@ -519,8 +519,9 @@ $apptId    = (int)($_GET['appt'] ?? 0);
                 <?php if(!empty($reports)): ?>
                     <?php foreach($reports as $idx => $r): ?>
                     <div class="h-item <?php echo $idx===0?'new-entry':''; ?>" id="hitem-<?php echo $r['id']; ?>">
-                        <div class="h-num">#<?php echo htmlspecialchars($r['id']); ?></div>
                         <div class="h-date"><i class="fas fa-calendar-day"></i> <?php echo htmlspecialchars(fmtDate($r['date']??'')); ?></div>
+                        <?php if ($canVisit): ?>
+                        <div class="h-num">#<?php echo htmlspecialchars($r['id']); ?></div>
                         <div class="h-meds"><?php echo htmlspecialchars(fmt($r['medicins']??null,'—')); ?></div>
                         <?php if(!empty(trim($r['notes']??''))): ?>
                         <div class="h-notes"><i class="fas fa-sticky-note"></i> <?php echo htmlspecialchars($r['notes']); ?></div>
@@ -528,7 +529,6 @@ $apptId    = (int)($_GET['appt'] ?? 0);
                         <?php if(!empty($r['amt'])&&$r['amt']>0): ?>
                         <div class="h-amt">₹<?php echo htmlspecialchars($r['amt']); ?></div>
                         <?php endif; ?>
-                        <?php if ($canVisit): ?>
                         <div class="h-action-btns">
                             <a href="/invoice/<?php echo $r['id']; ?>" target="_blank" class="h-inv-btn">
                                 <i class="fas fa-file-invoice"></i> Invoice
@@ -537,7 +537,6 @@ $apptId    = (int)($_GET['appt'] ?? 0);
                                 <i class="fas fa-pen"></i> Edit
                             </button>
                         </div>
-                        <?php endif; ?>
                         <div class="h-edit-form" id="hedit-<?php echo $r['id']; ?>">
                             <div class="h-edit-row">
                                 <input type="date" class="h-edit-input" id="he-date-<?php echo $r['id']; ?>"
@@ -560,6 +559,7 @@ $apptId    = (int)($_GET['appt'] ?? 0);
                                 <button class="h-cancel-btn" onclick="toggleHistEdit(<?php echo $r['id']; ?>)">Cancel</button>
                             </div>
                         </div>
+                        <?php endif; // canVisit ?>
                     </div>
                     <?php endforeach; ?>
                 <?php else: ?>
