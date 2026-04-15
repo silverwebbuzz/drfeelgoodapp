@@ -137,6 +137,13 @@ switch ($route) {
         header('Location: /login');
         exit;
 
+    // ── Help page (Doctor only) ───────────────────────────────────────────────
+
+    case 'help':
+        AuthController::requireRole('doctor');
+        require __DIR__ . '/views/help.php';
+        break;
+
     // ── User management (Doctor only) ─────────────────────────────────────────
 
     case 'users':

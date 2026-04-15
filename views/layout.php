@@ -106,6 +106,12 @@
                                 <span>Settings</span>
                             </a>
                         </li>
+                        <li>
+                            <a href="/help" class="<?php echo strpos($uri, '/help') !== false ? 'active' : ''; ?>">
+                                <i class="fas fa-book-open"></i>
+                                <span>Help</span>
+                            </a>
+                        </li>
                         <?php endif; ?>
 
                     </ul>
