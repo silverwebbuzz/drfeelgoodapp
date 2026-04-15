@@ -62,7 +62,35 @@ function fmtName($f, $l) {
 .info-panel-header {
     display:flex; align-items:center; justify-content:space-between;
     cursor:pointer; user-select:none;
+    transition: background 0.15s;
+    border-radius: 4px;
+    margin: -2px -4px;
+    padding: 2px 4px;
 }
+.info-panel-header:hover { background: var(--gray-50); }
+.toggle-chevron {
+    display:inline-flex; align-items:center; gap:5px;
+    font-size:0.75rem; color:var(--gray-500);
+    background: var(--gray-100);
+    border: 1px solid var(--gray-200);
+    border-radius: 5px;
+    padding: 3px 10px;
+    font-weight: 500;
+    transition: all 0.15s;
+    white-space: nowrap;
+    pointer-events: none;
+}
+.info-panel-header:hover .toggle-chevron {
+    background: var(--primary-light);
+    border-color: var(--primary);
+    color: var(--primary);
+}
+.toggle-chevron .chev {
+    display:inline-block;
+    transition: transform 0.25s;
+    font-style: normal;
+}
+.info-card-open .toggle-chevron .chev { transform: rotate(180deg); }
 .info-grid {
     display:grid;
     grid-template-columns:repeat(auto-fill, minmax(170px,1fr));
@@ -278,16 +306,22 @@ $apptId    = (int)($_GET['appt'] ?? 0);
 
 <!-- ── PATIENT INFORMATION CARD ── -->
 <div class="card mb-16" id="infoCard">
-    <div class="card-header">
-        <div class="info-panel-header" onclick="toggleInfo()">
-            <span><i class="fas fa-id-card"></i> Patient Information</span>
-            <div style="display:flex;gap:8px;align-items:center;" onclick="event.stopPropagation()">
+    <div class="card-header" style="cursor:pointer;" onclick="toggleInfo()">
+        <div class="info-panel-header">
+            <span style="display:flex;align-items:center;gap:8px;">
+                <i class="fas fa-id-card" style="color:var(--primary);"></i>
+                <strong>Patient Information</strong>
+            </span>
+            <div style="display:flex;gap:8px;align-items:center;">
                 <?php if ($canVisit): ?>
-                <button class="edit-btn-sm" id="infoEditBtn" onclick="toggleInfoEdit()">
+                <button class="edit-btn-sm" id="infoEditBtn" onclick="event.stopPropagation();toggleInfoEdit()">
                     <i class="fas fa-edit"></i> Edit
                 </button>
                 <?php endif; ?>
-                <span style="font-size:0.78rem;color:var(--gray-400);" id="infoToggleHint">▾ expand</span>
+                <span class="toggle-chevron" id="infoToggleHint">
+                    <i class="chev fas fa-chevron-down"></i>
+                    <span id="infoToggleLabel">Show</span>
+                </span>
             </div>
         </div>
     </div>
@@ -678,11 +712,13 @@ MedPicker.init();
 
 // ── Info panel toggle ──
 function toggleInfo() {
-    const b = document.getElementById('infoBody');
-    const h = document.getElementById('infoToggleHint');
-    const open = b.style.display === 'none';
+    const b     = document.getElementById('infoBody');
+    const card  = document.getElementById('infoCard');
+    const label = document.getElementById('infoToggleLabel');
+    const open  = b.style.display === 'none';
     b.style.display = open ? 'block' : 'none';
-    h.textContent = open ? '▴ collapse' : '▾ expand';
+    label.textContent = open ? 'Hide' : 'Show';
+    card.classList.toggle('info-card-open', open);
 }
 
 // ── Info edit mode ──
@@ -693,7 +729,8 @@ function toggleInfoEdit() {
     const b = document.getElementById('infoBody');
     if (b.style.display === 'none') {
         b.style.display = 'block';
-        document.getElementById('infoToggleHint').textContent = '▴ collapse';
+        document.getElementById('infoToggleLabel').textContent = 'Hide';
+        document.getElementById('infoCard').classList.add('info-card-open');
     }
     infoEditing = true;
     document.getElementById('infoEditBtn').classList.add('active');

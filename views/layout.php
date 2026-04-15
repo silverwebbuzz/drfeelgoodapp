@@ -33,11 +33,10 @@
             </div>
 
             <div class="header-user">
-                <span class="header-name">
-                    <i class="fas fa-user-circle" style="color:var(--gray-400);"></i>
+                <div class="header-name">
                     <span class="full-name"><?php echo htmlspecialchars($_SESSION['fullname'] ?? $_SESSION['username'] ?? 'User'); ?></span>
                     <span class="role-pill"><?php echo htmlspecialchars(\App\Models\User::roleLabel($layoutRole)); ?></span>
-                </span>
+                </div>
                 <a href="/logout" class="btn btn-secondary btn-sm">
                     <i class="fas fa-sign-out-alt"></i>
                     <span class="logout-label">Logout</span>
