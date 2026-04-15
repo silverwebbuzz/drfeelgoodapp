@@ -71,7 +71,7 @@ function fmtName($fname, $lname) {
                         <th style="text-align: center;">Action</th>
                     </tr>
                 </thead>
-                <tbody id="tableBody">
+                <tbody id="tableBody" style="visibility:hidden;">
                     <?php foreach ($response['data'] as $patient): ?>
                         <tr>
                             <td>
@@ -137,7 +137,7 @@ function fmtName($fname, $lname) {
                 <label for="entriesPerPage">Show</label>
                 <select id="entriesPerPage">
                     <option value="10">10</option>
-                    <option value="25">25</option>
+                    <option value="25" selected>25</option>
                     <option value="50">50</option>
                     <option value="100">100</option>
                 </select>
@@ -159,7 +159,7 @@ class DataTable {
         this.entriesSelect = document.getElementById(options.entriesSelectId);
         this.allRows = Array.from(this.tableBody.querySelectorAll('tr'));
         this.currentPage = 1;
-        this.entriesPerPage = 10;
+        this.entriesPerPage = 25;
         this.sortColumn = null;
         this.sortDirection = 'asc';
 
@@ -256,6 +256,9 @@ class DataTable {
         } else {
             paginatedRows.forEach(row => this.tableBody.appendChild(row.cloneNode(true)));
         }
+
+        // Reveal tbody only after first render — prevents layout jump on load
+        this.tableBody.style.visibility = 'visible';
 
         this.updateInfo(start, end);
         this.renderPagination();
