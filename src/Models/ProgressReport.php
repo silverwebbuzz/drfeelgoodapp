@@ -18,7 +18,7 @@ class ProgressReport extends BaseModel {
         $limit = (int)$limit;
         $offset = (int)$offset;
 
-        $sql = "SELECT id, p_id, date, medicins, amt
+        $sql = "SELECT id, p_id, date, medicins, notes, amt
                 FROM {$this->table}
                 WHERE p_id = ?
                 ORDER BY date DESC
@@ -42,15 +42,19 @@ class ProgressReport extends BaseModel {
      * Add progress report
      */
     public function create($patientId, $data) {
-        if (empty($patientId) || empty($data['medicins'] ?? null)) {
-            throw new \Exception("Patient ID and medicines are required");
+        if (empty($patientId)) {
+            throw new \Exception("Patient ID is required");
+        }
+        if (empty($data['medicins'] ?? null) && empty($data['notes'] ?? null)) {
+            throw new \Exception("Medicines or notes are required");
         }
 
         $reportData = [
-            'p_id' => $patientId,
-            'date' => $data['date'] ?? date('Y-m-d H:i:s'),
-            'medicins' => $data['medicins'],
-            'amt' => $data['amt'] ?? 0
+            'p_id'     => $patientId,
+            'date'     => $data['date'] ?? date('Y-m-d H:i:s'),
+            'medicins' => $data['medicins'] ?? '',
+            'notes'    => $data['notes']    ?? '',
+            'amt'      => $data['amt']      ?? 0,
         ];
 
         return $this->insert($reportData);
@@ -72,7 +76,7 @@ class ProgressReport extends BaseModel {
         $limit = (int)$limit;
 
         $sql = "SELECT
-                    pr.id, pr.p_id, pr.date, pr.medicins, pr.amt,
+                    pr.id, pr.p_id, pr.date, pr.medicins, pr.notes, pr.amt,
                     CONCAT(p.fname, ' ', p.lname) as patient_name
                 FROM {$this->table} pr
                 JOIN patient p ON pr.p_id = p.id
@@ -88,7 +92,7 @@ class ProgressReport extends BaseModel {
      */
     public function getByDateRange($startDate, $endDate, $limit = null) {
         $sql = "SELECT
-                    pr.id, pr.p_id, pr.date, pr.medicins, pr.amt,
+                    pr.id, pr.p_id, pr.date, pr.medicins, pr.notes, pr.amt,
                     CONCAT(p.fname, ' ', p.lname) as patient_name
                 FROM {$this->table} pr
                 JOIN patient p ON pr.p_id = p.id

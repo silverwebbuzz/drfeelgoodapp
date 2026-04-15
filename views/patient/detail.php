@@ -33,6 +33,9 @@ function fmtName($f, $l) {
     $reports = $response['progress_reports'] ?? [];
     $totalReports = $response['total_reports'] ?? count($reports);
     $pid = $p['id'];
+    // Define role/permission here so it's available throughout the whole view
+    $viewerRole = $_SESSION['role'] ?? 'doctor';
+    $canVisit   = in_array($viewerRole, ['doctor', 'asst_doctor']);
 ?>
 
 <style>
@@ -150,6 +153,8 @@ textarea.r-input { resize:vertical; }
 .h-item.new-entry { background:#eff6ff; border-left:3px solid var(--primary); }
 .h-date { font-size:0.78rem; font-weight:700; color:var(--primary); margin-bottom:3px; }
 .h-meds { font-size:0.88rem; color:var(--gray-800); font-weight:500; margin-bottom:2px; }
+.h-notes { font-size:0.82rem; color:var(--gray-500); font-style:italic; margin-bottom:2px; }
+.h-notes i { color:var(--warning); margin-right:3px; }
 .h-amt { font-size:0.8rem; color:var(--gray-500); }
 .h-num { float:right; font-size:0.72rem; color:var(--gray-400); }
 .h-action-btns {
@@ -400,8 +405,6 @@ $apptId    = (int)($_GET['appt'] ?? 0);
     </div><!-- /infoBody -->
 </div>
 
-<?php $viewerRole = $_SESSION['role'] ?? 'doctor'; $canVisit = in_array($viewerRole, ['doctor','asst_doctor']); ?>
-
 <!-- ── WORKSPACE ── -->
 <div class="workspace" style="<?php echo $canVisit ? '' : 'grid-template-columns:1fr;'; ?>">
 
@@ -427,46 +430,38 @@ $apptId    = (int)($_GET['appt'] ?? 0);
             </div>
 
             <!-- Medicine tag picker -->
-            <div style="margin-bottom:10px;">
+            <div style="margin-bottom:12px;">
                 <label class="info-label" style="display:block;margin-bottom:4px;">
                     Medicines
-                    <span style="font-weight:400;color:var(--gray-400);margin-left:6px;">— search or type below</span>
+                    <span style="font-weight:400;color:var(--gray-400);margin-left:6px;">— search or type, press Enter to add</span>
                 </label>
 
-                <!-- Search box -->
-                <div style="position:relative;" id="medPickerWrap">
-                    <div style="display:flex;align-items:center;gap:6px;border:1px solid var(--gray-300);border-radius:5px;padding:5px 8px;background:white;flex-wrap:wrap;" id="tagInputArea">
-                        <!-- Tags render here -->
+                <!-- Tag input area -->
+                <div id="medPickerWrap" style="position:relative;">
+                    <div id="tagInputArea" style="display:flex;align-items:center;gap:5px;border:1.5px solid var(--gray-300);border-radius:6px;padding:5px 8px;background:#fff;flex-wrap:wrap;cursor:text;min-height:38px;" onclick="document.getElementById('medSearch').focus()">
                         <input type="text" id="medSearch"
-                            placeholder="Search medicine or type new..."
+                            placeholder="Type medicine name..."
                             autocomplete="off"
-                            style="border:none;outline:none;font-size:12px;min-width:160px;flex:1;padding:2px 0;">
+                            style="border:none;outline:none;font-size:13px;min-width:140px;flex:1;padding:2px 0;background:transparent;">
                     </div>
                     <!-- Dropdown -->
-                    <div id="medDropdown" style="
-                        display:none; position:absolute; top:100%; left:0; right:0; z-index:200;
-                        background:white; border:1px solid var(--gray-200); border-top:none;
-                        border-radius:0 0 6px 6px; max-height:220px; overflow-y:auto;
-                        box-shadow:var(--shadow-md);">
-                    </div>
+                    <div id="medDropdown" style="display:none;position:absolute;top:calc(100% + 2px);left:0;right:0;z-index:500;background:#fff;border:1.5px solid var(--gray-300);border-radius:6px;max-height:200px;overflow-y:auto;box-shadow:0 4px 16px rgba(0,0,0,.12);"></div>
                 </div>
 
-                <!-- Selected tags display -->
-                <div id="selectedTags" style="display:flex;flex-wrap:wrap;gap:5px;margin-top:7px;min-height:20px;">
-                    <!-- Tags appear here -->
-                </div>
+                <!-- Selected tags below the input -->
+                <div id="selectedTags" style="display:flex;flex-wrap:wrap;gap:5px;margin-top:6px;min-height:0;"></div>
             </div>
 
-            <!-- Freetext notes (optional extra) -->
-            <div style="margin-bottom:10px;">
+            <!-- Notes field — completely separate from medicines -->
+            <div style="margin-bottom:12px;">
                 <label class="info-label" style="display:block;margin-bottom:4px;">
-                    Notes / Extra
-                    <span style="font-weight:400;color:var(--gray-400);margin-left:6px;">— any additional notes</span>
+                    Notes
+                    <span style="font-weight:400;color:var(--gray-400);margin-left:6px;">— follow-up, observations, instructions</span>
                 </label>
-                <textarea id="reportNotes" class="r-input" placeholder="e.g. follow-up, improvement noted..." rows="2"></textarea>
+                <textarea id="reportNotes" class="r-input" placeholder="e.g. Follow-up in 2 weeks, improvement noted..." rows="2"></textarea>
             </div>
 
-            <!-- Hidden final textarea that gets submitted -->
+            <!-- Hidden textarea for medicines only (submitted separately) -->
             <textarea id="reportMedicins" style="display:none;"></textarea>
 
             <button class="save-btn" id="saveReportBtn" onclick="saveReport(<?php echo $pid; ?>)">
@@ -493,6 +488,9 @@ $apptId    = (int)($_GET['appt'] ?? 0);
                         <div class="h-num">#<?php echo htmlspecialchars($r['id']); ?></div>
                         <div class="h-date"><i class="fas fa-calendar-day"></i> <?php echo htmlspecialchars(fmtDate($r['date']??'')); ?></div>
                         <div class="h-meds"><?php echo htmlspecialchars(fmt($r['medicins']??null,'—')); ?></div>
+                        <?php if(!empty(trim($r['notes']??''))): ?>
+                        <div class="h-notes"><i class="fas fa-sticky-note"></i> <?php echo htmlspecialchars($r['notes']); ?></div>
+                        <?php endif; ?>
                         <?php if(!empty($r['amt'])&&$r['amt']>0): ?>
                         <div class="h-amt">₹<?php echo htmlspecialchars($r['amt']); ?></div>
                         <?php endif; ?>
@@ -518,7 +516,9 @@ $apptId    = (int)($_GET['appt'] ?? 0);
                                     value="<?php echo htmlspecialchars($r['amt']??0); ?>">
                             </div>
                             <textarea class="h-edit-input" id="he-meds-<?php echo $r['id']; ?>"
-                                rows="2" style="margin-bottom:6px;"><?php echo htmlspecialchars($r['medicins']??''); ?></textarea>
+                                rows="2" placeholder="Medicines..." style="margin-bottom:5px;"><?php echo htmlspecialchars($r['medicins']??''); ?></textarea>
+                            <textarea class="h-edit-input" id="he-notes-<?php echo $r['id']; ?>"
+                                rows="2" placeholder="Notes (optional)..." style="margin-bottom:6px;"><?php echo htmlspecialchars($r['notes']??''); ?></textarea>
                             <div class="h-edit-actions">
                                 <button class="h-save-btn" onclick="saveHistEdit(<?php echo $r['id']; ?>)">
                                     <i class="fas fa-save"></i> Save
@@ -547,91 +547,91 @@ const PID = <?php echo $pid; ?>;
 // MEDICINE TAG PICKER
 // ════════════════════════════════════════
 const MedPicker = {
-    selected: [],   // array of { name }
+    selected: [],
     debounceTimer: null,
+    _dropdownOpen: false,
 
     init() {
-        const input = document.getElementById('medSearch');
+        const input    = document.getElementById('medSearch');
         const dropdown = document.getElementById('medDropdown');
+        const wrap     = document.getElementById('medPickerWrap');
 
         // Show top medicines on focus
         input.addEventListener('focus', () => {
-            if (this.selected.length === 0 || input.value === '') {
-                this.fetchMeds('');
-            }
+            this.fetchMeds(input.value.trim());
         });
 
-        // Search on type
+        // Search on type with debounce
         input.addEventListener('input', () => {
             clearTimeout(this.debounceTimer);
             this.debounceTimer = setTimeout(() => {
                 this.fetchMeds(input.value.trim());
-            }, 200);
+            }, 180);
         });
 
-        // Hide dropdown on outside click
-        document.addEventListener('click', (e) => {
-            if (!document.getElementById('medPickerWrap').contains(e.target)) {
+        // Close dropdown when clicking outside — use mousedown so it fires
+        // before the input loses focus, which prevents the dropdown from
+        // disappearing before the item click registers
+        document.addEventListener('mousedown', (e) => {
+            if (!wrap.contains(e.target)) {
                 dropdown.style.display = 'none';
             }
         });
 
-        // Allow Enter/comma to add custom medicine
+        // Keyboard: Enter / comma to add; Escape to close
         input.addEventListener('keydown', (e) => {
             if ((e.key === 'Enter' || e.key === ',') && input.value.trim() !== '') {
                 e.preventDefault();
-                this.addTag(input.value.replace(/,/g,'').trim());
+                this.addTag(input.value.replace(/,/g, '').trim());
                 input.value = '';
                 dropdown.style.display = 'none';
             }
             if (e.key === 'Escape') {
                 dropdown.style.display = 'none';
+                input.blur();
             }
         });
     },
 
     fetchMeds(query) {
-        const url = `/api/medicines${query ? '?q=' + encodeURIComponent(query) : ''}`;
+        const url = '/api/medicines' + (query ? '?q=' + encodeURIComponent(query) : '');
         fetch(url)
-        .then(r => r.json())
-        .then(data => {
-            if (data.success) this.renderDropdown(data.data, query);
-        })
-        .catch(() => {});
+            .then(r => r.json())
+            .then(data => { if (data.success) this.renderDropdown(data.data, query); })
+            .catch(() => {});
     },
 
     renderDropdown(items, query) {
         const dropdown = document.getElementById('medDropdown');
         const selectedNames = this.selected.map(s => s.name.toLowerCase());
+        const filtered = items.filter(i => !selectedNames.includes(i.name.toLowerCase()));
         let html = '';
 
-        const filtered = items.filter(i => !selectedNames.includes(i.name.toLowerCase()));
-
         if (filtered.length === 0 && !query) {
-            html = '<div class="med-drop-empty">No medicines found</div>';
+            html = '<div class="med-drop-empty">Start typing to search medicines</div>';
         } else {
             filtered.forEach(item => {
                 const count = item.usage_count > 0 ? `<span class="med-count">×${item.usage_count}</span>` : '';
-                html += `<div class="med-drop-item" onclick="MedPicker.addTag('${escHtml(item.name)}')">
+                // Use mousedown so the click registers before blur closes dropdown
+                html += `<div class="med-drop-item" onmousedown="event.preventDefault();MedPicker.addTag('${escHtml(item.name)}')">
                     <span>${escHtml(item.name)}</span>${count}
                 </div>`;
             });
         }
 
-        // If query doesn't exactly match any result, offer to add it
         if (query && !items.find(i => i.name.toLowerCase() === query.toLowerCase())) {
-            html += `<div class="med-drop-add" onclick="MedPicker.addTag('${escHtml(query)}'); document.getElementById('medSearch').value='';">
+            html += `<div class="med-drop-add" onmousedown="event.preventDefault();MedPicker.addTag('${escHtml(query)}');document.getElementById('medSearch').value='';">
                 <i class="fas fa-plus-circle"></i> Add "<strong>${escHtml(query)}</strong>"
             </div>`;
         }
 
         dropdown.innerHTML = html;
-        dropdown.style.display = 'block';
+        dropdown.style.display = (html && filtered.length > 0 || query) ? 'block' : 'none';
     },
 
     addTag(name) {
         name = name.trim();
-        if (!name || name.length < 1) return;
+        if (!name) return;
         // Prevent duplicate
         if (this.selected.find(s => s.name.toLowerCase() === name.toLowerCase())) return;
 
@@ -660,24 +660,18 @@ const MedPicker = {
     },
 
     syncTextarea() {
-        // Combine tags + any free notes into hidden textarea
-        const notes = document.getElementById('reportNotes').value.trim();
-        const meds = this.selected.map(s => s.name).join(', ');
-        const combined = notes ? (meds ? meds + ', ' + notes : notes) : meds;
-        document.getElementById('reportMedicins').value = combined;
+        // Medicines only — notes are a completely separate field
+        document.getElementById('reportMedicins').value = this.selected.map(s => s.name).join(', ');
     },
 
     clear() {
         this.selected = [];
         this.renderTags();
         document.getElementById('medSearch').value = '';
-        document.getElementById('reportNotes').value = '';
         document.getElementById('reportMedicins').value = '';
+        document.getElementById('medDropdown').style.display = 'none';
     }
 };
-
-// Keep textarea in sync when doc types in notes field
-document.getElementById('reportNotes').addEventListener('input', () => MedPicker.syncTextarea());
 
 // Init on load
 MedPicker.init();
@@ -761,75 +755,90 @@ function saveInfo(patientId) {
 
 // ── Save new report ──
 function saveReport(patientId) {
-    // Sync tag picker into hidden textarea first
     MedPicker.syncTextarea();
 
-    const date = document.getElementById('reportDate').value;
+    const date     = document.getElementById('reportDate').value;
     const medicins = document.getElementById('reportMedicins').value.trim();
-    const amt = document.getElementById('reportAmt').value || 0;
-    const btn = document.getElementById('saveReportBtn');
-    const ok = document.getElementById('saveOk');
+    const notes    = document.getElementById('reportNotes').value.trim();
+    const amt      = document.getElementById('reportAmt').value || 0;
+    const btn      = document.getElementById('saveReportBtn');
+    const ok       = document.getElementById('saveOk');
 
-    if (!medicins) {
-        const searchBox = document.getElementById('medSearch');
+    // Require at least medicines OR notes
+    if (!medicins && !notes) {
         const wrap = document.getElementById('tagInputArea');
-        wrap.style.borderColor='#ef4444';
-        searchBox.focus();
-        setTimeout(()=>wrap.style.borderColor='',2000); return;
+        wrap.style.borderColor = '#ef4444';
+        document.getElementById('medSearch').focus();
+        setTimeout(() => wrap.style.borderColor = '', 2000);
+        return;
     }
 
     btn.disabled = true;
     btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
 
     const fd = new FormData();
-    fd.append('date', date); fd.append('medicins', medicins); fd.append('amt', amt);
+    fd.append('date', date);
+    fd.append('medicins', medicins);
+    fd.append('notes', notes);
+    fd.append('amt', amt);
 
-    fetch(`/api/patient/${patientId}/report`, { method:'POST', body:fd })
+    fetch('/api/patient/' + patientId + '/report', { method: 'POST', body: fd })
     .then(r => r.json())
     .then(data => {
         if (data.success) {
-            const list = document.getElementById('historyList');
+            const list  = document.getElementById('historyList');
             const noMsg = document.getElementById('noVisitsMsg');
             if (noMsg) noMsg.remove();
-            // Remove new-entry highlight from previous
-            list.querySelectorAll('.new-entry').forEach(e=>e.classList.remove('new-entry'));
-            const rId = data.report_id || '';
-            const fd2 = new Date(date).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'});
-            const amtHtml = amt > 0 ? `<div class="h-amt">₹${escHtml(String(amt))}</div>` : '';
+            list.querySelectorAll('.new-entry').forEach(e => e.classList.remove('new-entry'));
+
+            const rId    = data.report_id || '';
+            const dateStr = new Date(date).toLocaleDateString('en-IN', {day:'2-digit', month:'short', year:'numeric'});
+            const amtHtml   = amt > 0   ? `<div class="h-amt">₹${escHtml(String(amt))}</div>` : '';
+            const notesHtml = notes     ? `<div class="h-notes"><i class="fas fa-sticky-note"></i> ${escHtml(notes)}</div>` : '';
+            const medsDisp  = medicins  ? escHtml(medicins) : '—';
+
             const el = document.createElement('div');
             el.className = 'h-item new-entry';
             el.id = 'hitem-' + rId;
             el.innerHTML = `
                 <div class="h-num">#${rId}</div>
-                <div class="h-date"><i class="fas fa-calendar-day"></i> ${fd2}</div>
-                <div class="h-meds">${escHtml(medicins)}</div>
+                <div class="h-date"><i class="fas fa-calendar-day"></i> ${dateStr}</div>
+                <div class="h-meds">${medsDisp}</div>
+                ${notesHtml}
                 ${amtHtml}
-                <button class="h-edit-btn" onclick="toggleHistEdit(${rId})"><i class="fas fa-pen"></i> Edit</button>
+                <div class="h-action-btns">
+                    <a href="/invoice/${rId}" target="_blank" class="h-inv-btn"><i class="fas fa-file-invoice"></i> Invoice</a>
+                    <button class="h-edit-btn" onclick="toggleHistEdit(${rId})"><i class="fas fa-pen"></i> Edit</button>
+                </div>
                 <div class="h-edit-form" id="hedit-${rId}">
                     <div class="h-edit-row">
                         <input type="date" class="h-edit-input" id="he-date-${rId}" value="${escHtml(date)}">
                         <input type="number" class="h-edit-input" id="he-amt-${rId}" placeholder="₹ Amount" value="${escHtml(String(amt))}">
                     </div>
-                    <textarea class="h-edit-input" id="he-meds-${rId}" rows="2" style="margin-bottom:6px;">${escHtml(medicins)}</textarea>
+                    <textarea class="h-edit-input" id="he-meds-${rId}" rows="2" placeholder="Medicines..." style="margin-bottom:5px;">${escHtml(medicins)}</textarea>
+                    <textarea class="h-edit-input" id="he-notes-${rId}" rows="2" placeholder="Notes (optional)..." style="margin-bottom:6px;">${escHtml(notes)}</textarea>
                     <div class="h-edit-actions">
                         <button class="h-save-btn" onclick="saveHistEdit(${rId})"><i class="fas fa-save"></i> Save</button>
                         <button class="h-cancel-btn" onclick="toggleHistEdit(${rId})">Cancel</button>
                     </div>
                 </div>`;
             list.prepend(el);
-            // Update badge
+
             const badge = document.getElementById('visitBadge');
-            badge.textContent = (parseInt(badge.textContent)||0) + 1 + ' total';
-            // Clear form
+            badge.textContent = ((parseInt(badge.textContent) || 0) + 1) + ' total';
+
             MedPicker.clear();
-            document.getElementById('reportAmt').value = '';
+            document.getElementById('reportAmt').value  = '';
+            document.getElementById('reportNotes').value = '';
             document.getElementById('reportDate').value = new Date().toISOString().split('T')[0];
             ok.style.display = 'block';
-            setTimeout(()=>ok.style.display='none', 3000);
-        } else { alert('Error: ' + (data.message||'')); }
+            setTimeout(() => ok.style.display = 'none', 3000);
+        } else {
+            alert('Error: ' + (data.message || ''));
+        }
     })
-    .catch(()=>alert('Network error'))
-    .finally(()=>{ btn.disabled=false; btn.innerHTML='<i class="fas fa-save"></i> Save Visit'; });
+    .catch(() => alert('Network error'))
+    .finally(() => { btn.disabled = false; btn.innerHTML = '<i class="fas fa-save"></i> Save Visit'; });
 }
 
 // ── History edit ──
@@ -838,29 +847,49 @@ function toggleHistEdit(id) {
     form.classList.toggle('open');
 }
 function saveHistEdit(id) {
-    const date = document.getElementById('he-date-' + id).value;
-    const medicins = document.getElementById('he-meds-' + id).value.trim();
-    const amt = document.getElementById('he-amt-' + id).value || 0;
+    const date     = document.getElementById('he-date-'  + id).value;
+    const medicins = document.getElementById('he-meds-'  + id).value.trim();
+    const notes    = document.getElementById('he-notes-' + id)?.value.trim() || '';
+    const amt      = document.getElementById('he-amt-'   + id).value || 0;
 
     const fd = new FormData();
-    fd.append('date', date); fd.append('medicins', medicins); fd.append('amt', amt);
+    fd.append('date', date);
+    fd.append('medicins', medicins);
+    fd.append('notes', notes);
+    fd.append('amt', amt);
 
-    fetch(`/api/report/${id}/update`, { method:'POST', body:fd })
+    fetch('/api/report/' + id + '/update', { method: 'POST', body: fd })
     .then(r => r.json())
     .then(data => {
         if (data.success) {
             const item = document.getElementById('hitem-' + id);
-            item.querySelector('.h-date').innerHTML = `<i class="fas fa-calendar-day"></i> ${fmtDateJS(date)}`;
+            item.querySelector('.h-date').innerHTML = '<i class="fas fa-calendar-day"></i> ' + fmtDateJS(date);
             item.querySelector('.h-meds').textContent = medicins || '—';
+
+            // Update notes display
+            let notesEl = item.querySelector('.h-notes');
+            if (notes) {
+                if (!notesEl) {
+                    notesEl = document.createElement('div');
+                    notesEl.className = 'h-notes';
+                    item.querySelector('.h-meds').after(notesEl);
+                }
+                notesEl.innerHTML = '<i class="fas fa-sticky-note"></i> ' + escHtml(notes);
+            } else if (notesEl) {
+                notesEl.remove();
+            }
+
+            // Update amount display
             let amtEl = item.querySelector('.h-amt');
             if (amt > 0) {
-                if (!amtEl) { amtEl = document.createElement('div'); amtEl.className='h-amt'; item.querySelector('.h-meds').after(amtEl); }
+                if (!amtEl) { amtEl = document.createElement('div'); amtEl.className = 'h-amt'; item.querySelector('.h-notes, .h-meds').after(amtEl); }
                 amtEl.textContent = '₹' + amt;
             } else if (amtEl) { amtEl.remove(); }
+
             toggleHistEdit(id);
-        } else { alert('Save failed: ' + (data.message||'')); }
+        } else { alert('Save failed: ' + (data.message || '')); }
     })
-    .catch(()=>alert('Network error'));
+    .catch(() => alert('Network error'));
 }
 
 function fmtDateJS(v) {
