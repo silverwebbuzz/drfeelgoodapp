@@ -92,30 +92,49 @@ class Patient extends BaseModel {
     }
 
     /**
-     * Get patient list with pagination
+     * Get paginated patients with optional search — server-side
      */
-    public function getPaginated($page = 1, $limit = 10) {
-        $offset = ($page - 1) * $limit;
-        $limit = (int)$limit;
-        $offset = (int)$offset;
+    public function getPaginated($page = 1, $limit = 25, $search = '') {
+        $limit  = (int)$limit;
+        $offset = ((int)$page - 1) * $limit;
+        $params = [];
 
-        $sql = "SELECT id, patient_id, fname, lname, contact_no, dob, age, gender, mrg_status, chief, dor
+        $where = '';
+        if ($search !== '') {
+            $where = "WHERE CONCAT(fname,' ',lname) LIKE ?
+                         OR patient_id LIKE ?
+                         OR contact_no LIKE ?";
+            $s = "%{$search}%";
+            $params = [$s, $s, $s];
+        }
+
+        $sql = "SELECT id, patient_id, fname, lname, contact_no, age, gender, mrg_status, dor
                 FROM {$this->table}
-                ORDER BY fname, lname
+                {$where}
+                ORDER BY id DESC
                 LIMIT {$limit} OFFSET {$offset}";
 
-        $stmt = $this->query($sql);
+        $stmt = $this->query($sql, $params);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
     /**
-     * Get total patient count
+     * Get total patient count with optional search
      */
-    public function getTotalCount() {
-        $sql = "SELECT COUNT(*) as count FROM {$this->table}";
-        $stmt = $this->query($sql);
+    public function getTotalCount($search = '') {
+        $params = [];
+        $where  = '';
+        if ($search !== '') {
+            $where = "WHERE CONCAT(fname,' ',lname) LIKE ?
+                         OR patient_id LIKE ?
+                         OR contact_no LIKE ?";
+            $s = "%{$search}%";
+            $params = [$s, $s, $s];
+        }
+        $sql    = "SELECT COUNT(*) as count FROM {$this->table} {$where}";
+        $stmt   = $this->query($sql, $params);
         $result = $stmt->fetch(PDO::FETCH_ASSOC);
-        return $result['count'];
+        return (int)$result['count'];
     }
 
     /**

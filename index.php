@@ -194,8 +194,9 @@ switch ($route) {
 
     case 'patients':
         AuthController::requireLogin();
-        $patientController = new PatientController($db);
-        $response = $patientController->getAllPatients();
+        $patientModel = new \App\Models\Patient($db);
+        $initialRows  = $patientModel->getPaginated(1, 25, '');
+        $totalPatients = $patientModel->getTotalCount('');
         require __DIR__ . '/views/patient/list.php';
         break;
 
@@ -218,6 +219,18 @@ switch ($route) {
         }
         require __DIR__ . '/views/patient/create.php';
         break;
+
+    case 'api/patients':
+        AuthController::requireLogin();
+        header('Content-Type: application/json');
+        $patientModel = new \App\Models\Patient($db);
+        $page   = max(1, (int)($_GET['page']   ?? 1));
+        $limit  = in_array((int)($_GET['limit'] ?? 25), [10,25,50,100]) ? (int)$_GET['limit'] : 25;
+        $search = trim($_GET['search'] ?? '');
+        $rows   = $patientModel->getPaginated($page, $limit, $search);
+        $total  = $patientModel->getTotalCount($search);
+        echo json_encode(['success'=>true,'data'=>$rows,'total'=>$total,'page'=>$page,'limit'=>$limit]);
+        exit;
 
     case 'api/medicines':
         AuthController::requireLogin();

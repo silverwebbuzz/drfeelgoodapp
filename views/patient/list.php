@@ -2,28 +2,17 @@
 ob_start();
 $page_title = 'Patients - Dr. Feelgood';
 
-/**
- * Format legacy data — treats empty strings, nulls, and '0000-00-00' as N/A
- */
-function fmt($value, $fallback = 'N/A') {
-    if ($value === null || $value === '' || $value === '0000-00-00' || $value === '1970-01-01') {
-        return $fallback;
-    }
-    return $value;
-}
-
 function fmtDate($value) {
-    if ($value === null || $value === '' || $value === '0000-00-00' || strpos($value, '0000') === 0 || $value === '1970-01-01') {
-        return 'N/A';
-    }
+    if (!$value || $value === '0000-00-00' || strpos($value,'0000') === 0 || $value === '1970-01-01') return 'N/A';
     $ts = strtotime($value);
     return $ts ? date('d M Y', $ts) : 'N/A';
 }
-
-function fmtName($fname, $lname) {
-    $full = trim(trim($fname ?? '') . ' ' . trim($lname ?? ''));
+function fmtName($f, $l) {
+    $full = trim(trim($f??'').' '.trim($l??''));
     return $full === '' ? 'N/A' : $full;
 }
+
+$mrgMap = ['S'=>'Single','M'=>'Married','D'=>'Divorced','W'=>'Widowed'];
 ?>
 
 <!-- PAGE HEADER -->
@@ -35,19 +24,14 @@ function fmtName($fname, $lname) {
 
 <!-- DATATABLE SECTION -->
 <div class="datatable-container">
+
     <!-- HEADER WITH SEARCH & CONTROLS -->
     <div class="datatable-header">
         <div class="datatable-search">
             <div class="input-group">
-                <span class="input-group-text">
-                    <i class="fas fa-search"></i>
-                </span>
-                <input
-                    type="text"
-                    class="form-control"
-                    id="tableSearch"
-                    placeholder="Search patients by name, contact, or ID..."
-                >
+                <span class="input-group-text"><i class="fas fa-search"></i></span>
+                <input type="text" class="form-control" id="tableSearch"
+                       placeholder="Search by name, contact, or patient ID...">
             </div>
         </div>
         <a href="/patient/create" class="btn btn-primary btn-sm" style="white-space:nowrap;">
@@ -57,81 +41,60 @@ function fmtName($fname, $lname) {
 
     <!-- TABLE WRAPPER -->
     <div class="datatable-table-wrapper">
-        <?php if (isset($response['success']) && $response['success'] && !empty($response['data'])): ?>
-            <table class="datatable-table" id="patientsTable">
-                <thead>
-                    <tr>
-                        <th class="sortable" data-column="patient_id" data-type="text">Patient ID</th>
-                        <th class="sortable" data-column="name" data-type="text">Name</th>
-                        <th class="sortable" data-column="contact_no" data-type="text">Contact</th>
-                        <th class="sortable" data-column="gender" data-type="text">Gender</th>
-                        <th class="sortable" data-column="age" data-type="number">Age</th>
-                        <th class="sortable" data-column="mrg_status" data-type="text">Mrg. Status</th>
-                        <th class="sortable" data-column="dor" data-type="date">Date of Reg.</th>
-                        <th style="text-align: center;">Action</th>
-                    </tr>
-                </thead>
-                <tbody id="tableBody" style="visibility:hidden;">
-                    <?php foreach ($response['data'] as $patient): ?>
-                        <tr>
-                            <td>
-                                <code><?php echo htmlspecialchars($patient['patient_id'] ?? $patient['id']); ?></code>
-                            </td>
-                            <td>
-                                <strong><?php echo htmlspecialchars(fmtName($patient['fname'] ?? '', $patient['lname'] ?? '')); ?></strong>
-                            </td>
-                            <td>
-                                <?php $contact = trim($patient['contact_no'] ?? ''); ?>
-                                <?php if ($contact !== ''): ?>
-                                    <a href="tel:<?php echo htmlspecialchars($contact); ?>"><?php echo htmlspecialchars($contact); ?></a>
-                                <?php else: ?>
-                                    <span style="color: var(--gray-400);">N/A</span>
-                                <?php endif; ?>
-                            </td>
-                            <td>
-                                <?php if (($patient['gender'] ?? '') === 'M'): ?>
-                                    <span class="badge badge-male"><i class="fas fa-mars"></i> Male</span>
-                                <?php elseif (($patient['gender'] ?? '') === 'F'): ?>
-                                    <span class="badge badge-female"><i class="fas fa-venus"></i> Female</span>
-                                <?php else: ?>
-                                    <span style="color: var(--gray-400);">N/A</span>
-                                <?php endif; ?>
-                            </td>
-                            <td>
-                                <?php $age = (int)($patient['age'] ?? 0); ?>
-                                <?php echo $age > 0 ? htmlspecialchars($age) . ' yrs' : '<span style="color: var(--gray-400);">N/A</span>'; ?>
-                            </td>
-                            <td>
-                                <?php
-                                $mrgMap = ['S' => 'Single', 'M' => 'Married', 'D' => 'Divorced', 'W' => 'Widowed'];
-                                $mrg = $mrgMap[$patient['mrg_status'] ?? ''] ?? '';
-                                echo $mrg !== '' ? htmlspecialchars($mrg) : '<span style="color: var(--gray-400);">N/A</span>';
-                                ?>
-                            </td>
-                            <td><?php echo htmlspecialchars(fmtDate($patient['dor'] ?? '')); ?></td>
-                            <td style="text-align: center;">
-                                <a href="/patient/<?php echo $patient['id']; ?>" class="btn btn-primary btn-sm">
-                                    <i class="fas fa-eye"></i> View
-                                </a>
-                            </td>
-                        </tr>
-                    <?php endforeach; ?>
-                </tbody>
-            </table>
-        <?php else: ?>
-            <div class="datatable-empty">
-                <i class="fas fa-inbox"></i>
-                <p>No patients found</p>
-            </div>
-        <?php endif; ?>
+        <table class="datatable-table" id="patientsTable">
+            <thead>
+                <tr>
+                    <th class="sortable" data-col="patient_id">Patient ID</th>
+                    <th class="sortable" data-col="name">Name</th>
+                    <th class="sortable" data-col="contact_no">Contact</th>
+                    <th class="sortable" data-col="gender">Gender</th>
+                    <th class="sortable" data-col="age">Age</th>
+                    <th class="sortable" data-col="mrg_status">Mrg. Status</th>
+                    <th class="sortable" data-col="dor">Date of Reg.</th>
+                    <th style="text-align:center;">Action</th>
+                </tr>
+            </thead>
+            <tbody id="tableBody">
+                <!-- Initial rows rendered server-side — no flash -->
+                <?php foreach ($initialRows as $p): ?>
+                <tr>
+                    <td><code><?php echo htmlspecialchars($p['patient_id'] ?? $p['id']); ?></code></td>
+                    <td><strong><?php echo htmlspecialchars(fmtName($p['fname']??'',$p['lname']??'')); ?></strong></td>
+                    <td>
+                        <?php $c=trim($p['contact_no']??''); ?>
+                        <?php if($c!==''): ?><a href="tel:<?php echo htmlspecialchars($c); ?>"><?php echo htmlspecialchars($c); ?></a>
+                        <?php else: ?><span style="color:var(--gray-400);">N/A</span><?php endif; ?>
+                    </td>
+                    <td>
+                        <?php if(($p['gender']??'')==='M'): ?>
+                            <span class="badge badge-male"><i class="fas fa-mars"></i> Male</span>
+                        <?php elseif(($p['gender']??'')==='F'): ?>
+                            <span class="badge badge-female"><i class="fas fa-venus"></i> Female</span>
+                        <?php else: ?><span style="color:var(--gray-400);">N/A</span><?php endif; ?>
+                    </td>
+                    <td><?php $age=(int)($p['age']??0); echo $age>0 ? htmlspecialchars($age).' yrs' : '<span style="color:var(--gray-400);">N/A</span>'; ?></td>
+                    <td><?php $m=$mrgMap[$p['mrg_status']??'']??''; echo $m!=='' ? htmlspecialchars($m) : '<span style="color:var(--gray-400);">N/A</span>'; ?></td>
+                    <td><?php echo htmlspecialchars(fmtDate($p['dor']??'')); ?></td>
+                    <td style="text-align:center;">
+                        <a href="/patient/<?php echo $p['id']; ?>" class="btn btn-primary btn-sm">
+                            <i class="fas fa-eye"></i> View
+                        </a>
+                    </td>
+                </tr>
+                <?php endforeach; ?>
+                <?php if (empty($initialRows)): ?>
+                <tr><td colspan="8" style="text-align:center;padding:40px;color:var(--gray-500);">No patients found</td></tr>
+                <?php endif; ?>
+            </tbody>
+        </table>
     </div>
 
     <!-- FOOTER WITH PAGINATION & INFO -->
     <div class="datatable-footer">
         <div class="datatable-info">
-            Showing <span id="startEntry">1</span> to <span id="endEntry">10</span> of <span id="totalEntries">0</span> entries
+            Showing <span id="startEntry">1</span>–<span id="endEntry"><?php echo min(25, $totalPatients); ?></span>
+            of <span id="totalEntries"><?php echo $totalPatients; ?></span> patients
         </div>
-
         <div class="datatable-controls">
             <div class="datatable-entries-select">
                 <label for="entriesPerPage">Show</label>
@@ -144,180 +107,179 @@ function fmtName($fname, $lname) {
                 <span>entries</span>
             </div>
         </div>
-
         <div class="datatable-pagination" id="pagination"></div>
     </div>
+
 </div>
 
 <script>
-class DataTable {
-    constructor(options) {
-        this.tableBody = document.getElementById(options.bodyId);
-        this.table = document.getElementById(options.tableId);
-        this.searchInput = document.getElementById(options.searchId);
-        this.paginationContainer = document.getElementById(options.paginationId);
-        this.entriesSelect = document.getElementById(options.entriesSelectId);
-        this.allRows = Array.from(this.tableBody.querySelectorAll('tr'));
-        this.currentPage = 1;
-        this.entriesPerPage = 25;
-        this.sortColumn = null;
-        this.sortDirection = 'asc';
+(function () {
 
-        this.init();
+    // ── State ──────────────────────────────────────────────────────────
+    let currentPage  = 1;
+    let limit        = 25;
+    let search       = '';
+    let total        = <?php echo (int)$totalPatients; ?>;
+    let searchTimer  = null;
+    let loading      = false;
+
+    const tbody      = document.getElementById('tableBody');
+    const searchEl   = document.getElementById('tableSearch');
+    const limitEl    = document.getElementById('entriesPerPage');
+    const startEl    = document.getElementById('startEntry');
+    const endEl      = document.getElementById('endEntry');
+    const totalEl    = document.getElementById('totalEntries');
+    const pagEl      = document.getElementById('pagination');
+
+    const mrgMap = {S:'Single',M:'Married',D:'Divorced',W:'Widowed'};
+
+    // ── Render initial pagination (no AJAX needed) ──────────────────
+    renderPagination();
+
+    // ── Events ─────────────────────────────────────────────────────────
+    searchEl.addEventListener('input', function () {
+        clearTimeout(searchTimer);
+        searchTimer = setTimeout(function () {
+            search = searchEl.value.trim();
+            currentPage = 1;
+            fetchPage();
+        }, 350); // debounce 350ms
+    });
+
+    limitEl.addEventListener('change', function () {
+        limit = parseInt(this.value);
+        currentPage = 1;
+        fetchPage();
+    });
+
+    // ── Fetch page from server ──────────────────────────────────────────
+    function fetchPage() {
+        if (loading) return;
+        loading = true;
+        setLoading(true);
+
+        const url = '/api/patients?page=' + currentPage +
+                    '&limit=' + limit +
+                    '&search=' + encodeURIComponent(search);
+
+        fetch(url)
+            .then(r => r.json())
+            .then(function (res) {
+                if (!res.success) throw new Error('Failed');
+                total = res.total;
+                renderRows(res.data);
+                renderInfo();
+                renderPagination();
+            })
+            .catch(function () {
+                tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:30px;color:var(--danger);">Error loading data. Please refresh.</td></tr>';
+            })
+            .finally(function () {
+                loading = false;
+                setLoading(false);
+            });
     }
 
-    init() {
-        this.updateTotalEntries();
-        this.attachSearchListener();
-        this.attachSortListeners();
-        this.attachEntriesSelectListener();
-        this.render();
+    // ── Render rows ─────────────────────────────────────────────────────
+    function renderRows(rows) {
+        if (!rows.length) {
+            tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:40px;color:var(--gray-500);">No patients found</td></tr>';
+            return;
+        }
+        tbody.innerHTML = rows.map(function (p) {
+            const name    = ((p.fname||'') + ' ' + (p.lname||'')).trim() || 'N/A';
+            const contact = (p.contact_no||'').trim();
+            const age     = parseInt(p.age) || 0;
+            const mrg     = mrgMap[p.mrg_status] || 'N/A';
+            const dor     = fmtDate(p.dor || '');
+            const pid     = esc(p.patient_id || p.id);
+
+            let genderBadge = '<span style="color:var(--gray-400);">N/A</span>';
+            if (p.gender === 'M') genderBadge = '<span class="badge badge-male"><i class="fas fa-mars"></i> Male</span>';
+            else if (p.gender === 'F') genderBadge = '<span class="badge badge-female"><i class="fas fa-venus"></i> Female</span>';
+
+            return '<tr>' +
+                '<td><code>' + pid + '</code></td>' +
+                '<td><strong>' + esc(name) + '</strong></td>' +
+                '<td>' + (contact ? '<a href="tel:' + esc(contact) + '">' + esc(contact) + '</a>' : '<span style="color:var(--gray-400);">N/A</span>') + '</td>' +
+                '<td>' + genderBadge + '</td>' +
+                '<td>' + (age > 0 ? age + ' yrs' : '<span style="color:var(--gray-400);">N/A</span>') + '</td>' +
+                '<td>' + esc(mrg) + '</td>' +
+                '<td>' + esc(dor) + '</td>' +
+                '<td style="text-align:center;"><a href="/patient/' + p.id + '" class="btn btn-primary btn-sm"><i class="fas fa-eye"></i> View</a></td>' +
+                '</tr>';
+        }).join('');
     }
 
-    attachSearchListener() {
-        this.searchInput.addEventListener('input', (e) => {
-            this.currentPage = 1;
-            this.filterRows(e.target.value.toLowerCase());
-        });
+    // ── Info bar ────────────────────────────────────────────────────────
+    function renderInfo() {
+        const start = total === 0 ? 0 : (currentPage - 1) * limit + 1;
+        const end   = Math.min(currentPage * limit, total);
+        startEl.textContent = start;
+        endEl.textContent   = end;
+        totalEl.textContent = total;
     }
 
-    filterRows(query) {
-        this.visibleRows = this.allRows.filter(row => {
-            return row.innerText.toLowerCase().includes(query);
-        });
-        this.updateTotalEntries();
-        this.currentPage = 1;
-        this.render();
-    }
+    // ── Pagination ──────────────────────────────────────────────────────
+    function renderPagination() {
+        const totalPages = Math.max(1, Math.ceil(total / limit));
+        let html = '';
 
-    attachSortListeners() {
-        const headers = this.table.querySelectorAll('th.sortable');
-        headers.forEach(header => {
-            header.addEventListener('click', () => {
-                const column = header.dataset.column;
-                if (this.sortColumn === column) {
-                    this.sortDirection = this.sortDirection === 'asc' ? 'desc' : 'asc';
-                } else {
-                    this.sortColumn = column;
-                    this.sortDirection = 'asc';
+        // Prev
+        html += currentPage > 1
+            ? '<a href="#" data-page="' + (currentPage-1) + '"><i class="fas fa-chevron-left"></i></a>'
+            : '<span class="disabled"><i class="fas fa-chevron-left"></i></span>';
+
+        // Pages with ellipsis
+        for (let i = 1; i <= totalPages; i++) {
+            if (i === currentPage) {
+                html += '<span class="active">' + i + '</span>';
+            } else if (i <= 2 || i > totalPages - 2 || (i >= currentPage - 1 && i <= currentPage + 1)) {
+                html += '<a href="#" data-page="' + i + '">' + i + '</a>';
+            } else if (i === 3 || i === totalPages - 2) {
+                html += '<span>...</span>';
+            }
+        }
+
+        // Next
+        html += currentPage < totalPages
+            ? '<a href="#" data-page="' + (currentPage+1) + '"><i class="fas fa-chevron-right"></i></a>'
+            : '<span class="disabled"><i class="fas fa-chevron-right"></i></span>';
+
+        pagEl.innerHTML = html;
+
+        // Attach click handlers
+        pagEl.querySelectorAll('a[data-page]').forEach(function (a) {
+            a.addEventListener('click', function (e) {
+                e.preventDefault();
+                const p = parseInt(this.dataset.page);
+                if (p !== currentPage) {
+                    currentPage = p;
+                    fetchPage();
                 }
-
-                headers.forEach(h => h.classList.remove('sort-asc', 'sort-desc'));
-                header.classList.add(this.sortDirection === 'asc' ? 'sort-asc' : 'sort-desc');
-
-                this.sortRows();
-                this.currentPage = 1;
-                this.render();
             });
         });
     }
 
-    sortRows() {
-        this.visibleRows.sort((a, b) => {
-            const aValue = a.cells[this.getColumnIndex(this.sortColumn)].innerText.trim();
-            const bValue = b.cells[this.getColumnIndex(this.sortColumn)].innerText.trim();
-
-            let aNum = parseFloat(aValue) || aValue;
-            let bNum = parseFloat(bValue) || bValue;
-
-            if (aNum < bNum) return this.sortDirection === 'asc' ? -1 : 1;
-            if (aNum > bNum) return this.sortDirection === 'asc' ? 1 : -1;
-            return 0;
-        });
+    // ── Loading state ───────────────────────────────────────────────────
+    function setLoading(on) {
+        tbody.style.opacity = on ? '0.4' : '1';
     }
 
-    getColumnIndex(columnName) {
-        const headers = Array.from(this.table.querySelectorAll('th.sortable'));
-        return headers.findIndex(h => h.dataset.column === columnName);
+    // ── Helpers ─────────────────────────────────────────────────────────
+    function esc(s) {
+        return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+    function fmtDate(v) {
+        if (!v || v === '0000-00-00' || v === '1970-01-01') return 'N/A';
+        const d = new Date(v);
+        if (isNaN(d)) return v;
+        return d.getDate().toString().padStart(2,'0') + ' ' +
+               ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][d.getMonth()] + ' ' +
+               d.getFullYear();
     }
 
-    attachEntriesSelectListener() {
-        this.entriesSelect.addEventListener('change', (e) => {
-            this.entriesPerPage = parseInt(e.target.value);
-            this.currentPage = 1;
-            this.render();
-        });
-    }
-
-    updateTotalEntries() {
-        this.visibleRows = this.visibleRows || this.allRows;
-        document.getElementById('totalEntries').textContent = this.visibleRows.length;
-    }
-
-    render() {
-        this.tableBody.innerHTML = '';
-
-        const start = (this.currentPage - 1) * this.entriesPerPage;
-        const end = start + this.entriesPerPage;
-        const paginatedRows = this.visibleRows.slice(start, end);
-
-        if (paginatedRows.length === 0) {
-            this.tableBody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 40px; color: var(--gray-500);">No records found</td></tr>';
-        } else {
-            paginatedRows.forEach(row => this.tableBody.appendChild(row.cloneNode(true)));
-        }
-
-        // Reveal tbody only after first render — prevents layout jump on load
-        this.tableBody.style.visibility = 'visible';
-
-        this.updateInfo(start, end);
-        this.renderPagination();
-    }
-
-    updateInfo(start, end) {
-        const total = this.visibleRows.length;
-        document.getElementById('startEntry').textContent = total === 0 ? 0 : start + 1;
-        document.getElementById('endEntry').textContent = Math.min(end, total);
-        document.getElementById('totalEntries').textContent = total;
-    }
-
-    renderPagination() {
-        const totalPages = Math.ceil(this.visibleRows.length / this.entriesPerPage);
-        let html = '';
-
-        // Previous button
-        if (this.currentPage > 1) {
-            html += `<a href="#" onclick="return table.goToPage(${this.currentPage - 1})"><i class="fas fa-chevron-left"></i></a>`;
-        } else {
-            html += `<span class="disabled"><i class="fas fa-chevron-left"></i></span>`;
-        }
-
-        // Page numbers
-        for (let i = 1; i <= totalPages; i++) {
-            if (i === this.currentPage) {
-                html += `<span class="active">${i}</span>`;
-            } else if (i <= 3 || i > totalPages - 2 || (i > this.currentPage - 2 && i < this.currentPage + 2)) {
-                html += `<a href="#" onclick="return table.goToPage(${i})">${i}</a>`;
-            } else if (i === 4 || i === totalPages - 2) {
-                html += `<span>...</span>`;
-            }
-        }
-
-        // Next button
-        if (this.currentPage < totalPages) {
-            html += `<a href="#" onclick="return table.goToPage(${this.currentPage + 1})"><i class="fas fa-chevron-right"></i></a>`;
-        } else {
-            html += `<span class="disabled"><i class="fas fa-chevron-right"></i></span>`;
-        }
-
-        this.paginationContainer.innerHTML = html;
-    }
-
-    goToPage(page) {
-        this.currentPage = page;
-        this.render();
-        return false;
-    }
-}
-
-// Initialize table
-const table = new DataTable({
-    tableId: 'patientsTable',
-    bodyId: 'tableBody',
-    searchId: 'tableSearch',
-    paginationId: 'pagination',
-    entriesSelectId: 'entriesPerPage'
-});
+})();
 </script>
 
 <?php
