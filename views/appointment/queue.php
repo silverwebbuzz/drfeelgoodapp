@@ -285,23 +285,23 @@ $multiDay = ($view !== 'today');
                     ?>
 
                     <?php if ($s === 'waiting'): ?>
-
                         <?php if ($isWalkin): ?>
                             
-                            <?php if ($qCanConsult): ?>
-                            <button class="btn btn-primary btn-sm" onclick="callPatient(<?php echo $id; ?>,<?php echo $pid; ?>)">
-                                <i class="fas fa-stethoscope"></i> Call
-                            </button>
-                            <?php endif; ?>
-
-                        <?php else: ?>
                             <button class="btn btn-success btn-sm" onclick="setStatus(<?php echo $id; ?>,'arrived')">
                                 <i class="fas fa-check-circle"></i> Arrived
                             </button>
-                            <button class="btn btn-warning btn-sm" onclick="setStatus(<?php echo $id; ?>,'no_show')" style="color:#fff;" title="Patient has not come">
+                        <?php else: ?>
+                            
+                            <button class="btn btn-success btn-sm" onclick="setStatus(<?php echo $id; ?>,'arrived')">
+                                <i class="fas fa-check-circle"></i> Arrived
+                            </button>
+                            <button class="btn btn-warning btn-sm" onclick="setStatus(<?php echo $id; ?>,'no_show')" style="color:#fff;">
                                 <i class="fas fa-user-slash"></i> Not Arrived
                             </button>
                         <?php endif; ?>
+                        <button class="btn btn-secondary btn-sm" onclick="setStatus(<?php echo $id; ?>,'cancelled')" title="Cancel">
+                            <i class="fas fa-times"></i>
+                        </button>
 
                     <?php elseif ($s === 'arrived'): ?>
                         
@@ -310,39 +310,52 @@ $multiDay = ($view !== 'today');
                             <i class="fas fa-stethoscope"></i> Call
                         </button>
                         <?php else: ?>
-                        <span style="color:#0ea5e9;font-size:11px;font-weight:600;"><i class="fas fa-clock"></i> Ready</span>
+                        <span style="color:#16a34a;font-size:11px;font-weight:600;">
+                            <i class="fas fa-user-check"></i> In Clinic
+                        </span>
                         <?php endif; ?>
+                        <button class="btn btn-secondary btn-sm" onclick="setStatus(<?php echo $id; ?>,'cancelled')" title="Cancel">
+                            <i class="fas fa-times"></i>
+                        </button>
 
                     <?php elseif ($s === 'in_consultation'): ?>
+                        
                         <?php if ($qCanConsult): ?>
                         <button class="btn btn-success btn-sm" onclick="finishConsult(<?php echo $id; ?>)">
                             <i class="fas fa-check"></i> Finish
                         </button>
-                        <?php endif; ?>
                         <?php if ($pid): ?>
-                        <a href="/patient/<?php echo $pid; ?>" class="btn btn-secondary btn-sm" title="View Patient"><i class="fas fa-user"></i></a>
+                        <a href="/patient/<?php echo $pid; ?>" class="btn btn-secondary btn-sm" title="View Patient">
+                            <i class="fas fa-user"></i>
+                        </a>
                         <?php endif; ?>
-
-                    <?php elseif ($s === 'completed'): ?>
-                        <span style="color:#9ca3af;font-size:11px;"><i class="fas fa-check-double"></i> Done</span>
-                        <?php if ($pid): ?>
-                        <a href="/patient/<?php echo $pid; ?>" class="btn btn-secondary btn-sm" title="View Patient"><i class="fas fa-user"></i></a>
+                        <?php else: ?>
+                        <span style="color:#2563eb;font-size:11px;font-weight:600;">
+                            <i class="fas fa-stethoscope"></i> With Doctor
+                        </span>
                         <?php endif; ?>
 
                     <?php elseif ($s === 'no_show'): ?>
-                        <span style="color:#ef4444;font-size:11px;font-weight:600;"><i class="fas fa-user-slash"></i> Not Arrived</span>
-                        <button class="btn btn-outline-primary btn-sm" onclick="setStatus(<?php echo $id; ?>,'waiting')" title="Patient arrived late — undo">
+                        
+                        <button class="btn btn-outline-primary btn-sm" onclick="setStatus(<?php echo $id; ?>,'arrived')" title="Patient came late">
                             <i class="fas fa-undo"></i> Arrived Late
                         </button>
 
-                    <?php else: ?>
-                        <span style="color:#9ca3af;font-size:11px;"><?php echo htmlspecialchars(ucfirst(str_replace('_',' ',$s))); ?></span>
-                    <?php endif; ?>
+                    <?php elseif ($s === 'completed'): ?>
+                        <span style="color:#9ca3af;font-size:11px;">
+                            <i class="fas fa-check-double"></i> Done
+                        </span>
+                        <?php if ($pid && $qCanConsult): ?>
+                        <a href="/patient/<?php echo $pid; ?>" class="btn btn-secondary btn-sm" title="View Patient">
+                            <i class="fas fa-user"></i>
+                        </a>
+                        <?php endif; ?>
 
-                    <?php if (!in_array($s, ['completed','cancelled','no_show'])): ?>
-                    <button class="btn btn-secondary btn-sm" onclick="setStatus(<?php echo $id; ?>,'cancelled')" title="Cancel appointment">
-                        <i class="fas fa-times"></i>
-                    </button>
+                    <?php elseif ($s === 'cancelled'): ?>
+                        <span style="color:#9ca3af;font-size:11px;">
+                            <i class="fas fa-times-circle"></i> Cancelled
+                        </span>
+
                     <?php endif; ?>
 
                 </td>
