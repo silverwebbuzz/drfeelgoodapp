@@ -164,6 +164,7 @@ $multiDay = ($view !== 'today');
             <li class="nav-item"><a class="nav-link" href="#" data-filter="arrived">Arrived</a></li>
             <li class="nav-item"><a class="nav-link" href="#" data-filter="in_consultation">In Consult</a></li>
             <li class="nav-item"><a class="nav-link" href="#" data-filter="completed">Completed</a></li>
+            <li class="nav-item"><a class="nav-link" href="#" data-filter="no_show">Not Arrived</a></li>
             <li class="nav-item"><a class="nav-link" href="#" data-filter="cancelled">Cancelled</a></li>
         </ul>
 
@@ -265,7 +266,7 @@ $multiDay = ($view !== 'today');
                         'in_consultation' => ['primary',  'In Consult'],
                         'completed'       => ['success',  'Completed'],
                         'cancelled'       => ['secondary','Cancelled'],
-                        'no_show'         => ['danger',   'No Show'],
+                        'no_show'         => ['danger',   'Not Arrived'],
                     ];
                     [$cls,$lbl] = $sMap[$s] ?? ['secondary', ucfirst($s)];
                     if ($isLate && $s === 'arrived') {
@@ -294,12 +295,11 @@ $multiDay = ($view !== 'today');
                             <?php endif; ?>
 
                         <?php else: ?>
-                            
-                            <button class="btn btn-success btn-sm" onclick="setStatus(<?php echo $id; ?>,'arrived')" title="Mark patient as arrived">
+                            <button class="btn btn-success btn-sm" onclick="setStatus(<?php echo $id; ?>,'arrived')">
                                 <i class="fas fa-check-circle"></i> Arrived
                             </button>
-                            <button class="btn btn-danger btn-sm" onclick="setStatus(<?php echo $id; ?>,'no_show')" title="Patient did not come">
-                                <i class="fas fa-user-slash"></i> No Show
+                            <button class="btn btn-warning btn-sm" onclick="setStatus(<?php echo $id; ?>,'no_show')" style="color:#fff;" title="Patient has not come">
+                                <i class="fas fa-user-slash"></i> Not Arrived
                             </button>
                         <?php endif; ?>
 
@@ -329,11 +329,16 @@ $multiDay = ($view !== 'today');
                         <a href="/patient/<?php echo $pid; ?>" class="btn btn-secondary btn-sm" title="View Patient"><i class="fas fa-user"></i></a>
                         <?php endif; ?>
 
+                    <?php elseif ($s === 'no_show'): ?>
+                        <span style="color:#ef4444;font-size:11px;font-weight:600;"><i class="fas fa-user-slash"></i> Not Arrived</span>
+                        <button class="btn btn-outline-primary btn-sm" onclick="setStatus(<?php echo $id; ?>,'waiting')" title="Patient arrived late — undo">
+                            <i class="fas fa-undo"></i> Arrived Late
+                        </button>
+
                     <?php else: ?>
                         <span style="color:#9ca3af;font-size:11px;"><?php echo htmlspecialchars(ucfirst(str_replace('_',' ',$s))); ?></span>
                     <?php endif; ?>
 
-                    
                     <?php if (!in_array($s, ['completed','cancelled','no_show'])): ?>
                     <button class="btn btn-secondary btn-sm" onclick="setStatus(<?php echo $id; ?>,'cancelled')" title="Cancel appointment">
                         <i class="fas fa-times"></i>
