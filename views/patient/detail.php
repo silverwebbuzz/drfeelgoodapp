@@ -277,9 +277,11 @@ $apptId    = (int)($_GET['appt'] ?? 0);
         <div class="info-panel-header" onclick="toggleInfo()">
             <span><i class="fas fa-id-card"></i> Patient Information</span>
             <div style="display:flex;gap:8px;align-items:center;" onclick="event.stopPropagation()">
+                <?php if ($canVisit): ?>
                 <button class="edit-btn-sm" id="infoEditBtn" onclick="toggleInfoEdit()">
                     <i class="fas fa-edit"></i> Edit
                 </button>
+                <?php endif; ?>
                 <span style="font-size:0.78rem;color:var(--gray-400);" id="infoToggleHint">▾ expand</span>
             </div>
         </div>
