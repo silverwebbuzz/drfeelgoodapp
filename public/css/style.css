@@ -116,22 +116,24 @@ body {
     gap: 2px;
     line-height: 1;
 }
-.header-name .full-name {
+.app-header .header-name .full-name {
     font-size: 0.84rem;
     font-weight: 600;
     color: var(--gray-800);
     white-space: nowrap;
 }
-.header-name .role-pill {
+.app-header .header-name .role-pill {
+    display: inline-block;
     font-size: 10px;
-    background: var(--primary);
-    color: #fff;
+    background: var(--primary) !important;
+    color: #fff !important;
     border-radius: 4px;
-    padding: 2px 8px;
+    padding: 2px 9px;
     font-weight: 700;
     white-space: nowrap;
-    letter-spacing: 0.3px;
+    letter-spacing: 0.4px;
     text-transform: uppercase;
+    line-height: 1.6;
 }
 
 /* ── Body area below header ── */
@@ -474,8 +476,8 @@ body {
     .sidebar-toggle { display: inline-flex; }
 
     /* On mobile: hide name text, keep role pill only */
-    .header-name .full-name { display: none; }
-    .header-name { align-items: center; }
+    .app-header .header-name .full-name { display: none; }
+    .app-header .header-name { align-items: center; }
 
     /* Sidebar becomes a slide-in drawer */
     .app-sidebar {
@@ -531,7 +533,7 @@ body {
     .btn-sm      { padding: 4px 8px; font-size: 0.75rem; }
 
     /* Hide role pill + logout text on very small screens */
-    .header-name .role-pill { display: none; }
+    .app-header .header-name .role-pill { display: none; }
     .logout-label { display: none; }
 }
 
