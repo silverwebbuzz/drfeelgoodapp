@@ -11,19 +11,18 @@
 </head>
 <body>
     <?php
-    // Make role available throughout layout
-    $layoutRole = (isset($_SESSION['role']) && $_SESSION['role'] !== '') ? $_SESSION['role'] : 'doctor';
+    $layoutRole   = (isset($_SESSION['role']) && $_SESSION['role'] !== '') ? $_SESSION['role'] : 'doctor';
     $isDoctor     = $layoutRole === 'doctor';
     $isAsstDoctor = $layoutRole === 'asst_doctor';
     $isReception  = $layoutRole === 'reception';
     $canReports   = $isDoctor || $isAsstDoctor;
-    $uri = $_SERVER['REQUEST_URI'];
+    $uri          = $_SERVER['REQUEST_URI'];
     ?>
     <div class="app-wrapper">
 
-        <!-- HEADER -->
+        <!-- ── HEADER ─────────────────────────────────── -->
         <header class="app-header">
-            <div style="display:flex;align-items:center;gap:4px;">
+            <div class="header-left">
                 <button class="sidebar-toggle" id="sidebarToggle" aria-label="Toggle menu">
                     <i class="fas fa-bars"></i>
                 </button>
@@ -32,26 +31,26 @@
                     <span>Dr. Feelgood</span>
                 </a>
             </div>
+
             <div class="header-user">
-                <span class="header-username" style="display:flex;align-items:center;gap:6px;">
-                    <i class="fas fa-user-circle"></i>
-                    <?php echo htmlspecialchars($_SESSION['fullname'] ?? $_SESSION['username'] ?? 'User'); ?>
-                    <span style="font-size:10px;background:var(--primary-light);color:var(--primary);border-radius:10px;padding:1px 8px;font-weight:700;">
-                        <?php echo htmlspecialchars(\App\Models\User::roleLabel($layoutRole)); ?>
-                    </span>
+                <span class="header-name">
+                    <i class="fas fa-user-circle" style="color:var(--gray-400);"></i>
+                    <span class="full-name"><?php echo htmlspecialchars($_SESSION['fullname'] ?? $_SESSION['username'] ?? 'User'); ?></span>
+                    <span class="role-pill"><?php echo htmlspecialchars(\App\Models\User::roleLabel($layoutRole)); ?></span>
                 </span>
                 <a href="/logout" class="btn btn-secondary btn-sm">
                     <i class="fas fa-sign-out-alt"></i>
-                    <span class="header-username">Logout</span>
+                    <span class="logout-label">Logout</span>
                 </a>
             </div>
         </header>
 
-        <!-- Overlay for mobile drawer -->
+        <!-- ── OVERLAY (mobile drawer backdrop) ──────── -->
         <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
         <div class="app-container">
-            <!-- SIDEBAR -->
+
+            <!-- ── SIDEBAR ───────────────────────────── -->
             <aside class="app-sidebar" id="appSidebar">
                 <nav>
                     <ul class="sidebar-menu">
@@ -64,7 +63,7 @@
                         </li>
 
                         <li>
-                            <a href="/patients" class="<?php echo strpos($uri, 'patient') !== false && strpos($uri, 'reports') === false ? 'active' : ''; ?>">
+                            <a href="/patients" class="<?php echo (strpos($uri, 'patient') !== false && strpos($uri, 'reports') === false) ? 'active' : ''; ?>">
                                 <i class="fas fa-users"></i>
                                 <span>Patients</span>
                             </a>
@@ -86,11 +85,11 @@
                                 <i class="fas fa-chevron-down submenu-arrow"></i>
                             </a>
                             <ul class="submenu">
-                                <li><a href="/reports/income"      class="<?php echo strpos($uri,'/reports/income')!==false?'active':''; ?>"><i class="fas fa-rupee-sign"></i> Income</a></li>
-                                <li><a href="/reports/patients"    class="<?php echo strpos($uri,'/reports/patients')!==false?'active':''; ?>"><i class="fas fa-users"></i> Patients</a></li>
-                                <li><a href="/reports/queue"       class="<?php echo strpos($uri,'/reports/queue')!==false?'active':''; ?>"><i class="fas fa-list-ol"></i> Queue / Ops</a></li>
-                                <li><a href="/reports/medicines"   class="<?php echo strpos($uri,'/reports/medicines')!==false?'active':''; ?>"><i class="fas fa-pills"></i> Medicines</a></li>
-                                <li><a href="/reports/productivity"class="<?php echo strpos($uri,'/reports/productivity')!==false?'active':''; ?>"><i class="fas fa-stethoscope"></i> Productivity</a></li>
+                                <li><a href="/reports/income"       class="<?php echo strpos($uri,'/reports/income')!==false?'active':''; ?>"><i class="fas fa-rupee-sign"></i> Income</a></li>
+                                <li><a href="/reports/patients"     class="<?php echo strpos($uri,'/reports/patients')!==false?'active':''; ?>"><i class="fas fa-users"></i> Patients</a></li>
+                                <li><a href="/reports/queue"        class="<?php echo strpos($uri,'/reports/queue')!==false?'active':''; ?>"><i class="fas fa-list-ol"></i> Queue / Ops</a></li>
+                                <li><a href="/reports/medicines"    class="<?php echo strpos($uri,'/reports/medicines')!==false?'active':''; ?>"><i class="fas fa-pills"></i> Medicines</a></li>
+                                <li><a href="/reports/productivity" class="<?php echo strpos($uri,'/reports/productivity')!==false?'active':''; ?>"><i class="fas fa-stethoscope"></i> Productivity</a></li>
                             </ul>
                         </li>
                         <?php endif; ?>
@@ -114,44 +113,51 @@
                 </nav>
             </aside>
 
-            <!-- MAIN CONTENT -->
+            <!-- ── MAIN CONTENT ──────────────────────── -->
             <main class="app-content">
                 <?php echo $content; ?>
             </main>
-        </div>
-    </div>
+
+        </div><!-- /.app-container -->
+    </div><!-- /.app-wrapper -->
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-    // ── Sidebar drawer (mobile) ───────────────────────────────────────────────
-    const sidebar  = document.getElementById('appSidebar');
-    const overlay  = document.getElementById('sidebarOverlay');
-    const toggle   = document.getElementById('sidebarToggle');
+    (function () {
+        const sidebar = document.getElementById('appSidebar');
+        const overlay = document.getElementById('sidebarOverlay');
+        const toggle  = document.getElementById('sidebarToggle');
 
-    function openSidebar() {
-        sidebar.classList.add('open');
-        overlay.classList.add('active');
-        document.body.style.overflow = 'hidden';
-    }
-    function closeSidebar() {
-        sidebar.classList.remove('open');
-        overlay.classList.remove('active');
-        document.body.style.overflow = '';
-    }
+        function openSidebar() {
+            sidebar.classList.add('open');
+            overlay.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+        function closeSidebar() {
+            sidebar.classList.remove('open');
+            overlay.classList.remove('active');
+            document.body.style.overflow = '';
+        }
 
-    toggle.addEventListener('click', () => {
-        sidebar.classList.contains('open') ? closeSidebar() : openSidebar();
-    });
-    overlay.addEventListener('click', closeSidebar);
-
-    // Close drawer when a nav link is clicked (mobile)
-    sidebar.querySelectorAll('a').forEach(a => {
-        a.addEventListener('click', () => {
-            if (window.innerWidth <= 768) closeSidebar();
+        toggle.addEventListener('click', function () {
+            sidebar.classList.contains('open') ? closeSidebar() : openSidebar();
         });
-    });
 
-    // ── Submenu toggle ────────────────────────────────────────────────────────
+        overlay.addEventListener('click', closeSidebar);
+
+        // Close drawer on nav link click (mobile)
+        sidebar.querySelectorAll('a').forEach(function (a) {
+            a.addEventListener('click', function () {
+                if (window.innerWidth <= 768) closeSidebar();
+            });
+        });
+
+        // Close drawer on window resize to desktop
+        window.addEventListener('resize', function () {
+            if (window.innerWidth > 768) closeSidebar();
+        });
+    })();
+
     function toggleSubmenu(el) {
         el.closest('.has-submenu').classList.toggle('open');
     }
