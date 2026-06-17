@@ -183,6 +183,12 @@ class Patient extends BaseModel {
         $data['dor'] = $data['dor'] ?? date('Y-m-d');
         $data['patient_id'] = $data['patient_id'] ?? time(); // Fallback to timestamp
 
+        // Whitelist to real table columns so stray POST keys can't break the INSERT
+        $allowed = ['patient_id','dor','fname','lname','address','city','state','zip',
+                    'contact_no','dob','age','gender','mrg_status','veg','religion',
+                    'education','occupation','refered_by','chief'];
+        $data = array_intersect_key($data, array_flip($allowed));
+
         return $this->insert($data);
     }
 

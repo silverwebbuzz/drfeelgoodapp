@@ -63,7 +63,14 @@ $patientId      = $patient['patient_id'] ?? $patient['id'];
 $patientAge     = invFmt($patient['age'] ?? null, '');
 $patientGender  = match($patient['gender'] ?? '') { 'M' => 'Male', 'F' => 'Female', default => '' };
 $patientContact = invFmt($patient['contact_no'] ?? null, '');
-$patientAddress = invFmt($patient['address'] ?? null, '');
+// Address: legacy free-text line + structured city/state/zip when present
+$addrBits = array_filter([
+    trim($patient['address'] ?? ''),
+    trim($patient['city'] ?? ''),
+    trim($patient['state'] ?? ''),
+    trim($patient['zip'] ?? ''),
+], fn($v) => $v !== '' && $v !== '0');
+$patientAddress = invFmt(implode(', ', $addrBits), '');
 
 // Notes
 $visitNotes = trim($report['notes'] ?? '');

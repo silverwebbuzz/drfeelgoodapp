@@ -424,10 +424,28 @@ $apptId    = (int)($_GET['appt'] ?? 0);
 
             <!-- Full-width rows -->
             <div class="info-full">
-                <div class="info-label">Address</div>
+                <div class="info-label">Address <span style="font-weight:400;color:var(--gray-400);">(Street / Area)</span></div>
                 <div class="info-value normal" id="disp_address"><?php echo htmlspecialchars(fmt($p['address']??null)); ?></div>
                 <input type="text" class="field-edit-input edit-mode" name="address"
                     value="<?php echo htmlspecialchars(trim($p['address']??'')); ?>" style="display:none;">
+            </div>
+            <div class="info-item">
+                <div class="info-label">City</div>
+                <div class="info-value normal" id="disp_city"><?php echo htmlspecialchars(fmt($p['city']??null)); ?></div>
+                <input type="text" class="field-edit-input edit-mode" name="city"
+                    value="<?php echo htmlspecialchars(trim($p['city']??'')); ?>" style="display:none;">
+            </div>
+            <div class="info-item">
+                <div class="info-label">State</div>
+                <div class="info-value normal" id="disp_state"><?php echo htmlspecialchars(fmt($p['state']??null)); ?></div>
+                <input type="text" class="field-edit-input edit-mode" name="state"
+                    value="<?php echo htmlspecialchars(trim($p['state']??'')); ?>" style="display:none;">
+            </div>
+            <div class="info-item">
+                <div class="info-label">ZIP Code</div>
+                <div class="info-value normal" id="disp_zip"><?php echo htmlspecialchars(fmt($p['zip']??null)); ?></div>
+                <input type="text" class="field-edit-input edit-mode" name="zip"
+                    value="<?php echo htmlspecialchars(trim($p['zip']??'')); ?>" style="display:none;">
             </div>
             <div class="info-full">
                 <div class="info-label">Chief Complaint / Case Notes</div>

@@ -181,7 +181,7 @@ class PatientController {
 
             // Whitelist editable fields
             $allowed = ['fname','lname','contact_no','dob','age','gender','mrg_status','veg',
-                        'religion','education','occupation','refered_by','address','chief',
+                        'religion','education','occupation','refered_by','address','city','state','zip','chief',
                         'dor','lname'];
             $data = array_intersect_key($data, array_flip($allowed));
 
