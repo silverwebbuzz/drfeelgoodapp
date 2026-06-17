@@ -87,8 +87,6 @@
 
         /* ── Confirmation ── */
         .conf-icon  { text-align:center; font-size:50px; color:#16a34a; margin-bottom:6px; }
-        .token-big  { text-align:center; font-size:72px; font-weight:900; color:#2563eb; line-height:1; }
-        .token-sub  { text-align:center; font-size:11px; color:#9ca3af; margin-bottom:14px; }
         .conf-table { background:#f9fafb; border-radius:8px; overflow:hidden; margin-bottom:12px; }
         .conf-row   { display:flex; justify-content:space-between; padding:8px 14px; border-bottom:1px solid #f3f4f6; font-size:12px; }
         .conf-row:last-child { border:none; }
@@ -176,7 +174,7 @@
             <div class="mb-3">
                 <label class="form-label">Visit Type</label>
                 <select id="isFollowup" class="form-control">
-                    <option value="0">First / Regular Visit</option>
+                    <option value="0">New Patient / New Case</option>
                     <option value="1">Follow-up</option>
                 </select>
             </div>
@@ -191,8 +189,6 @@
         <!-- ── STEP 3: Confirmation ── -->
         <div class="step" id="step3">
             <div class="conf-icon"><i class="fas fa-check-circle"></i></div>
-            <div class="token-big" id="confToken"></div>
-            <div class="token-sub">Your Queue Token Number</div>
             <div class="conf-table">
                 <div class="conf-row"><span>Patient</span><strong id="confName"></strong></div>
                 <div class="conf-row"><span>Date</span><strong id="confDate"></strong></div>
@@ -201,7 +197,7 @@
             </div>
             <div class="notice">
                 <i class="fas fa-info-circle"></i>
-                Please arrive 10 minutes before your slot and show this token number at reception.
+                Please arrive 10 minutes before your slot and check in at reception.
             </div>
             <button class="btn-main" onclick="location.reload()">Book Another Appointment</button>
         </div>
@@ -445,7 +441,6 @@ function step2Next() {
     .then(r => r.json())
     .then(data => {
         if (data.success) {
-            document.getElementById('confToken').textContent = data.token;
             document.getElementById('confName').textContent  = S.name;
             document.getElementById('confDate').textContent  = fmtLong(data.appt_date);
             document.getElementById('confTime').textContent  = to12(data.slot_time);
