@@ -162,9 +162,9 @@ $tableId     = 'dashQueueTable';
         <div class="qa-grid">
 
             <a href="/walkin" class="qa-btn">
-                <div class="qa-icon" style="background:#eff6ff;color:#2563eb;"><i class="fas fa-ticket-alt"></i></div>
+                <div class="qa-icon" style="background:#eff6ff;color:#2563eb;"><i class="fas fa-calendar-check"></i></div>
                 <div>
-                    <div>Walk-in Token</div>
+                    <div>Walk-in Booking</div>
                     <div class="qa-sub">Add patient to today's appointments</div>
                 </div>
             </a>

@@ -1,5 +1,5 @@
 <?php
-$page_title = 'Walk-in Token';
+$page_title = 'Book Appointment';
 ob_start();
 ?>
 <style>
@@ -24,7 +24,7 @@ ob_start();
 </style>
 
 <div class="page-header" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
-    <h1 class="page-title" style="margin:0;">New Walk-in Token</h1>
+    <h1 class="page-title" style="margin:0;">Book Appointment</h1>
     <a href="/queue" class="btn btn-secondary btn-sm"><i class="fas fa-arrow-left"></i> Back to Queue</a>
 </div>
 
@@ -66,10 +66,10 @@ ob_start();
             <input type="date" name="appt_date" id="apptDate" class="form-control" value="<?php echo date('Y-m-d'); ?>">
         </div>
         <div>
-            <label class="form-label">Follow-up?</label>
+            <label class="form-label">Visit Type</label>
             <select name="is_followup" class="form-control">
-                <option value="0">No</option>
-                <option value="1">Yes</option>
+                <option value="0">New Patient / New Case</option>
+                <option value="1">Follow-up</option>
             </select>
         </div>
     </div>
@@ -99,19 +99,31 @@ ob_start();
     <div id="formMsg" style="display:none;padding:8px 12px;border-radius:6px;font-size:12px;margin-bottom:10px;"></div>
 
     <div style="display:flex;gap:8px;">
-        <button type="submit" class="btn btn-primary"><i class="fas fa-ticket-alt"></i> Generate Token</button>
+        <button type="submit" class="btn btn-primary"><i class="fas fa-calendar-check"></i> Book</button>
         <a href="/queue" class="btn btn-secondary">Cancel</a>
     </div>
 </form>
 
-<!-- Token display -->
-<div id="tokenDisplay" style="display:none;text-align:center;padding:30px 0;">
-    <div style="font-size:12px;color:#6b7280;margin-bottom:8px;">Token Number</div>
-    <div id="tokenNum" style="font-size:72px;font-weight:800;color:var(--primary);line-height:1;"></div>
-    <div id="tokenSlot" style="font-size:13px;color:#6b7280;margin-top:4px;"></div>
+<!-- Booking confirmation -->
+<div id="tokenDisplay" style="display:none;text-align:center;padding:24px 0;">
+    <div style="width:64px;height:64px;border-radius:50%;background:#16a34a;color:#fff;display:flex;align-items:center;justify-content:center;font-size:30px;margin:0 auto 14px;">
+        <i class="fas fa-check"></i>
+    </div>
+    <div style="font-size:16px;font-weight:700;color:#111827;">Appointment Booked</div>
     <div id="tokenName" style="font-size:14px;color:#374151;margin-top:4px;"></div>
+    <div id="tokenSlot" style="font-size:13px;color:#6b7280;margin-top:2px;"></div>
+
+    <div style="background:#fef3c7;color:#92400e;border-radius:6px;padding:9px 12px;font-size:12px;margin:16px auto 4px;max-width:420px;text-align:left;">
+        <i class="fas fa-info-circle"></i>
+        Please arrive 10 minutes before the slot and check in at reception.
+    </div>
+    <div style="background:#fef3c7;color:#92400e;border-radius:6px;padding:9px 12px;font-size:12px;margin:0 auto 4px;max-width:420px;text-align:left;">
+        <i class="fas fa-clock"></i>
+        Appointment time is approximate — the doctor may run a little behind if a patient needs extra care.
+    </div>
+
     <div style="margin-top:20px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
-        <button class="btn btn-primary" onclick="resetForm()"><i class="fas fa-plus"></i> New Token</button>
+        <button class="btn btn-primary" onclick="resetForm()"><i class="fas fa-plus"></i> New Booking</button>
         <a href="/queue" class="btn btn-secondary"><i class="fas fa-list"></i> View Queue</a>
         <a id="patientLink" href="#" class="btn btn-secondary" style="display:none;">
             <i class="fas fa-user"></i> View Patient
@@ -289,7 +301,6 @@ document.getElementById('walkinForm').addEventListener('submit', function(e) {
     .then(data => {
         if (data.success) {
             document.getElementById('walkinForm').style.display = 'none';
-            document.getElementById('tokenNum').textContent  = data.token;
             document.getElementById('tokenName').textContent = fd.get('patient_name') || 'Patient';
             const slot = fd.get('slot_time');
             document.getElementById('tokenSlot').textContent = slot ? 'Slot: ' + to12(slot) : 'Walk-in (no slot)';

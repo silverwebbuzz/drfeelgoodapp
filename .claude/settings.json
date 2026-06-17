@@ -9,7 +9,8 @@
       "Bash(grep -n 'protected $table' src/Models/Appointment.php)",
       "Bash(grep -n 'canVisit\\\\|$role\\\\|_SESSION\\\\['\\\\''role'\\\\''\\\\]\\\\|page-header\\\\|page-title\\\\|$patient\\\\['\\\\''fname'\\\\''\\\\]\\\\|h1\\\\|Edit\\\\b\\\\|editPatient\\\\|btn-secondary\\\\|patient-header\\\\|info-actions' views/patient/detail.php)",
       "Bash(grep -rn \"createQuick\\\\|->insert\\(\\\\|name=\\\\\"address\\\\\"\\\\|->create\\(\\\\$\" src/Models/Patient.php views/patient/create.php)",
-      "Bash(grep -rn 'class Report\\\\b\\\\|function getById\\\\|progress_report\\\\|protected $table' src/Models/Report.php)"
+      "Bash(grep -rn 'class Report\\\\b\\\\|function getById\\\\|progress_report\\\\|protected $table' src/Models/Report.php)",
+      "Bash(CLAUDE_CODE_TMPDIR=/Users/apple/Silverwebbuzz/drfeelgoodapp grep -n \"tokenNum\\\\|data.token\\\\|Generate Token\\\\|New Walk-in\" views/appointment/walkin.php)"
     ]
   }
 }
