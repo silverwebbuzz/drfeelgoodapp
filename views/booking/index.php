@@ -199,6 +199,10 @@
                 <i class="fas fa-info-circle"></i>
                 Please arrive 10 minutes before your slot and check in at reception.
             </div>
+            <div class="notice">
+                <i class="fas fa-clock"></i>
+                Please note: your appointment time is approximate. Since some patients may need extra care, the doctor may run a little behind schedule. We appreciate your patience and understanding.
+            </div>
             <button class="btn-main" onclick="location.reload()">Book Another Appointment</button>
         </div>
 
