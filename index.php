@@ -295,6 +295,19 @@ switch ($route) {
         echo json_encode($response);
         exit;
 
+    case (preg_match('/^api\/patient\/(\d+)\/delete$/', $route, $matches) ? true : false):
+        // Only the main doctor can permanently delete a patient + all records
+        AuthController::requireRole('doctor');
+        header('Content-Type: application/json');
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            echo json_encode(['success' => false, 'message' => 'POST required']); exit;
+        }
+        $patientId = $matches[1];
+        $patientController = new PatientController($db);
+        $response = $patientController->deletePatient($patientId);
+        echo json_encode($response);
+        exit;
+
     case 'dashboard':
         AuthController::requireLogin();
         $patientController  = new PatientController($db);

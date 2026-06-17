@@ -214,6 +214,47 @@ class Patient extends BaseModel {
     }
 
     /**
+     * Permanently delete a patient and ALL related records
+     * (progress reports, additional info, appointments) in one transaction.
+     * Returns a breakdown of how many rows were removed per table.
+     */
+    public function deleteWithRelated($id) {
+        $id = (int)$id;
+
+        $patient = $this->getById($id);
+        if (!$patient) {
+            throw new \Exception("Patient not found");
+        }
+
+        $this->db->beginTransaction();
+        try {
+            $deleted = [];
+
+            $stmt = $this->db->prepare("DELETE FROM progress_report WHERE p_id = ?");
+            $stmt->execute([$id]);
+            $deleted['reports'] = $stmt->rowCount();
+
+            $stmt = $this->db->prepare("DELETE FROM additional_info WHERE p_id = ?");
+            $stmt->execute([$id]);
+            $deleted['additional_info'] = $stmt->rowCount();
+
+            $stmt = $this->db->prepare("DELETE FROM appointments WHERE patient_id = ?");
+            $stmt->execute([$id]);
+            $deleted['appointments'] = $stmt->rowCount();
+
+            $stmt = $this->db->prepare("DELETE FROM {$this->table} WHERE id = ?");
+            $stmt->execute([$id]);
+            $deleted['patient'] = $stmt->rowCount();
+
+            $this->db->commit();
+            return $deleted;
+        } catch (\Exception $e) {
+            $this->db->rollBack();
+            throw new \Exception("Failed to delete patient: " . $e->getMessage());
+        }
+    }
+
+    /**
      * Get recent patients (last N)
      */
     public function getRecent($limit = 10) {

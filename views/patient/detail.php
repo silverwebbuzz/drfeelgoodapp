@@ -306,6 +306,12 @@ $apptId    = (int)($_GET['appt'] ?? 0);
     </div>
     <div class="pt-header-actions">
         <a href="/patients" class="btn btn-secondary btn-sm"><i class="fas fa-arrow-left"></i> Back</a>
+        <?php if ($viewerRole === 'doctor'): ?>
+        <button class="btn btn-danger btn-sm" id="deletePatientBtn"
+                onclick="deletePatient(<?php echo (int)$p['id']; ?>, '<?php echo htmlspecialchars(addslashes(fmtName($p['fname']??'',$p['lname']??'')), ENT_QUOTES); ?>')">
+            <i class="fas fa-trash"></i> Delete Patient
+        </button>
+        <?php endif; ?>
     </div>
 </div>
 
@@ -606,6 +612,46 @@ $apptId    = (int)($_GET['appt'] ?? 0);
 
 <script>
 const PID = <?php echo $pid; ?>;
+
+// ════════════════════════════════════════
+// DELETE PATIENT (doctor only) — requires typed confirmation
+// ════════════════════════════════════════
+function deletePatient(id, name) {
+    const warning =
+        'PERMANENTLY DELETE this patient?\n\n' +
+        '"' + name + '"\n\n' +
+        'This removes the patient AND all related records — every visit/progress report, ' +
+        'additional info, and appointments. This CANNOT be undone.\n\n' +
+        'Type DELETE (in capitals) to confirm:';
+    const typed = prompt(warning);
+    if (typed === null) return;            // cancelled
+    if (typed.trim() !== 'DELETE') {
+        alert('Deletion cancelled — confirmation text did not match.');
+        return;
+    }
+
+    const btn = document.getElementById('deletePatientBtn');
+    if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Deleting...'; }
+
+    fetch('/api/patient/' + id + '/delete', { method: 'POST' })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            const d = data.deleted || {};
+            alert('Patient deleted.\n\n' +
+                  'Reports removed: ' + (d.reports ?? 0) + '\n' +
+                  'Appointments removed: ' + (d.appointments ?? 0));
+            window.location.href = '/patients';
+        } else {
+            alert('Error: ' + (data.message || 'Could not delete patient'));
+            if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-trash"></i> Delete Patient'; }
+        }
+    })
+    .catch(() => {
+        alert('Network error while deleting patient');
+        if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-trash"></i> Delete Patient'; }
+    });
+}
 
 // ════════════════════════════════════════
 // MEDICINE TAG PICKER

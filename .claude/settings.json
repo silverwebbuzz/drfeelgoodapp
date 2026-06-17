@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(grep -n 'function \\\\|protected $table\\\\|DELETE\\\\|delete' src/Models/Patient.php)",
+      "Bash(grep -n 'function delete\\\\|function query\\\\|->beginTransaction\\\\|protected $table' src/Models/BaseModel.php)",
+      "Bash(grep -n 'protected $table' src/Models/AdditionalInfo.php src/Models/Appointment.php src/Models/ProgressReport.php src/Models/Patient.php)",
+      "Bash(grep -n 'function __construct\\\\|$this->db\\\\|private $db\\\\|protected $db\\\\|public $db' src/Models/BaseModel.php)",
+      "Bash(grep -n 'function __construct\\\\|new \\\\|private $\\\\|public $\\\\|$this->db' src/Controllers/PatientController.php)",
+      "Bash(grep -n 'protected $table' src/Models/Appointment.php)",
+      "Bash(grep -n 'canVisit\\\\|$role\\\\|_SESSION\\\\['\\\\''role'\\\\''\\\\]\\\\|page-header\\\\|page-title\\\\|$patient\\\\['\\\\''fname'\\\\''\\\\]\\\\|h1\\\\|Edit\\\\b\\\\|editPatient\\\\|btn-secondary\\\\|patient-header\\\\|info-actions' views/patient/detail.php)"
+    ]
+  }
+}

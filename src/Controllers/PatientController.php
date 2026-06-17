@@ -234,6 +234,26 @@ class PatientController {
     }
 
     /**
+     * Permanently delete a patient and all related records.
+     * Doctor-only — enforced at the route level.
+     */
+    public function deletePatient($patientId) {
+        try {
+            $deleted = $this->patientModel->deleteWithRelated($patientId);
+            return [
+                'success' => true,
+                'message' => 'Patient and all related records deleted',
+                'deleted' => $deleted,
+            ];
+        } catch (\Exception $e) {
+            return [
+                'success' => false,
+                'message' => $e->getMessage(),
+            ];
+        }
+    }
+
+    /**
      * Update a progress report
      */
     public function updateReport($reportId, $data) {
