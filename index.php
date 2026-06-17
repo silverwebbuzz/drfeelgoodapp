@@ -496,9 +496,9 @@ switch ($route) {
         require __DIR__ . '/views/reports/productivity.php';
         break;
 
-    // ── Invoice (doctor + asst_doctor only) ───────────────────────────────────
+    // ── Invoice (doctor + asst_doctor + reception) ────────────────────────────
     case (preg_match('/^invoice\/(\d+)$/', $route, $matches) ? true : false):
-        AuthController::requireRole('doctor', 'asst_doctor');
+        AuthController::requireRole('doctor', 'asst_doctor', 'reception');
         $reportId = (int)$matches[1];
         $reportModel = new App\Models\Report($db);
         $report = $reportModel->getById($reportId);

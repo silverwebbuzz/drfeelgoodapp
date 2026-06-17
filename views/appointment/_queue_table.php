@@ -100,7 +100,12 @@ $nowDate     = date('Y-m-d');
             <?php if (!$compact): ?>
             <td><?php
                 $ph = trim($row['patient_phone'] ?? $row['contact_no'] ?? '');
-                echo $ph !== '' ? htmlspecialchars($ph) : '<span style="color:#d1d5db;">—</span>';
+                if ($ph !== '') {
+                    $telDigits = preg_replace('/[^0-9+]/', '', $ph);
+                    echo '<a href="tel:' . htmlspecialchars($telDigits) . '" style="font-weight:600;white-space:nowrap;"><i class="fas fa-phone-alt" style="font-size:10px;margin-right:4px;color:#16a34a;"></i>' . htmlspecialchars($ph) . '</a>';
+                } else {
+                    echo '<span style="color:#d1d5db;">—</span>';
+                }
             ?></td>
             <?php endif; ?>
 

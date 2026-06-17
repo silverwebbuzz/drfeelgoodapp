@@ -36,6 +36,11 @@ $visitDate  = invFmtDate($report['date'] ?? '');
 $medicines  = array_filter(array_map('trim', explode(',', $report['medicins'] ?? '')));
 $baseAmt    = (float)($report['amt'] ?? 0);
 
+// Payment
+$payType    = ($report['payment_type'] ?? 'cash') === 'online' ? 'Online' : 'Cash';
+$isPaid     = ($report['payment_status'] ?? 'paid') !== 'remaining';
+$payLabel   = $isPaid ? 'PAID' : 'PAYMENT DUE';
+
 // GST
 $gstEnabled = ($s['inv_gst_enabled'] ?? '0') === '1';
 $gstRate    = $gstEnabled ? (float)($s['inv_gst_rate'] ?? 18) : 0;
@@ -153,6 +158,10 @@ body {
     font-size: 11px; font-weight: 800;
     letter-spacing: 1.5px;
     color: #000;
+}
+.inv-paid.inv-due {
+    border-color: #b91c1c;
+    color: #b91c1c;
 }
 
 /* ══ PAN / GST BAR ══ */
@@ -376,7 +385,10 @@ body {
             <div class="inv-date">
                 <strong>Date:</strong> <?php echo $visitDate; ?>
             </div>
-            <div><span class="inv-paid">PAID</span></div>
+            <div class="inv-date">
+                <strong>Payment Mode:</strong> <?php echo htmlspecialchars($payType); ?>
+            </div>
+            <div><span class="inv-paid <?php echo $isPaid ? '' : 'inv-due'; ?>"><?php echo htmlspecialchars($payLabel); ?></span></div>
         </div>
     </div>
 
@@ -433,14 +445,8 @@ body {
         <tbody>
             <tr>
                 <td>
-                    <div class="item-title">Consultation</div>
+                    <div class="item-title">Consultation<?php echo !empty($medicines) ? ' &amp; Medicines' : ''; ?></div>
                     <div class="item-sub">Visit on <?php echo $visitDate; ?></div>
-                    <?php if (!empty($medicines)): ?>
-                    <div class="item-meds">
-                        <div class="item-meds-label">Medicines Prescribed</div>
-                        <?php echo htmlspecialchars(implode(', ', $medicines)); ?>
-                    </div>
-                    <?php endif; ?>
                 </td>
                 <td>&#8377;<?php echo number_format($baseAmt, 2); ?></td>
             </tr>
@@ -462,6 +468,14 @@ body {
         <tr class="totals-total">
             <td>Total</td>
             <td>&#8377;<?php echo number_format($totalAmt, 2); ?></td>
+        </tr>
+        <tr>
+            <td>Payment Mode</td>
+            <td><?php echo htmlspecialchars($payType); ?></td>
+        </tr>
+        <tr>
+            <td>Payment Status</td>
+            <td style="font-weight:700;color:<?php echo $isPaid ? '#047857' : '#b91c1c'; ?>;"><?php echo $isPaid ? 'Paid' : 'Remaining'; ?></td>
         </tr>
     </table>
 

@@ -184,6 +184,11 @@ textarea.r-input { resize:vertical; }
 .h-notes { font-size:0.82rem; color:var(--gray-500); font-style:italic; margin-bottom:2px; }
 .h-notes i { color:var(--warning); margin-right:3px; }
 .h-amt { font-size:0.8rem; color:var(--gray-500); }
+.pay-badge { display:inline-block; font-size:0.65rem; font-weight:700; padding:1px 7px; border-radius:10px; margin-left:4px; text-transform:uppercase; letter-spacing:.3px; vertical-align:middle; }
+.pay-badge.pay-cash      { background:#ecfdf5; color:#047857; }
+.pay-badge.pay-online    { background:#eff6ff; color:#1d4ed8; }
+.pay-badge.pay-paid      { background:#ecfdf5; color:#047857; }
+.pay-badge.pay-remaining { background:#fef2f2; color:#b91c1c; }
 .h-num { float:right; font-size:0.72rem; color:var(--gray-400); }
 .h-action-btns {
     display:none; position:absolute; right:10px; bottom:10px;
@@ -463,6 +468,24 @@ $apptId    = (int)($_GET['appt'] ?? 0);
                 </div>
             </div>
 
+            <!-- Payment type + status row -->
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
+                <div>
+                    <label class="info-label" style="display:block;margin-bottom:4px;">Payment Type</label>
+                    <select id="reportPaymentType" class="r-input" style="height:34px;">
+                        <option value="cash">Cash</option>
+                        <option value="online">Online</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="info-label" style="display:block;margin-bottom:4px;">Payment Status</label>
+                    <select id="reportPaymentStatus" class="r-input" style="height:34px;">
+                        <option value="paid">Paid</option>
+                        <option value="remaining">Remaining</option>
+                    </select>
+                </div>
+            </div>
+
             <!-- Medicine tag picker -->
             <div style="margin-bottom:12px;">
                 <label class="info-label" style="display:block;margin-bottom:4px;">
@@ -527,7 +550,14 @@ $apptId    = (int)($_GET['appt'] ?? 0);
                         <div class="h-notes"><i class="fas fa-sticky-note"></i> <?php echo htmlspecialchars($r['notes']); ?></div>
                         <?php endif; ?>
                         <?php if(!empty($r['amt'])&&$r['amt']>0): ?>
-                        <div class="h-amt">₹<?php echo htmlspecialchars($r['amt']); ?></div>
+                        <div class="h-amt">₹<?php echo htmlspecialchars($r['amt']); ?>
+                            <?php
+                                $pt = $r['payment_type']   ?? 'cash';
+                                $ps = $r['payment_status'] ?? 'paid';
+                            ?>
+                            <span class="pay-badge pay-<?php echo htmlspecialchars($pt); ?>"><?php echo $pt==='online'?'Online':'Cash'; ?></span>
+                            <span class="pay-badge pay-<?php echo htmlspecialchars($ps); ?>"><?php echo $ps==='remaining'?'Due':'Paid'; ?></span>
+                        </div>
                         <?php endif; ?>
                         <div class="h-action-btns">
                             <a href="/invoice/<?php echo $r['id']; ?>" target="_blank" class="h-inv-btn">
@@ -798,6 +828,8 @@ function saveReport(patientId) {
     const medicins = document.getElementById('reportMedicins').value.trim();
     const notes    = document.getElementById('reportNotes').value.trim();
     const amt      = document.getElementById('reportAmt').value || 0;
+    const payType  = document.getElementById('reportPaymentType').value;
+    const payStat  = document.getElementById('reportPaymentStatus').value;
     const btn      = document.getElementById('saveReportBtn');
     const ok       = document.getElementById('saveOk');
 
@@ -818,6 +850,8 @@ function saveReport(patientId) {
     fd.append('medicins', medicins);
     fd.append('notes', notes);
     fd.append('amt', amt);
+    fd.append('payment_type', payType);
+    fd.append('payment_status', payStat);
 
     fetch('/api/patient/' + patientId + '/report', { method: 'POST', body: fd })
     .then(r => r.json())
@@ -830,7 +864,9 @@ function saveReport(patientId) {
 
             const rId    = data.report_id || '';
             const dateStr = new Date(date).toLocaleDateString('en-IN', {day:'2-digit', month:'short', year:'numeric'});
-            const amtHtml   = amt > 0   ? `<div class="h-amt">₹${escHtml(String(amt))}</div>` : '';
+            const payBadges = `<span class="pay-badge pay-${payType}">${payType==='online'?'Online':'Cash'}</span>`
+                            + `<span class="pay-badge pay-${payStat}">${payStat==='remaining'?'Due':'Paid'}</span>`;
+            const amtHtml   = amt > 0   ? `<div class="h-amt">₹${escHtml(String(amt))} ${payBadges}</div>` : '';
             const notesHtml = notes     ? `<div class="h-notes"><i class="fas fa-sticky-note"></i> ${escHtml(notes)}</div>` : '';
             const medsDisp  = medicins  ? escHtml(medicins) : '—';
 
@@ -867,6 +903,8 @@ function saveReport(patientId) {
             MedPicker.clear();
             document.getElementById('reportAmt').value  = '';
             document.getElementById('reportNotes').value = '';
+            document.getElementById('reportPaymentType').value   = 'cash';
+            document.getElementById('reportPaymentStatus').value = 'paid';
             document.getElementById('reportDate').value = new Date().toISOString().split('T')[0];
             ok.style.display = 'block';
             setTimeout(() => ok.style.display = 'none', 3000);

@@ -7,9 +7,18 @@ class Appointment extends BaseModel {
 
     /** Today's queue — all appointments for a date */
     public function getByDate($date) {
-        $sql = "SELECT a.*, p.fname, p.lname, p.contact_no
+        $sql = "SELECT a.*, p.fname, p.lname, p.contact_no,
+                       pr.id   AS report_id,
+                       pr.amt  AS report_amt,
+                       pr.payment_type,
+                       pr.payment_status
                 FROM {$this->table} a
                 LEFT JOIN patient p ON a.patient_id = p.id
+                LEFT JOIN progress_report pr ON pr.id = (
+                    SELECT pr2.id FROM progress_report pr2
+                    WHERE pr2.p_id = a.patient_id AND pr2.date = a.appt_date
+                    ORDER BY pr2.id DESC LIMIT 1
+                )
                 WHERE a.appt_date = ?
                 ORDER BY a.token_number ASC, a.slot_time ASC";
         $stmt = $this->query($sql, [$date]);
@@ -148,9 +157,18 @@ class Appointment extends BaseModel {
 
     /** Appointments for a date range (week / month view) */
     public function getByRange($from, $to) {
-        $sql = "SELECT a.*, p.fname, p.lname, p.contact_no
+        $sql = "SELECT a.*, p.fname, p.lname, p.contact_no,
+                       pr.id   AS report_id,
+                       pr.amt  AS report_amt,
+                       pr.payment_type,
+                       pr.payment_status
                 FROM {$this->table} a
                 LEFT JOIN patient p ON a.patient_id = p.id
+                LEFT JOIN progress_report pr ON pr.id = (
+                    SELECT pr2.id FROM progress_report pr2
+                    WHERE pr2.p_id = a.patient_id AND pr2.date = a.appt_date
+                    ORDER BY pr2.id DESC LIMIT 1
+                )
                 WHERE a.appt_date BETWEEN ? AND ?
                 ORDER BY a.appt_date ASC, a.token_number ASC, a.slot_time ASC";
         $stmt = $this->query($sql, [$from, $to]);

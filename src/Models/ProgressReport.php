@@ -18,7 +18,7 @@ class ProgressReport extends BaseModel {
         $limit = (int)$limit;
         $offset = (int)$offset;
 
-        $sql = "SELECT id, p_id, date, medicins, notes, amt
+        $sql = "SELECT id, p_id, date, medicins, notes, amt, payment_type, payment_status
                 FROM {$this->table}
                 WHERE p_id = ?
                 ORDER BY date DESC
@@ -50,11 +50,13 @@ class ProgressReport extends BaseModel {
         }
 
         $reportData = [
-            'p_id'     => $patientId,
-            'date'     => $data['date'] ?? date('Y-m-d H:i:s'),
-            'medicins' => $data['medicins'] ?? '',
-            'notes'    => $data['notes']    ?? '',
-            'amt'      => $data['amt']      ?? 0,
+            'p_id'           => $patientId,
+            'date'           => $data['date'] ?? date('Y-m-d H:i:s'),
+            'medicins'       => $data['medicins'] ?? '',
+            'notes'          => $data['notes']    ?? '',
+            'amt'            => $data['amt']      ?? 0,
+            'payment_type'   => in_array($data['payment_type'] ?? '', ['cash', 'online']) ? $data['payment_type'] : 'cash',
+            'payment_status' => in_array($data['payment_status'] ?? '', ['paid', 'remaining']) ? $data['payment_status'] : 'paid',
         ];
 
         return $this->insert($reportData);
@@ -77,6 +79,7 @@ class ProgressReport extends BaseModel {
 
         $sql = "SELECT
                     pr.id, pr.p_id, pr.date, pr.medicins, pr.notes, pr.amt,
+                    pr.payment_type, pr.payment_status,
                     CONCAT(p.fname, ' ', p.lname) as patient_name
                 FROM {$this->table} pr
                 JOIN patient p ON pr.p_id = p.id
@@ -93,6 +96,7 @@ class ProgressReport extends BaseModel {
     public function getByDateRange($startDate, $endDate, $limit = null) {
         $sql = "SELECT
                     pr.id, pr.p_id, pr.date, pr.medicins, pr.notes, pr.amt,
+                    pr.payment_type, pr.payment_status,
                     CONCAT(p.fname, ' ', p.lname) as patient_name
                 FROM {$this->table} pr
                 JOIN patient p ON pr.p_id = p.id

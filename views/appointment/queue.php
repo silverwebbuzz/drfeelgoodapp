@@ -63,6 +63,11 @@ $multiDay = ($view !== 'today');
     white-space:nowrap;
 }
 .date-group-header td { background:#f9fafb; font-size:11px; font-weight:700; color:#6b7280; text-transform:uppercase; letter-spacing:.5px; padding:6px 14px; border-top:2px solid #e5e7eb; }
+.pay-badge { display:inline-block; font-size:10px; font-weight:700; padding:1px 7px; border-radius:10px; text-transform:uppercase; letter-spacing:.3px; }
+.pay-badge.pay-cash      { background:#ecfdf5; color:#047857; }
+.pay-badge.pay-online    { background:#eff6ff; color:#1d4ed8; }
+.pay-badge.pay-paid      { background:#ecfdf5; color:#047857; }
+.pay-badge.pay-remaining { background:#fef2f2; color:#b91c1c; }
 @media(max-width:768px){
     .queue-grid { grid-template-columns:repeat(3,1fr); }
 }
@@ -182,6 +187,7 @@ $multiDay = ($view !== 'today');
                     <th class="time-col" title="Done">Out</th>
                     <th>Complaint</th>
                     <th>Status</th>
+                    <th>Payment</th>
                     <th style="width:160px;">Actions</th>
                 </tr>
             </thead>
@@ -211,7 +217,7 @@ $multiDay = ($view !== 'today');
                     $lastDate = $rowDate;
             ?>
             <tr class="date-group-header">
-                <td colspan="11"><?php echo date('l, d M Y', strtotime($rowDate)); ?></td>
+                <td colspan="12"><?php echo date('l, d M Y', strtotime($rowDate)); ?></td>
             </tr>
             <?php endif; ?>
             <tr class="queue-row <?php echo $isLate ? 'row-late' : ''; ?>" data-status="<?php echo htmlspecialchars($s); ?>" data-id="<?php echo $id; ?>">
@@ -232,7 +238,15 @@ $multiDay = ($view !== 'today');
                         <span class="badge bg-info" style="font-size:10px;">New</span>
                     <?php endif; ?>
                 </td>
-                <td><?php $ph=trim($row['patient_phone']??$row['contact_no']??''); echo $ph!==''?htmlspecialchars($ph):'<span style="color:#d1d5db;">—</span>'; ?></td>
+                <td><?php
+                    $ph = trim($row['patient_phone'] ?? $row['contact_no'] ?? '');
+                    if ($ph !== '') {
+                        $telDigits = preg_replace('/[^0-9+]/', '', $ph);
+                        echo '<a href="tel:' . htmlspecialchars($telDigits) . '" style="font-weight:600;white-space:nowrap;"><i class="fas fa-phone-alt" style="font-size:10px;margin-right:4px;color:#16a34a;"></i>' . htmlspecialchars($ph) . '</a>';
+                    } else {
+                        echo '<span style="color:#d1d5db;">—</span>';
+                    }
+                ?></td>
                 <td>
                     <?php if ($row['type'] === 'walkin'): ?>
                         <span class="badge bg-secondary"><i class="fas fa-walking"></i> Walk-in</span>
@@ -275,6 +289,22 @@ $multiDay = ($view !== 'today');
                         echo "<span class=\"badge bg-{$cls}\">Waiting</span> <span class=\"badge-late\"><i class=\"fas fa-clock\"></i> Overdue</span>";
                     } else {
                         echo "<span class=\"badge bg-{$cls}\">{$lbl}</span>";
+                    }
+                ?></td>
+                <td class="payment-cell"><?php
+                    if ($s === 'completed' && !empty($row['report_id'])) {
+                        $pt  = $row['payment_type']   ?? 'cash';
+                        $ps  = $row['payment_status'] ?? 'paid';
+                        $amt = (int)($row['report_amt'] ?? 0);
+                        $ptLbl = $pt === 'online' ? 'Online' : 'Cash';
+                        $psLbl = $ps === 'remaining' ? 'Due' : 'Paid';
+                        echo '<span class="pay-badge pay-' . htmlspecialchars($pt) . '">' . $ptLbl . '</span> ';
+                        echo '<span class="pay-badge pay-' . htmlspecialchars($ps) . '">' . $psLbl . '</span>';
+                        if ($amt > 0) {
+                            echo '<div style="font-size:11px;color:#6b7280;margin-top:2px;">&#8377;' . number_format($amt) . '</div>';
+                        }
+                    } else {
+                        echo '<span style="color:#d1d5db;">—</span>';
                     }
                 ?></td>
                 <td class="status-btns">
@@ -342,9 +372,15 @@ $multiDay = ($view !== 'today');
                         </button>
 
                     <?php elseif ($s === 'completed'): ?>
+                        <?php if (!empty($row['report_id'])): ?>
+                        <a href="/invoice/<?php echo (int)$row['report_id']; ?>" target="_blank" class="btn btn-primary btn-sm" title="Print Invoice">
+                            <i class="fas fa-print"></i> Invoice
+                        </a>
+                        <?php else: ?>
                         <span style="color:#9ca3af;font-size:11px;">
                             <i class="fas fa-check-double"></i> Done
                         </span>
+                        <?php endif; ?>
                         <?php if ($pid && $qCanConsult): ?>
                         <a href="/patient/<?php echo $pid; ?>" class="btn btn-secondary btn-sm" title="View Patient">
                             <i class="fas fa-user"></i>
