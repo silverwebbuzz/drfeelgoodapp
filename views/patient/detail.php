@@ -93,24 +93,49 @@ function fmtName($f, $l) {
 .info-card-open .toggle-chevron .chev { transform: rotate(180deg); }
 .info-grid {
     display:grid;
-    grid-template-columns:repeat(auto-fill, minmax(170px,1fr));
+    grid-template-columns:repeat(4, 1fr);
     gap:0;
+    border-top:1px solid var(--gray-100);
 }
+@media(max-width:1100px){ .info-grid { grid-template-columns:repeat(3,1fr); } }
+@media(max-width:760px){  .info-grid { grid-template-columns:repeat(2,1fr); } }
+@media(max-width:480px){  .info-grid { grid-template-columns:1fr; } }
+
+/* Section divider headers inside the grid */
+.info-section {
+    grid-column:1/-1;
+    display:flex; align-items:center; gap:8px;
+    padding:9px 14px;
+    background:var(--gray-50, #f9fafb);
+    border-bottom:1px solid var(--gray-100);
+    font-size:0.7rem; font-weight:700; text-transform:uppercase;
+    letter-spacing:0.6px; color:var(--gray-500);
+}
+.info-section i { color:var(--primary); font-size:0.8rem; }
+.info-section:not(:first-child) { border-top:1px solid var(--gray-100); }
+
 .info-item {
     padding:9px 14px;
     border-right:1px solid var(--gray-100);
     border-bottom:1px solid var(--gray-100);
+    min-width:0;
 }
 .info-label {
     font-size:0.7rem; text-transform:uppercase;
-    letter-spacing:0.4px; color:var(--gray-400); margin-bottom:2px;
+    letter-spacing:0.4px; color:var(--gray-400); margin-bottom:3px;
 }
-.info-value { font-size:0.9rem; font-weight:600; color:var(--gray-800); }
+.info-value {
+    font-size:0.9rem; font-weight:600; color:var(--gray-800);
+    word-break:break-word;
+}
 .info-value.normal { font-weight:400; }
 .info-full {
     grid-column:1/-1; padding:9px 14px;
     border-bottom:1px solid var(--gray-100);
 }
+/* Span helpers for cleaner row arrangement */
+.info-item.span-2 { grid-column:span 2; }
+@media(max-width:480px){ .info-item.span-2 { grid-column:span 1; } }
 
 /* View / Edit toggle */
 .edit-btn-sm {
@@ -147,7 +172,10 @@ textarea.field-edit-input { resize:vertical; min-height:70px; font-weight:400; }
 /* On mobile, history panel loses sticky — just flows naturally */
 @media(max-width:900px){ .history-panel { position:static; } }
 /* Visit form: stack Notes/Reports-Notes and the payment row on narrow screens */
-@media(max-width:560px){ .visit-notes-grid { grid-template-columns:1fr !important; } }
+@media(max-width:560px){
+    .visit-notes-grid { grid-template-columns:1fr !important; }
+    .visit-pay-grid   { grid-template-columns:1fr !important; }
+}
 
 /* ── Add report form ── */
 .report-form-card .card-header { background:var(--primary); color:white; }
@@ -341,7 +369,9 @@ $apptId    = (int)($_GET['appt'] ?? 0);
     <div id="infoBody" style="display:none;">
         <div class="info-grid" id="infoGrid">
 
-            <!-- ROW 1: 6 fields -->
+            <!-- ══ CONTACT & DEMOGRAPHICS ══ -->
+            <div class="info-section"><i class="fas fa-user"></i> Contact &amp; Demographics</div>
+
             <div class="info-item">
                 <div class="info-label">Contact No.</div>
                 <div class="info-value" id="disp_contact_no">
@@ -357,6 +387,15 @@ $apptId    = (int)($_GET['appt'] ?? 0);
                 </div>
                 <input type="number" class="field-edit-input edit-mode" name="age"
                     value="<?php echo htmlspecialchars($p['age']??''); ?>" min="0" max="150" style="display:none;">
+            </div>
+            <div class="info-item">
+                <div class="info-label">DOB</div>
+                <div class="info-value" id="disp_dob"><?php echo fmtDate($p['dob']??''); ?></div>
+                <input type="date" class="field-edit-input edit-mode" name="dob"
+                    value="<?php
+                        $dv = $p['dob']??'';
+                        echo ($dv&&$dv!=='0000-00-00'&&$dv!=='1970-01-01') ? htmlspecialchars($dv) : '';
+                    ?>" style="display:none;">
             </div>
             <div class="info-item">
                 <div class="info-label">Gender</div>
@@ -394,29 +433,6 @@ $apptId    = (int)($_GET['appt'] ?? 0);
                 <input type="text" class="field-edit-input edit-mode" name="religion"
                     value="<?php echo htmlspecialchars(trim($p['religion']??'')); ?>" style="display:none;">
             </div>
-
-            <!-- ROW 2 -->
-            <div class="info-item">
-                <div class="info-label">Occupation</div>
-                <div class="info-value" id="disp_occupation"><?php echo htmlspecialchars(fmt($p['occupation']??null)); ?></div>
-                <input type="text" class="field-edit-input edit-mode" name="occupation"
-                    value="<?php echo htmlspecialchars(trim($p['occupation']??'')); ?>" style="display:none;">
-            </div>
-            <div class="info-item">
-                <div class="info-label">Education</div>
-                <div class="info-value" id="disp_education"><?php echo htmlspecialchars(fmt($p['education']??null)); ?></div>
-                <input type="text" class="field-edit-input edit-mode" name="education"
-                    value="<?php echo htmlspecialchars(trim($p['education']??'')); ?>" style="display:none;">
-            </div>
-            <div class="info-item">
-                <div class="info-label">DOB</div>
-                <div class="info-value" id="disp_dob"><?php echo fmtDate($p['dob']??''); ?></div>
-                <input type="date" class="field-edit-input edit-mode" name="dob"
-                    value="<?php
-                        $dv = $p['dob']??'';
-                        echo ($dv&&$dv!=='0000-00-00'&&$dv!=='1970-01-01') ? htmlspecialchars($dv) : '';
-                    ?>" style="display:none;">
-            </div>
             <div class="info-item">
                 <div class="info-label">Referred By</div>
                 <div class="info-value" id="disp_refered_by"><?php echo htmlspecialchars(fmt($p['refered_by']??null)); ?></div>
@@ -424,9 +440,27 @@ $apptId    = (int)($_GET['appt'] ?? 0);
                     value="<?php echo htmlspecialchars(trim($p['refered_by']??'')); ?>" style="display:none;">
             </div>
 
-            <!-- Full-width rows -->
+            <!-- ══ PROFESSION ══ -->
+            <div class="info-section"><i class="fas fa-briefcase"></i> Profession</div>
+
+            <div class="info-item span-2">
+                <div class="info-label">Occupation</div>
+                <div class="info-value" id="disp_occupation"><?php echo htmlspecialchars(fmt($p['occupation']??null)); ?></div>
+                <input type="text" class="field-edit-input edit-mode" name="occupation"
+                    value="<?php echo htmlspecialchars(trim($p['occupation']??'')); ?>" style="display:none;">
+            </div>
+            <div class="info-item span-2">
+                <div class="info-label">Education</div>
+                <div class="info-value" id="disp_education"><?php echo htmlspecialchars(fmt($p['education']??null)); ?></div>
+                <input type="text" class="field-edit-input edit-mode" name="education"
+                    value="<?php echo htmlspecialchars(trim($p['education']??'')); ?>" style="display:none;">
+            </div>
+
+            <!-- ══ ADDRESS ══ -->
+            <div class="info-section"><i class="fas fa-map-marker-alt"></i> Address</div>
+
             <div class="info-full">
-                <div class="info-label">Address <span style="font-weight:400;color:var(--gray-400);">(Street / Area)</span></div>
+                <div class="info-label">Street / Area</div>
                 <div class="info-value normal" id="disp_address"><?php echo htmlspecialchars(fmt($p['address']??null)); ?></div>
                 <input type="text" class="field-edit-input edit-mode" name="address"
                     value="<?php echo htmlspecialchars(trim($p['address']??'')); ?>" style="display:none;">
@@ -449,6 +483,10 @@ $apptId    = (int)($_GET['appt'] ?? 0);
                 <input type="text" class="field-edit-input edit-mode" name="zip"
                     value="<?php echo htmlspecialchars(trim($p['zip']??'')); ?>" style="display:none;">
             </div>
+
+            <!-- ══ CLINICAL ══ -->
+            <div class="info-section"><i class="fas fa-notes-medical"></i> Clinical</div>
+
             <div class="info-full">
                 <div class="info-label">Chief Complaint / Case Notes</div>
                 <div class="info-value normal" id="disp_chief" style="white-space:pre-line;"><?php echo htmlspecialchars(fmt($p['chief']??null)); ?></div>
@@ -529,25 +567,30 @@ $apptId    = (int)($_GET['appt'] ?? 0);
                 </div>
             </div>
 
-            <!-- Amount + Payment (bottom) -->
-            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:14px;padding-top:12px;border-top:1px solid var(--gray-200);">
-                <div>
-                    <label class="info-label" style="display:block;margin-bottom:4px;">Amount (₹)</label>
-                    <input type="number" id="reportAmt" class="r-input" placeholder="0" min="0" style="height:34px;">
+            <!-- Amount + Payment (bottom, grouped) -->
+            <div style="background:var(--gray-50);border:1px solid var(--gray-200);border-radius:8px;padding:12px;margin-bottom:14px;">
+                <div class="info-label" style="margin-bottom:8px;color:var(--gray-500);font-weight:700;">
+                    <i class="fas fa-rupee-sign" style="color:var(--primary);"></i> Payment
                 </div>
-                <div>
-                    <label class="info-label" style="display:block;margin-bottom:4px;">Payment Type</label>
-                    <select id="reportPaymentType" class="r-input" style="height:34px;">
-                        <option value="cash">Cash</option>
-                        <option value="online">Online</option>
-                    </select>
-                </div>
-                <div>
-                    <label class="info-label" style="display:block;margin-bottom:4px;">Payment Status</label>
-                    <select id="reportPaymentStatus" class="r-input" style="height:34px;">
-                        <option value="paid">Paid</option>
-                        <option value="remaining">Remaining</option>
-                    </select>
+                <div class="visit-pay-grid" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;">
+                    <div>
+                        <label class="info-label" style="display:block;margin-bottom:4px;">Amount (₹)</label>
+                        <input type="number" id="reportAmt" class="r-input" placeholder="0" min="0" style="height:34px;">
+                    </div>
+                    <div>
+                        <label class="info-label" style="display:block;margin-bottom:4px;">Payment Type</label>
+                        <select id="reportPaymentType" class="r-input" style="height:34px;">
+                            <option value="cash">Cash</option>
+                            <option value="online">Online</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="info-label" style="display:block;margin-bottom:4px;">Payment Status</label>
+                        <select id="reportPaymentStatus" class="r-input" style="height:34px;">
+                            <option value="paid">Paid</option>
+                            <option value="remaining">Remaining</option>
+                        </select>
+                    </div>
                 </div>
             </div>
 
