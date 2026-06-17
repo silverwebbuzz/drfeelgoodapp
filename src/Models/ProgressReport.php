@@ -18,7 +18,7 @@ class ProgressReport extends BaseModel {
         $limit = (int)$limit;
         $offset = (int)$offset;
 
-        $sql = "SELECT id, p_id, date, medicins, notes, amt, payment_type, payment_status
+        $sql = "SELECT id, p_id, date, medicins, notes, reports_notes, amt, payment_type, payment_status
                 FROM {$this->table}
                 WHERE p_id = ?
                 ORDER BY date DESC
@@ -45,7 +45,7 @@ class ProgressReport extends BaseModel {
         if (empty($patientId)) {
             throw new \Exception("Patient ID is required");
         }
-        if (empty($data['medicins'] ?? null) && empty($data['notes'] ?? null)) {
+        if (empty($data['medicins'] ?? null) && empty($data['notes'] ?? null) && empty($data['reports_notes'] ?? null)) {
             throw new \Exception("Medicines or notes are required");
         }
 
@@ -54,6 +54,7 @@ class ProgressReport extends BaseModel {
             'date'           => $data['date'] ?? date('Y-m-d H:i:s'),
             'medicins'       => $data['medicins'] ?? '',
             'notes'          => $data['notes']    ?? '',
+            'reports_notes'  => $data['reports_notes'] ?? '',
             'amt'            => $data['amt']      ?? 0,
             'payment_type'   => in_array($data['payment_type'] ?? '', ['cash', 'online']) ? $data['payment_type'] : 'cash',
             'payment_status' => in_array($data['payment_status'] ?? '', ['paid', 'remaining']) ? $data['payment_status'] : 'paid',
@@ -78,7 +79,7 @@ class ProgressReport extends BaseModel {
         $limit = (int)$limit;
 
         $sql = "SELECT
-                    pr.id, pr.p_id, pr.date, pr.medicins, pr.notes, pr.amt,
+                    pr.id, pr.p_id, pr.date, pr.medicins, pr.notes, pr.reports_notes, pr.amt,
                     pr.payment_type, pr.payment_status,
                     CONCAT(p.fname, ' ', p.lname) as patient_name
                 FROM {$this->table} pr
@@ -95,7 +96,7 @@ class ProgressReport extends BaseModel {
      */
     public function getByDateRange($startDate, $endDate, $limit = null) {
         $sql = "SELECT
-                    pr.id, pr.p_id, pr.date, pr.medicins, pr.notes, pr.amt,
+                    pr.id, pr.p_id, pr.date, pr.medicins, pr.notes, pr.reports_notes, pr.amt,
                     pr.payment_type, pr.payment_status,
                     CONCAT(p.fname, ' ', p.lname) as patient_name
                 FROM {$this->table} pr

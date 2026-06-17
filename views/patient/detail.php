@@ -146,6 +146,8 @@ textarea.field-edit-input { resize:vertical; min-height:70px; font-weight:400; }
 @media(max-width:900px){ .workspace{grid-template-columns:1fr;} }
 /* On mobile, history panel loses sticky — just flows naturally */
 @media(max-width:900px){ .history-panel { position:static; } }
+/* Visit form: stack Notes/Reports-Notes and the payment row on narrow screens */
+@media(max-width:560px){ .visit-notes-grid { grid-template-columns:1fr !important; } }
 
 /* ── Add report form ── */
 .report-form-card .card-header { background:var(--primary); color:white; }
@@ -479,35 +481,11 @@ $apptId    = (int)($_GET['appt'] ?? 0);
         </div>
         <div class="card-body" style="padding:14px;">
 
-            <!-- Date + Amount row -->
-            <div style="display:grid;grid-template-columns:1fr 120px;gap:10px;margin-bottom:10px;">
-                <div>
-                    <label class="info-label" style="display:block;margin-bottom:4px;">Date</label>
-                    <input type="date" id="reportDate" class="r-input"
-                        value="<?php echo date('Y-m-d'); ?>" style="height:34px;">
-                </div>
-                <div>
-                    <label class="info-label" style="display:block;margin-bottom:4px;">Amount (₹)</label>
-                    <input type="number" id="reportAmt" class="r-input" placeholder="0" min="0" style="height:34px;">
-                </div>
-            </div>
-
-            <!-- Payment type + status row -->
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
-                <div>
-                    <label class="info-label" style="display:block;margin-bottom:4px;">Payment Type</label>
-                    <select id="reportPaymentType" class="r-input" style="height:34px;">
-                        <option value="cash">Cash</option>
-                        <option value="online">Online</option>
-                    </select>
-                </div>
-                <div>
-                    <label class="info-label" style="display:block;margin-bottom:4px;">Payment Status</label>
-                    <select id="reportPaymentStatus" class="r-input" style="height:34px;">
-                        <option value="paid">Paid</option>
-                        <option value="remaining">Remaining</option>
-                    </select>
-                </div>
+            <!-- Date row -->
+            <div style="margin-bottom:10px;">
+                <label class="info-label" style="display:block;margin-bottom:4px;">Date</label>
+                <input type="date" id="reportDate" class="r-input"
+                    value="<?php echo date('Y-m-d'); ?>" style="height:34px;">
             </div>
 
             <!-- Medicine tag picker -->
@@ -533,13 +511,44 @@ $apptId    = (int)($_GET['appt'] ?? 0);
                 <div id="selectedTags" style="display:flex;flex-wrap:wrap;gap:5px;margin-top:6px;min-height:0;"></div>
             </div>
 
-            <!-- Notes field — completely separate from medicines -->
-            <div style="margin-bottom:12px;">
-                <label class="info-label" style="display:block;margin-bottom:4px;">
-                    Notes
-                    <span style="font-weight:400;color:var(--gray-400);margin-left:6px;">— follow-up, observations, instructions</span>
-                </label>
-                <textarea id="reportNotes" class="r-input" placeholder="e.g. Follow-up in 2 weeks, improvement noted..." rows="2"></textarea>
+            <!-- Notes + Reports Notes side by side (50 / 50) -->
+            <div class="visit-notes-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
+                <div>
+                    <label class="info-label" style="display:block;margin-bottom:4px;">
+                        Notes
+                        <span style="font-weight:400;color:var(--gray-400);">— follow-up, observations</span>
+                    </label>
+                    <textarea id="reportNotes" class="r-input" placeholder="e.g. Follow-up in 2 weeks, improvement noted..." rows="3"></textarea>
+                </div>
+                <div>
+                    <label class="info-label" style="display:block;margin-bottom:4px;">
+                        Reports - Notes
+                        <span style="font-weight:400;color:var(--gray-400);">— lab / investigation findings</span>
+                    </label>
+                    <textarea id="reportReportsNotes" class="r-input" placeholder="e.g. CBC normal, Vit-D low, X-ray clear..." rows="3"></textarea>
+                </div>
+            </div>
+
+            <!-- Amount + Payment (bottom) -->
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:14px;padding-top:12px;border-top:1px solid var(--gray-200);">
+                <div>
+                    <label class="info-label" style="display:block;margin-bottom:4px;">Amount (₹)</label>
+                    <input type="number" id="reportAmt" class="r-input" placeholder="0" min="0" style="height:34px;">
+                </div>
+                <div>
+                    <label class="info-label" style="display:block;margin-bottom:4px;">Payment Type</label>
+                    <select id="reportPaymentType" class="r-input" style="height:34px;">
+                        <option value="cash">Cash</option>
+                        <option value="online">Online</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="info-label" style="display:block;margin-bottom:4px;">Payment Status</label>
+                    <select id="reportPaymentStatus" class="r-input" style="height:34px;">
+                        <option value="paid">Paid</option>
+                        <option value="remaining">Remaining</option>
+                    </select>
+                </div>
             </div>
 
             <!-- Hidden textarea for medicines only (submitted separately) -->
@@ -573,6 +582,9 @@ $apptId    = (int)($_GET['appt'] ?? 0);
                         <?php if(!empty(trim($r['notes']??''))): ?>
                         <div class="h-notes"><i class="fas fa-sticky-note"></i> <?php echo htmlspecialchars($r['notes']); ?></div>
                         <?php endif; ?>
+                        <?php if(!empty(trim($r['reports_notes']??''))): ?>
+                        <div class="h-notes"><i class="fas fa-flask"></i> <?php echo htmlspecialchars($r['reports_notes']); ?></div>
+                        <?php endif; ?>
                         <?php if(!empty($r['amt'])&&$r['amt']>0): ?>
                         <div class="h-amt">₹<?php echo htmlspecialchars($r['amt']); ?>
                             <?php
@@ -605,7 +617,9 @@ $apptId    = (int)($_GET['appt'] ?? 0);
                             <textarea class="h-edit-input" id="he-meds-<?php echo $r['id']; ?>"
                                 rows="2" placeholder="Medicines..." style="margin-bottom:5px;"><?php echo htmlspecialchars($r['medicins']??''); ?></textarea>
                             <textarea class="h-edit-input" id="he-notes-<?php echo $r['id']; ?>"
-                                rows="2" placeholder="Notes (optional)..." style="margin-bottom:6px;"><?php echo htmlspecialchars($r['notes']??''); ?></textarea>
+                                rows="2" placeholder="Notes (optional)..." style="margin-bottom:5px;"><?php echo htmlspecialchars($r['notes']??''); ?></textarea>
+                            <textarea class="h-edit-input" id="he-repnotes-<?php echo $r['id']; ?>"
+                                rows="2" placeholder="Reports - Notes (optional)..." style="margin-bottom:6px;"><?php echo htmlspecialchars($r['reports_notes']??''); ?></textarea>
                             <div class="h-edit-actions">
                                 <button class="h-save-btn" onclick="saveHistEdit(<?php echo $r['id']; ?>)">
                                     <i class="fas fa-save"></i> Save
@@ -888,17 +902,18 @@ function saveInfo(patientId) {
 function saveReport(patientId) {
     MedPicker.syncTextarea();
 
-    const date     = document.getElementById('reportDate').value;
-    const medicins = document.getElementById('reportMedicins').value.trim();
-    const notes    = document.getElementById('reportNotes').value.trim();
-    const amt      = document.getElementById('reportAmt').value || 0;
-    const payType  = document.getElementById('reportPaymentType').value;
-    const payStat  = document.getElementById('reportPaymentStatus').value;
-    const btn      = document.getElementById('saveReportBtn');
-    const ok       = document.getElementById('saveOk');
+    const date      = document.getElementById('reportDate').value;
+    const medicins  = document.getElementById('reportMedicins').value.trim();
+    const notes     = document.getElementById('reportNotes').value.trim();
+    const repNotes  = document.getElementById('reportReportsNotes').value.trim();
+    const amt       = document.getElementById('reportAmt').value || 0;
+    const payType   = document.getElementById('reportPaymentType').value;
+    const payStat   = document.getElementById('reportPaymentStatus').value;
+    const btn       = document.getElementById('saveReportBtn');
+    const ok        = document.getElementById('saveOk');
 
-    // Require at least medicines OR notes
-    if (!medicins && !notes) {
+    // Require at least medicines OR notes OR reports-notes
+    if (!medicins && !notes && !repNotes) {
         const wrap = document.getElementById('tagInputArea');
         wrap.style.borderColor = '#ef4444';
         document.getElementById('medSearch').focus();
@@ -913,6 +928,7 @@ function saveReport(patientId) {
     fd.append('date', date);
     fd.append('medicins', medicins);
     fd.append('notes', notes);
+    fd.append('reports_notes', repNotes);
     fd.append('amt', amt);
     fd.append('payment_type', payType);
     fd.append('payment_status', payStat);
@@ -932,6 +948,7 @@ function saveReport(patientId) {
                             + `<span class="pay-badge pay-${payStat}">${payStat==='remaining'?'Due':'Paid'}</span>`;
             const amtHtml   = amt > 0   ? `<div class="h-amt">₹${escHtml(String(amt))} ${payBadges}</div>` : '';
             const notesHtml = notes     ? `<div class="h-notes"><i class="fas fa-sticky-note"></i> ${escHtml(notes)}</div>` : '';
+            const repHtml   = repNotes  ? `<div class="h-notes"><i class="fas fa-flask"></i> ${escHtml(repNotes)}</div>` : '';
             const medsDisp  = medicins  ? escHtml(medicins) : '—';
 
             const el = document.createElement('div');
@@ -942,6 +959,7 @@ function saveReport(patientId) {
                 <div class="h-date"><i class="fas fa-calendar-day"></i> ${dateStr}</div>
                 <div class="h-meds">${medsDisp}</div>
                 ${notesHtml}
+                ${repHtml}
                 ${amtHtml}
                 <div class="h-action-btns">
                     <a href="/invoice/${rId}" target="_blank" class="h-inv-btn"><i class="fas fa-file-invoice"></i> Invoice</a>
@@ -953,7 +971,8 @@ function saveReport(patientId) {
                         <input type="number" class="h-edit-input" id="he-amt-${rId}" placeholder="₹ Amount" value="${escHtml(String(amt))}">
                     </div>
                     <textarea class="h-edit-input" id="he-meds-${rId}" rows="2" placeholder="Medicines..." style="margin-bottom:5px;">${escHtml(medicins)}</textarea>
-                    <textarea class="h-edit-input" id="he-notes-${rId}" rows="2" placeholder="Notes (optional)..." style="margin-bottom:6px;">${escHtml(notes)}</textarea>
+                    <textarea class="h-edit-input" id="he-notes-${rId}" rows="2" placeholder="Notes (optional)..." style="margin-bottom:5px;">${escHtml(notes)}</textarea>
+                    <textarea class="h-edit-input" id="he-repnotes-${rId}" rows="2" placeholder="Reports - Notes (optional)..." style="margin-bottom:6px;">${escHtml(repNotes)}</textarea>
                     <div class="h-edit-actions">
                         <button class="h-save-btn" onclick="saveHistEdit(${rId})"><i class="fas fa-save"></i> Save</button>
                         <button class="h-cancel-btn" onclick="toggleHistEdit(${rId})">Cancel</button>
@@ -967,6 +986,7 @@ function saveReport(patientId) {
             MedPicker.clear();
             document.getElementById('reportAmt').value  = '';
             document.getElementById('reportNotes').value = '';
+            document.getElementById('reportReportsNotes').value = '';
             document.getElementById('reportPaymentType').value   = 'cash';
             document.getElementById('reportPaymentStatus').value = 'paid';
             document.getElementById('reportDate').value = new Date().toISOString().split('T')[0];
@@ -986,46 +1006,25 @@ function toggleHistEdit(id) {
     form.classList.toggle('open');
 }
 function saveHistEdit(id) {
-    const date     = document.getElementById('he-date-'  + id).value;
-    const medicins = document.getElementById('he-meds-'  + id).value.trim();
-    const notes    = document.getElementById('he-notes-' + id)?.value.trim() || '';
-    const amt      = document.getElementById('he-amt-'   + id).value || 0;
+    const date     = document.getElementById('he-date-'     + id).value;
+    const medicins = document.getElementById('he-meds-'     + id).value.trim();
+    const notes    = document.getElementById('he-notes-'    + id)?.value.trim() || '';
+    const repNotes = document.getElementById('he-repnotes-' + id)?.value.trim() || '';
+    const amt      = document.getElementById('he-amt-'      + id).value || 0;
 
     const fd = new FormData();
     fd.append('date', date);
     fd.append('medicins', medicins);
     fd.append('notes', notes);
+    fd.append('reports_notes', repNotes);
     fd.append('amt', amt);
 
     fetch('/api/report/' + id + '/update', { method: 'POST', body: fd })
     .then(r => r.json())
     .then(data => {
         if (data.success) {
-            const item = document.getElementById('hitem-' + id);
-            item.querySelector('.h-date').innerHTML = '<i class="fas fa-calendar-day"></i> ' + fmtDateJS(date);
-            item.querySelector('.h-meds').textContent = medicins || '—';
-
-            // Update notes display
-            let notesEl = item.querySelector('.h-notes');
-            if (notes) {
-                if (!notesEl) {
-                    notesEl = document.createElement('div');
-                    notesEl.className = 'h-notes';
-                    item.querySelector('.h-meds').after(notesEl);
-                }
-                notesEl.innerHTML = '<i class="fas fa-sticky-note"></i> ' + escHtml(notes);
-            } else if (notesEl) {
-                notesEl.remove();
-            }
-
-            // Update amount display
-            let amtEl = item.querySelector('.h-amt');
-            if (amt > 0) {
-                if (!amtEl) { amtEl = document.createElement('div'); amtEl.className = 'h-amt'; item.querySelector('.h-notes, .h-meds').after(amtEl); }
-                amtEl.textContent = '₹' + amt;
-            } else if (amtEl) { amtEl.remove(); }
-
-            toggleHistEdit(id);
+            // Reload so both Notes + Reports-Notes and amount/badges re-render cleanly
+            location.reload();
         } else { alert('Save failed: ' + (data.message || '')); }
     })
     .catch(() => alert('Network error'));

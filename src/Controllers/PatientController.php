@@ -258,7 +258,7 @@ class PatientController {
      */
     public function updateReport($reportId, $data) {
         try {
-            $allowed = ['date', 'medicins', 'notes', 'amt', 'payment_type', 'payment_status'];
+            $allowed = ['date', 'medicins', 'notes', 'reports_notes', 'amt', 'payment_type', 'payment_status'];
             $clean = array_intersect_key($data, array_flip($allowed));
 
             if (empty($clean)) {
