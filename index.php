@@ -202,7 +202,7 @@ switch ($route) {
     case 'patients':
         AuthController::requireLogin();
         $patientModel = new \App\Models\Patient($db);
-        $initialRows  = $patientModel->getPaginated(1, 25, '');
+        $initialRows  = $patientModel->getPaginated(1, 10, '');
         $totalPatients = $patientModel->getTotalCount('');
         require __DIR__ . '/views/patient/list.php';
         break;
