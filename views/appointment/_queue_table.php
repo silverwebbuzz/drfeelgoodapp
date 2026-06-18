@@ -66,6 +66,7 @@ $nowDate     = date('Y-m-d');
             <th>Complaint</th>
             <?php endif; ?>
             <th>Status</th>
+            <?php if ($qRole === 'reception'): ?><th style="min-width:100px;text-align:center;">Payment</th><?php endif; ?>
             <th style="width:<?php echo $compact ? '130px' : '180px'; ?>;">Actions</th>
         </tr>
     </thead>
@@ -139,6 +140,22 @@ $nowDate     = date('Y-m-d');
             <?php endif; ?>
 
             <td><?php echo statusBadge($s, $isLate); ?></td>
+
+            <?php if ($qRole === 'reception'): ?>
+            <td style="text-align:center;">
+                <?php if ($s === 'completed' && !empty($row['report_id'])): ?>
+                    <?php $payStatus = $row['payment_status'] ?? 'paid'; ?>
+                    <button class="btn btn-sm <?php echo $payStatus === 'paid' ? 'btn-success' : 'btn-warning'; ?>" 
+                            onclick="togglePayment(<?php echo (int)$row['report_id']; ?>, '<?php echo htmlspecialchars($payStatus); ?>')"
+                            title="Click to change payment status">
+                        <i class="fas fa-<?php echo $payStatus === 'paid' ? 'check-circle' : 'clock'; ?>"></i>
+                        <?php echo $payStatus === 'paid' ? 'Paid' : 'Remaining'; ?>
+                    </button>
+                <?php else: ?>
+                    <span style="color:#d1d5db;font-size:12px;">—</span>
+                <?php endif; ?>
+            </td>
+            <?php endif; ?>
 
             <td class="status-btns">
 
@@ -262,6 +279,23 @@ function doStatus(id, status, cb) {
     })
     .then(r => r.json())
     .then(data => { if (data.success) cb(data); else alert('Error: ' + data.message); });
+}
+function togglePayment(reportId, currentStatus) {
+    const newStatus = currentStatus === 'paid' ? 'remaining' : 'paid';
+    fetch('/api/report/' + reportId + '/payment', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+        body: 'payment_status=' + encodeURIComponent(newStatus)
+    })
+    .then(r => r.json())
+    .then(data => { 
+        if (data.success) {
+            location.reload();
+        } else {
+            alert('Error: ' + (data.message || 'Failed to update payment status'));
+        }
+    })
+    .catch(e => alert('Error: ' + e.message));
 }
 </script>
 <?php endif; ?>

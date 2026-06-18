@@ -295,6 +295,31 @@ switch ($route) {
         echo json_encode($response);
         exit;
 
+    case (preg_match('/^api\/report\/(\d+)\/payment$/', $route, $matches) ? true : false):
+        // Reception and doctor can change payment status
+        AuthController::requireRole('reception', 'doctor', 'asst_doctor');
+        header('Content-Type: application/json');
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            echo json_encode(['success' => false, 'message' => 'POST required']); exit;
+        }
+        $reportId = $matches[1];
+        $paymentStatus = $_POST['payment_status'] ?? '';
+        if (!in_array($paymentStatus, ['paid', 'remaining'])) {
+            echo json_encode(['success' => false, 'message' => 'Invalid payment status']); exit;
+        }
+        try {
+            $progressReportModel = new App\Models\ProgressReport($db);
+            $report = $progressReportModel->getById($reportId);
+            if (!$report) {
+                echo json_encode(['success' => false, 'message' => 'Report not found']); exit;
+            }
+            $progressReportModel->updateReport($reportId, ['payment_status' => $paymentStatus]);
+            echo json_encode(['success' => true, 'message' => 'Payment status updated', 'payment_status' => $paymentStatus]);
+        } catch (\Exception $e) {
+            echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+        }
+        exit;
+
     case (preg_match('/^api\/patient\/(\d+)\/delete$/', $route, $matches) ? true : false):
         // Only the main doctor can permanently delete a patient + all records
         AuthController::requireRole('doctor');
