@@ -589,3 +589,14 @@ body {
     .report-period-bar form { flex-wrap: wrap; }
     .report-period-bar form input[type=date] { width: 100% !important; }
 }
+table tbody tr:nth-child(odd) {
+    background-color: #f8f9fa;
+}
+
+table tbody tr:nth-child(even) {
+    background-color: #ffffff;
+}
+
+table tbody tr:hover {
+    background-color: #e9f5ff;
+}
