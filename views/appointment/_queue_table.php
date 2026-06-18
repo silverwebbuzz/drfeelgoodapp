@@ -197,6 +197,11 @@ $nowDate     = date('Y-m-d');
                 <?php elseif ($s === 'completed'): ?>
 
                     <span style="color:#9ca3af;font-size:11px;"><i class="fas fa-check-double"></i> Done</span>
+                    <?php if ($qRole === 'reception' && !empty($row['report_id'])): ?>
+                    <a href="/invoice/<?php echo (int)$row['report_id']; ?>" target="_blank" class="btn btn-primary btn-sm" title="Print Invoice">
+                        <i class="fas fa-print"></i> Invoice
+                    </a>
+                    <?php endif; ?>
                     <?php if ($pid && $qCanConsult && !$compact): ?>
                     <a href="/patient/<?php echo $pid; ?>" class="btn btn-secondary btn-sm" title="View Patient">
                         <i class="fas fa-user"></i>
