@@ -155,27 +155,11 @@ $nowDate     = date('Y-m-d');
                             <i class="fas fa-check-circle"></i> Paid
                         </span>
                     <?php else: ?>
-                        <div class="pay-pop-wrap" style="position:relative;display:inline-block;">
-                            <button type="button" class="btn btn-warning btn-sm"
-                                    onclick="togglePayPop(<?php echo $rptId; ?>)"
-                                    title="Click to record payment">
-                                <i class="fas fa-clock"></i> Remaining
-                            </button>
-                            <div class="pay-pop" id="payPop<?php echo $rptId; ?>" style="display:none;">
-                                <div class="pay-pop-amt">Amount: &#8377;<?php echo number_format($payAmt); ?></div>
-                                <label class="pay-pop-label">Payment method</label>
-                                <select id="payType<?php echo $rptId; ?>" class="pay-pop-select">
-                                    <option value="cash" <?php echo $payType === 'cash' ? 'selected' : ''; ?>>Cash</option>
-                                    <option value="online" <?php echo $payType === 'online' ? 'selected' : ''; ?>>Online</option>
-                                </select>
-                                <div class="pay-pop-actions">
-                                    <button type="button" class="btn btn-secondary btn-sm" onclick="togglePayPop(<?php echo $rptId; ?>)">Cancel</button>
-                                    <button type="button" class="btn btn-success btn-sm" onclick="savePayment(<?php echo $rptId; ?>)">
-                                        <i class="fas fa-check"></i> Mark Paid
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
+                        <button type="button" class="btn btn-warning btn-sm"
+                                onclick="openPayModal(<?php echo $rptId; ?>, <?php echo $payAmt; ?>, '<?php echo htmlspecialchars($payType); ?>', '<?php echo htmlspecialchars(addslashes(qName($row)), ENT_QUOTES); ?>')"
+                                title="Click to record payment">
+                            <i class="fas fa-clock"></i> Remaining
+                        </button>
                     <?php endif; ?>
                 <?php else: ?>
                     <span style="color:#d1d5db;font-size:12px;">—</span>
@@ -270,6 +254,30 @@ global $__queueJsLoaded;
 if (empty($__queueJsLoaded)):
     $__queueJsLoaded = true;
 ?>
+<!-- Payment modal (shared, rendered once) -->
+<div class="pay-modal-overlay" id="payModalOverlay">
+    <div class="pay-modal" role="dialog" aria-modal="true">
+        <div class="pay-modal-head">
+            <h3><i class="fas fa-rupee-sign"></i> Record Payment</h3>
+            <button type="button" class="pay-modal-close" onclick="closePayModal()" aria-label="Close">&times;</button>
+        </div>
+        <div class="pay-modal-body">
+            <div class="pay-modal-patient" id="payModalPatient"></div>
+            <div class="pay-modal-amt" id="payModalAmt">&#8377;0</div>
+            <label class="pay-modal-label" for="payModalType">Payment method</label>
+            <select id="payModalType" class="pay-modal-select">
+                <option value="cash">Cash</option>
+                <option value="online">Online</option>
+            </select>
+        </div>
+        <div class="pay-modal-foot">
+            <button type="button" class="btn btn-secondary btn-sm" onclick="closePayModal()">Cancel</button>
+            <button type="button" class="btn btn-success btn-sm" id="payModalSave" onclick="submitPayModal()">
+                <i class="fas fa-check"></i> Mark Paid
+            </button>
+        </div>
+    </div>
+</div>
 <style>
 .queue-row[data-status="arrived"]         { background:#f0fdf4; }
 .queue-row[data-status="in_consultation"] { background:#eff6ff; }
@@ -284,16 +292,27 @@ if (empty($__queueJsLoaded)):
     text-transform:uppercase; white-space:nowrap;
 }
 .status-btns .btn { padding:3px 8px; font-size:11px; }
-.pay-pop {
-    position:absolute; top:100%; right:0; margin-top:4px; z-index:50;
-    background:#fff; border:1px solid #e5e7eb; border-radius:8px;
-    box-shadow:0 8px 24px rgba(0,0,0,.12); padding:12px; width:180px; text-align:left;
+.pay-modal-overlay {
+    display:none; position:fixed; inset:0; z-index:1000;
+    background:rgba(17,24,39,.5); align-items:center; justify-content:center;
 }
-.pay-pop-amt { font-weight:700; font-size:13px; color:#111827; margin-bottom:8px; }
-.pay-pop-label { display:block; font-size:11px; color:#6b7280; margin-bottom:3px; }
-.pay-pop-select { width:100%; padding:5px 6px; font-size:12px; border:1px solid #d1d5db; border-radius:6px; margin-bottom:10px; }
-.pay-pop-actions { display:flex; gap:6px; justify-content:flex-end; }
-.pay-pop-actions .btn { padding:3px 8px; font-size:11px; }
+.pay-modal-overlay.open { display:flex; }
+.pay-modal {
+    background:#fff; border-radius:12px; box-shadow:0 20px 60px rgba(0,0,0,.25);
+    width:340px; max-width:92vw; padding:0; overflow:hidden;
+}
+.pay-modal-head {
+    display:flex; align-items:center; justify-content:space-between;
+    padding:14px 18px; border-bottom:1px solid #f0f0f0;
+}
+.pay-modal-head h3 { margin:0; font-size:15px; font-weight:700; color:#111827; }
+.pay-modal-close { background:none; border:none; font-size:20px; line-height:1; color:#9ca3af; cursor:pointer; }
+.pay-modal-body { padding:18px; }
+.pay-modal-patient { font-size:13px; color:#6b7280; margin-bottom:6px; }
+.pay-modal-amt { font-size:22px; font-weight:800; color:#111827; margin-bottom:14px; }
+.pay-modal-label { display:block; font-size:12px; color:#6b7280; margin-bottom:5px; }
+.pay-modal-select { width:100%; padding:9px 10px; font-size:14px; border:1px solid #d1d5db; border-radius:8px; }
+.pay-modal-foot { display:flex; gap:8px; justify-content:flex-end; padding:14px 18px; border-top:1px solid #f0f0f0; }
 </style>
 <script>
 function callPatient(id, patientId) {
@@ -316,18 +335,24 @@ function doStatus(id, status, cb) {
     .then(r => r.json())
     .then(data => { if (data.success) cb(data); else alert('Error: ' + data.message); });
 }
-function togglePayPop(reportId) {
-    const pop = document.getElementById('payPop' + reportId);
-    if (!pop) return;
-    const isOpen = pop.style.display === 'block';
-    // Close any other open popovers first
-    document.querySelectorAll('.pay-pop').forEach(p => p.style.display = 'none');
-    pop.style.display = isOpen ? 'none' : 'block';
+var __payReportId = null;
+function openPayModal(reportId, amount, payType, patientName) {
+    __payReportId = reportId;
+    document.getElementById('payModalAmt').innerHTML = '&#8377;' + Number(amount).toLocaleString('en-IN');
+    document.getElementById('payModalPatient').textContent = patientName || '';
+    document.getElementById('payModalType').value = (payType === 'online') ? 'online' : 'cash';
+    document.getElementById('payModalOverlay').classList.add('open');
 }
-function savePayment(reportId) {
-    const sel = document.getElementById('payType' + reportId);
-    const payType = sel ? sel.value : 'cash';
-    fetch('/api/report/' + reportId + '/payment', {
+function closePayModal() {
+    __payReportId = null;
+    document.getElementById('payModalOverlay').classList.remove('open');
+}
+function submitPayModal() {
+    if (!__payReportId) return;
+    var payType = document.getElementById('payModalType').value;
+    var btn = document.getElementById('payModalSave');
+    btn.disabled = true;
+    fetch('/api/report/' + __payReportId + '/payment', {
         method: 'POST',
         headers: {'Content-Type': 'application/x-www-form-urlencoded'},
         body: 'payment_status=paid&payment_type=' + encodeURIComponent(payType)
@@ -337,16 +362,18 @@ function savePayment(reportId) {
         if (data.success) {
             location.reload();
         } else {
+            btn.disabled = false;
             alert('Error: ' + (data.message || 'Failed to update payment status'));
         }
     })
-    .catch(e => alert('Error: ' + e.message));
+    .catch(e => { btn.disabled = false; alert('Error: ' + e.message); });
 }
-// Close popover when clicking outside
+// Close on overlay click / Esc
 document.addEventListener('click', function(e) {
-    if (!e.target.closest('.pay-pop-wrap')) {
-        document.querySelectorAll('.pay-pop').forEach(p => p.style.display = 'none');
-    }
+    if (e.target && e.target.id === 'payModalOverlay') closePayModal();
+});
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') closePayModal();
 });
 </script>
 <?php endif; ?>

@@ -306,13 +306,10 @@ $apptId    = (int)($_GET['appt'] ?? 0);
 ?>
 
 <?php if ($fromQueue && $apptId): ?>
-<div style="background:#eff6ff;border:2px solid #2563eb;border-radius:8px;padding:10px 16px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;">
+<div style="background:#eff6ff;border:2px solid #2563eb;border-radius:8px;padding:10px 16px;margin-bottom:12px;">
     <div style="font-size:12px;color:#1d4ed8;">
-        <i class="fas fa-stethoscope"></i> <strong>In Consultation</strong> — Add visit notes below, then finish when done.
+        <i class="fas fa-stethoscope"></i> <strong>In Consultation</strong> — Add visit notes below, then Save Visit to finish.
     </div>
-    <button onclick="finishConsult(<?php echo $apptId; ?>)" class="btn btn-success btn-sm">
-        <i class="fas fa-check"></i> Finish &amp; Back to Queue
-    </button>
 </div>
 <?php endif; ?>
 
@@ -603,6 +600,12 @@ $apptId    = (int)($_GET['appt'] ?? 0);
             <div class="save-ok" id="saveOk">
                 <i class="fas fa-check-circle"></i> Visit saved!
             </div>
+            <?php if ($fromQueue && $apptId): ?>
+            <button class="btn btn-success" id="finishConsultBtn" style="display:none;width:100%;margin-top:10px;padding:11px;font-size:15px;font-weight:600;"
+                    onclick="finishConsult(<?php echo $apptId; ?>)">
+                <i class="fas fa-check"></i> Finish &amp; Back to Queue
+            </button>
+            <?php endif; ?>
         </div>
     </div>
     <?php endif; // canVisit ?>
@@ -1035,6 +1038,9 @@ function saveReport(patientId) {
             document.getElementById('reportDate').value = new Date().toISOString().split('T')[0];
             ok.style.display = 'block';
             setTimeout(() => ok.style.display = 'none', 3000);
+            // Reveal the finish button so the doctor can complete the visit
+            const finishBtn = document.getElementById('finishConsultBtn');
+            if (finishBtn) finishBtn.style.display = 'block';
         } else {
             alert('Error: ' + (data.message || ''));
         }
