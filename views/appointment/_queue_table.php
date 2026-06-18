@@ -144,13 +144,39 @@ $nowDate     = date('Y-m-d');
             <?php if ($qRole === 'reception'): ?>
             <td style="text-align:center;">
                 <?php if ($s === 'completed' && !empty($row['report_id'])): ?>
-                    <?php $payStatus = $row['payment_status'] ?? 'paid'; ?>
-                    <button class="btn btn-sm <?php echo $payStatus === 'paid' ? 'btn-success' : 'btn-warning'; ?>" 
-                            onclick="togglePayment(<?php echo (int)$row['report_id']; ?>, '<?php echo htmlspecialchars($payStatus); ?>')"
-                            title="Click to change payment status">
-                        <i class="fas fa-<?php echo $payStatus === 'paid' ? 'check-circle' : 'clock'; ?>"></i>
-                        <?php echo $payStatus === 'paid' ? 'Paid' : 'Remaining'; ?>
-                    </button>
+                    <?php
+                        $payStatus = $row['payment_status'] ?? 'paid';
+                        $payType   = $row['payment_type']   ?? 'cash';
+                        $payAmt    = (int)($row['report_amt'] ?? 0);
+                        $rptId     = (int)$row['report_id'];
+                    ?>
+                    <?php if ($payStatus === 'paid'): ?>
+                        <span class="badge bg-success" style="font-size:11px;">
+                            <i class="fas fa-check-circle"></i> Paid
+                        </span>
+                    <?php else: ?>
+                        <div class="pay-pop-wrap" style="position:relative;display:inline-block;">
+                            <button type="button" class="btn btn-warning btn-sm"
+                                    onclick="togglePayPop(<?php echo $rptId; ?>)"
+                                    title="Click to record payment">
+                                <i class="fas fa-clock"></i> Remaining
+                            </button>
+                            <div class="pay-pop" id="payPop<?php echo $rptId; ?>" style="display:none;">
+                                <div class="pay-pop-amt">Amount: &#8377;<?php echo number_format($payAmt); ?></div>
+                                <label class="pay-pop-label">Payment method</label>
+                                <select id="payType<?php echo $rptId; ?>" class="pay-pop-select">
+                                    <option value="cash" <?php echo $payType === 'cash' ? 'selected' : ''; ?>>Cash</option>
+                                    <option value="online" <?php echo $payType === 'online' ? 'selected' : ''; ?>>Online</option>
+                                </select>
+                                <div class="pay-pop-actions">
+                                    <button type="button" class="btn btn-secondary btn-sm" onclick="togglePayPop(<?php echo $rptId; ?>)">Cancel</button>
+                                    <button type="button" class="btn btn-success btn-sm" onclick="savePayment(<?php echo $rptId; ?>)">
+                                        <i class="fas fa-check"></i> Mark Paid
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    <?php endif; ?>
                 <?php else: ?>
                     <span style="color:#d1d5db;font-size:12px;">—</span>
                 <?php endif; ?>
@@ -258,6 +284,16 @@ if (empty($__queueJsLoaded)):
     text-transform:uppercase; white-space:nowrap;
 }
 .status-btns .btn { padding:3px 8px; font-size:11px; }
+.pay-pop {
+    position:absolute; top:100%; right:0; margin-top:4px; z-index:50;
+    background:#fff; border:1px solid #e5e7eb; border-radius:8px;
+    box-shadow:0 8px 24px rgba(0,0,0,.12); padding:12px; width:180px; text-align:left;
+}
+.pay-pop-amt { font-weight:700; font-size:13px; color:#111827; margin-bottom:8px; }
+.pay-pop-label { display:block; font-size:11px; color:#6b7280; margin-bottom:3px; }
+.pay-pop-select { width:100%; padding:5px 6px; font-size:12px; border:1px solid #d1d5db; border-radius:6px; margin-bottom:10px; }
+.pay-pop-actions { display:flex; gap:6px; justify-content:flex-end; }
+.pay-pop-actions .btn { padding:3px 8px; font-size:11px; }
 </style>
 <script>
 function callPatient(id, patientId) {
@@ -280,15 +316,24 @@ function doStatus(id, status, cb) {
     .then(r => r.json())
     .then(data => { if (data.success) cb(data); else alert('Error: ' + data.message); });
 }
-function togglePayment(reportId, currentStatus) {
-    const newStatus = currentStatus === 'paid' ? 'remaining' : 'paid';
+function togglePayPop(reportId) {
+    const pop = document.getElementById('payPop' + reportId);
+    if (!pop) return;
+    const isOpen = pop.style.display === 'block';
+    // Close any other open popovers first
+    document.querySelectorAll('.pay-pop').forEach(p => p.style.display = 'none');
+    pop.style.display = isOpen ? 'none' : 'block';
+}
+function savePayment(reportId) {
+    const sel = document.getElementById('payType' + reportId);
+    const payType = sel ? sel.value : 'cash';
     fetch('/api/report/' + reportId + '/payment', {
         method: 'POST',
         headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-        body: 'payment_status=' + encodeURIComponent(newStatus)
+        body: 'payment_status=paid&payment_type=' + encodeURIComponent(payType)
     })
     .then(r => r.json())
-    .then(data => { 
+    .then(data => {
         if (data.success) {
             location.reload();
         } else {
@@ -297,5 +342,11 @@ function togglePayment(reportId, currentStatus) {
     })
     .catch(e => alert('Error: ' + e.message));
 }
+// Close popover when clicking outside
+document.addEventListener('click', function(e) {
+    if (!e.target.closest('.pay-pop-wrap')) {
+        document.querySelectorAll('.pay-pop').forEach(p => p.style.display = 'none');
+    }
+});
 </script>
 <?php endif; ?>

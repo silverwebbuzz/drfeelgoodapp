@@ -307,14 +307,25 @@ switch ($route) {
         if (!in_array($paymentStatus, ['paid', 'remaining'])) {
             echo json_encode(['success' => false, 'message' => 'Invalid payment status']); exit;
         }
+        // Payment method (cash/online) is optional — only applied when provided
+        $paymentType = $_POST['payment_type'] ?? '';
         try {
             $progressReportModel = new App\Models\ProgressReport($db);
             $report = $progressReportModel->getById($reportId);
             if (!$report) {
                 echo json_encode(['success' => false, 'message' => 'Report not found']); exit;
             }
-            $progressReportModel->updateReport($reportId, ['payment_status' => $paymentStatus]);
-            echo json_encode(['success' => true, 'message' => 'Payment status updated', 'payment_status' => $paymentStatus]);
+            $update = ['payment_status' => $paymentStatus];
+            if (in_array($paymentType, ['cash', 'online'])) {
+                $update['payment_type'] = $paymentType;
+            }
+            $progressReportModel->updateReport($reportId, $update);
+            echo json_encode([
+                'success'        => true,
+                'message'        => 'Payment status updated',
+                'payment_status' => $paymentStatus,
+                'payment_type'   => $update['payment_type'] ?? ($report['payment_type'] ?? ''),
+            ]);
         } catch (\Exception $e) {
             echo json_encode(['success' => false, 'message' => $e->getMessage()]);
         }
