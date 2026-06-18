@@ -572,18 +572,18 @@ $apptId    = (int)($_GET['appt'] ?? 0);
                 <div class="visit-pay-grid" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;">
                     <div>
                         <label class="info-label" style="display:block;margin-bottom:4px;">Amount (₹)</label>
-                        <input type="number" id="reportAmt" class="r-input" placeholder="0" min="0" style="height:34px;">
+                        <input type="number" id="reportAmt" class="r-input" placeholder="0" min="0">
                     </div>
                     <div>
                         <label class="info-label" style="display:block;margin-bottom:4px;">Payment Type</label>
-                        <select id="reportPaymentType" class="r-input" style="height:34px;">
+                        <select id="reportPaymentType" class="r-input">
                             <option value="cash">Cash</option>
                             <option value="online">Online</option>
                         </select>
                     </div>
                     <div>
                         <label class="info-label" style="display:block;margin-bottom:4px;">Payment Status</label>
-                        <select id="reportPaymentStatus" class="r-input" style="height:34px;">
+                        <select id="reportPaymentStatus" class="r-input">
                             <option value="paid">Paid</option>
                             <option value="remaining">Remaining</option>
                         </select>
