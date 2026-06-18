@@ -92,15 +92,15 @@ $mrgMap = ['S'=>'Single','M'=>'Married','D'=>'Divorced','W'=>'Widowed'];
     <!-- FOOTER WITH PAGINATION & INFO -->
     <div class="datatable-footer">
         <div class="datatable-info">
-            Showing <span id="startEntry">1</span>–<span id="endEntry"><?php echo min(25, $totalPatients); ?></span>
+            Showing <span id="startEntry">1</span>–<span id="endEntry"><?php echo min(10, $totalPatients); ?></span>
             of <span id="totalEntries"><?php echo $totalPatients; ?></span> patients
         </div>
         <div class="datatable-controls">
             <div class="datatable-entries-select">
                 <label for="entriesPerPage">Show</label>
                 <select id="entriesPerPage">
-                    <option value="10">10</option>
-                    <option value="25" selected>25</option>
+                    <option value="10" selected>10</option>
+                    <option value="25">25</option>
                     <option value="50">50</option>
                     <option value="100">100</option>
                 </select>
@@ -117,7 +117,7 @@ $mrgMap = ['S'=>'Single','M'=>'Married','D'=>'Divorced','W'=>'Widowed'];
 
     // ── State ──────────────────────────────────────────────────────────
     let currentPage  = 1;
-    let limit        = 25;
+    let limit        = 10;
     let search       = '';
     let total        = <?php echo (int)$totalPatients; ?>;
     let searchTimer  = null;
