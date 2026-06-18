@@ -121,8 +121,8 @@ function fmtName($f, $l) {
     min-width:0;
 }
 .info-label {
-    font-size:0.7rem; text-transform:uppercase;
-    letter-spacing:0.4px; color:var(--gray-400); margin-bottom:3px;
+    font-size:0.72rem; text-transform:uppercase; font-weight:700;
+    letter-spacing:0.4px; color:var(--gray-800); margin-bottom:3px;
 }
 .info-value {
     font-size:0.9rem; font-weight:600; color:var(--gray-800);
