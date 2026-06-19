@@ -25,6 +25,22 @@ class Appointment extends BaseModel {
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
+    /**
+     * The patient's currently in-consultation appointment for a date, if any.
+     * Used so the visit page can show "Finish" even when the doctor opened the
+     * patient directly (not via the queue's Call action).
+     */
+    public function getActiveForPatient($patientId, $date) {
+        $sql = "SELECT id, token_number, status
+                FROM {$this->table}
+                WHERE patient_id = ? AND appt_date = ? AND status = 'in_consultation'
+                ORDER BY id DESC
+                LIMIT 1";
+        $stmt = $this->query($sql, [$patientId, $date]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        return $row ?: null;
+    }
+
     /** Next available token number for a date */
     public function nextToken($date) {
         $sql = "SELECT MAX(token_number) as max_token FROM {$this->table} WHERE appt_date = ?";

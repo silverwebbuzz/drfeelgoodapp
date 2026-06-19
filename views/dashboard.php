@@ -21,7 +21,8 @@ function dashNum($n) {
 $stats       = $dashStats        ?? [];
 $todayQueue  = $todayQueueData['queue'] ?? [];
 $todayStats  = $todayQueueData['stats'] ?? [];
-$queue       = $todayQueue;
+// Dashboard shows latest record first (queue data comes ordered by token ascending)
+$queue       = array_reverse($todayQueue);
 $compact     = false;
 $tableId     = 'dashQueueTable';
 ?>

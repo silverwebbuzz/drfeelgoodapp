@@ -33,6 +33,7 @@ function fmtName($f, $l) {
     $reports = $response['progress_reports'] ?? [];
     $totalReports = $response['total_reports'] ?? count($reports);
     $todayReport = $response['today_report'] ?? null; // in-progress visit started earlier today
+    $activeAppt  = $response['active_appt'] ?? null;  // patient's in-consultation appointment today
     $pid = $p['id'];
     // Define role/permission here so it's available throughout the whole view
     $viewerRole = $_SESSION['role'] ?? 'doctor';
@@ -304,9 +305,12 @@ textarea.r-input { resize:vertical; }
 <?php
 $fromQueue = ($_GET['from'] ?? '') === 'queue';
 $apptId    = (int)($_GET['appt'] ?? 0);
+// Appointment to finish: the one we arrived with, or the patient's active
+// in-consultation appointment today (so Finish works even opened directly).
+$finishApptId = $apptId ?: (int)($activeAppt['id'] ?? 0);
 ?>
 
-<?php if ($fromQueue && $apptId): ?>
+<?php if (($fromQueue && $apptId) || $activeAppt): ?>
 <div style="background:#eff6ff;border:2px solid #2563eb;border-radius:8px;padding:10px 16px;margin-bottom:12px;">
     <div style="font-size:12px;color:#1d4ed8;">
         <i class="fas fa-stethoscope"></i> <strong>In Consultation</strong> — Add visit notes below, then Save Visit to finish.
@@ -616,9 +620,9 @@ $apptId    = (int)($_GET['appt'] ?? 0);
             <div class="save-ok" id="saveOk">
                 <i class="fas fa-check-circle"></i> Visit saved!
             </div>
-            <?php if ($fromQueue && $apptId): ?>
-            <button class="btn btn-success" id="finishConsultBtn" style="display:none;width:100%;margin-top:10px;padding:11px;font-size:15px;font-weight:600;"
-                    onclick="finishConsult(<?php echo $apptId; ?>)">
+            <?php if ($finishApptId): ?>
+            <button class="btn btn-success" id="finishConsultBtn" style="width:100%;margin-top:10px;padding:11px;font-size:15px;font-weight:600;"
+                    onclick="finishConsult(<?php echo $finishApptId; ?>)">
                 <i class="fas fa-check"></i> Finish &amp; Back to Queue
             </button>
             <?php endif; ?>

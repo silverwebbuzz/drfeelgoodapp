@@ -10,18 +10,21 @@ use App\Models\Patient;
 use App\Models\AdditionalInfo;
 use App\Models\ProgressReport;
 use App\Models\Medicine;
+use App\Models\Appointment;
 
 class PatientController {
     private $patientModel;
     private $additionalInfoModel;
     private $progressReportModel;
     private $medicineModel;
+    private $appointmentModel;
 
     public function __construct($db) {
         $this->patientModel = new Patient($db);
         $this->additionalInfoModel = new AdditionalInfo($db);
         $this->progressReportModel = new ProgressReport($db);
         $this->medicineModel = new Medicine($db);
+        $this->appointmentModel = new Appointment($db);
     }
 
     /**
@@ -104,6 +107,10 @@ class PatientController {
             // visit form can continue it instead of creating a duplicate.
             $todayReport = $this->progressReportModel->getTodayForPatient($patientId);
 
+            // Patient's active (in-consultation) appointment today, so the visit
+            // page can offer "Finish" even when opened directly (not from queue).
+            $activeAppt = $this->appointmentModel->getActiveForPatient($patientId, date('Y-m-d'));
+
             return [
                 'success' => true,
                 'patient' => $patient,
@@ -114,6 +121,7 @@ class PatientController {
                 'progress_reports' => $reports,
                 'total_reports' => $reportCount,
                 'today_report' => $todayReport,
+                'active_appt' => $activeAppt,
             ];
         } catch (\Exception $e) {
             return [
