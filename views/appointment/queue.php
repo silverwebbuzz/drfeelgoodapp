@@ -1,7 +1,8 @@
 <?php
 $page_title = 'Appointments';
 
-$queue   = $queueData['queue'] ?? [];
+// Latest record first (queue data comes ordered by token ascending)
+$queue   = array_reverse($queueData['queue'] ?? []);
 $stats   = $queueData['stats'] ?? [];
 $date    = $queueData['date']  ?? date('Y-m-d');
 $view    = $queueData['view']  ?? 'today';
