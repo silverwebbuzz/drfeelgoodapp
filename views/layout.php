@@ -15,7 +15,7 @@
     $isDoctor     = $layoutRole === 'doctor';
     $isAsstDoctor = $layoutRole === 'asst_doctor';
     $isReception  = $layoutRole === 'reception';
-    $canReports   = $isDoctor || $isAsstDoctor;
+    $canReports   = $isDoctor;
     $uri          = $_SERVER['REQUEST_URI'];
     ?>
     <div class="app-wrapper">
@@ -26,7 +26,7 @@
                 <button class="sidebar-toggle" id="sidebarToggle" aria-label="Toggle menu">
                     <i class="fas fa-bars"></i>
                 </button>
-                <a href="/dashboard" class="app-brand">
+                <a href="<?php echo $isAsstDoctor ? '/queue' : '/dashboard'; ?>" class="app-brand">
                     <i class="fas fa-heart"></i>
                     <span>Dr. Feelgood</span>
                 </a>
@@ -54,6 +54,7 @@
                 <nav>
                     <ul class="sidebar-menu">
 
+                        <?php if (!$isAsstDoctor): ?>
                         <li>
                             <a href="/dashboard" class="<?php echo strpos($uri, 'dashboard') !== false ? 'active' : ''; ?>">
                                 <i class="fas fa-th-large"></i>
@@ -67,6 +68,7 @@
                                 <span>Patients</span>
                             </a>
                         </li>
+                        <?php endif; ?>
 
                         <li>
                             <a href="/queue" class="<?php echo (strpos($uri, 'queue') !== false || strpos($uri, 'walkin') !== false) ? 'active' : ''; ?>">

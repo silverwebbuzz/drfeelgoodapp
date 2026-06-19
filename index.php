@@ -101,6 +101,9 @@ if (empty($route)) {
     $route = 'login';
 }
 
+// Asst. Doctor is locked to the Appointments + consultation workflow
+AuthController::enforceAsstDoctorScope($route);
+
 // Route handler
 switch ($route) {
     // Authentication routes

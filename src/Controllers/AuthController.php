@@ -37,7 +37,9 @@ class AuthController {
         $_SESSION['logged_in'] = true;
         $_SESSION['login_time']= time();
 
-        return ['success' => true, 'message' => 'Login successful', 'redirect' => '/dashboard'];
+        // Asst. Doctor is scoped to the Appointments workflow — land there, not the dashboard
+        $landing = ($_SESSION['role'] === 'asst_doctor') ? '/queue' : '/dashboard';
+        return ['success' => true, 'message' => 'Login successful', 'redirect' => $landing];
     }
 
     public function logout() {
@@ -96,6 +98,41 @@ class AuthController {
             require __DIR__ . '/../../views/error/403.php';
             exit;
         }
+    }
+
+    /**
+     * Asst. Doctor is restricted to the Appointments page and the consultation
+     * workflow it leads into (calling a patient → patient detail → visit report).
+     * Every other route is denied. Call this once, early in routing.
+     */
+    public static function enforceAsstDoctorScope(string $route): void {
+        if (!self::isLoggedIn() || self::getRole() !== 'asst_doctor') return;
+
+        $allowed = [
+            '#^login$#',
+            '#^logout$#',
+            '#^queue$#',                       // Appointments page
+            '#^walkin$#',                      // Book walk-in from Appointments
+            '#^patient/\d+$#',                 // Patient detail (consultation)
+            '#^api/appointment/\d+/status$#',  // Call / finish / status changes
+            '#^api/appointment/walkin$#',
+            '#^api/slots$#',                   // Walk-in slot picker
+            '#^api/medicines$#',               // Medicine search in visit report
+            '#^api/patient/search$#',          // Patient lookup in walk-in form
+            '#^api/patient/\d+/report$#',      // Save visit report
+            '#^api/patient/\d+/update$#',      // Edit patient demographics
+            '#^api/report/\d+/update$#',       // Edit visit report
+            '#^api/report/\d+/payment$#',      // Record payment
+            '#^invoice/\d+$#',                 // Print invoice
+        ];
+        foreach ($allowed as $pattern) {
+            if (preg_match($pattern, $route)) return;
+        }
+
+        http_response_code(403);
+        $roleName = User::roleLabel(self::getRole());
+        require __DIR__ . '/../../views/error/403.php';
+        exit;
     }
 
     public static function checkSessionTimeout(): void {

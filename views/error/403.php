@@ -14,8 +14,9 @@ ob_start();
     <p style="color:#9ca3af;font-size:0.85rem;margin-bottom:28px;">
         Contact the Doctor if you think this is a mistake.
     </p>
-    <a href="/dashboard" class="btn btn-primary">
-        <i class="fas fa-arrow-left"></i> Back to Dashboard
+    <?php $backIsQueue = (($_SESSION['role'] ?? '') === 'asst_doctor'); ?>
+    <a href="<?php echo $backIsQueue ? '/queue' : '/dashboard'; ?>" class="btn btn-primary">
+        <i class="fas fa-arrow-left"></i> <?php echo $backIsQueue ? 'Back to Appointments' : 'Back to Dashboard'; ?>
     </a>
 </div>
 <?php
