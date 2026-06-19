@@ -8,6 +8,8 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link href="/css/style.css?v=<?php echo @filemtime(dirname(__DIR__).'/css/style.css') ?: time(); ?>" rel="stylesheet">
     <link href="/css/datatable.css" rel="stylesheet">
+    <link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#0d6efd">
 </head>
 <body>
     <?php
@@ -169,5 +171,29 @@
         el.closest('.has-submenu').classList.toggle('open');
     }
     </script>
+    <script>
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function () {
+        navigator.serviceWorker.register('/service-worker.js');
+    });
+}
+</script>
+<button id="installBtn" style="display:none;">
+Install App
+</button>
+
+<script>
+let deferredPrompt;
+
+window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+    document.getElementById('installBtn').style.display = 'block';
+});
+
+document.getElementById('installBtn').addEventListener('click', async () => {
+    deferredPrompt.prompt();
+});
+</script>
 </body>
 </html>
