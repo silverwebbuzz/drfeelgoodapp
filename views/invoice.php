@@ -482,7 +482,7 @@ body {
         </tr>
         <tr>
             <td>Payment Status</td>
-            <td style="font-weight:700;color:<?php echo $isPaid ? '#047857' : '#b91c1c'; ?>;"><?php echo $isPaid ? 'Paid' : 'Remaining'; ?></td>
+            <td style="font-weight:700;color:<?php echo $isPaid ? '#047857' : '#b91c1c'; ?>;"><?php echo $isPaid ? 'Paid' : 'Due'; ?></td>
         </tr>
     </table>
 

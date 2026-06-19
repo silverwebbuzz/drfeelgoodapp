@@ -585,7 +585,7 @@ $apptId    = (int)($_GET['appt'] ?? 0);
                         <label class="info-label" style="display:block;margin-bottom:4px;">Payment Status</label>
                         <select id="reportPaymentStatus" class="r-input">
                             <option value="paid">Paid</option>
-                            <option value="remaining">Remaining</option>
+                            <option value="remaining">Due</option>
                         </select>
                     </div>
                 </div>
