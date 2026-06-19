@@ -66,7 +66,7 @@ $nowDate     = date('Y-m-d');
             <th>Complaint</th>
             <?php endif; ?>
             <th>Status</th>
-            <?php if ($qRole === 'reception'): ?><th style="min-width:100px;text-align:center;">Payment</th><?php endif; ?>
+            <th style="min-width:80px;text-align:center;">Payment</th>
             <th style="width:<?php echo $compact ? '130px' : '180px'; ?>;">Actions</th>
         </tr>
     </thead>
@@ -141,34 +141,29 @@ $nowDate     = date('Y-m-d');
 
             <td><?php echo statusBadge($s, $isLate); ?></td>
 
-            <?php if ($qRole === 'reception'): ?>
             <td style="text-align:center;">
                 <?php if ($s === 'completed' && !empty($row['report_id'])): ?>
                     <?php
                         $payStatus = $row['payment_status'] ?? 'paid';
-                        $payType   = $row['payment_type']   ?? 'cash';
                         $payAmt    = (int)($row['report_amt'] ?? 0);
+                        $payType   = $row['payment_type']   ?? 'cash';
                         $rptId     = (int)$row['report_id'];
-                        $ptLbl     = $payType === 'online' ? 'Online' : 'Cash';
                     ?>
                     <?php if ($payStatus === 'paid'): ?>
-                        <span class="pay-badge pay-<?php echo htmlspecialchars($payType); ?>"><?php echo $ptLbl; ?></span>
                         <span class="pay-badge pay-paid">Paid</span>
-                    <?php else: ?>
+                    <?php elseif ($qRole === 'reception'): ?>
                         <button type="button" class="pay-badge-btn"
                                 onclick="openPayModal(<?php echo $rptId; ?>, <?php echo $payAmt; ?>, '<?php echo htmlspecialchars($payType); ?>', '<?php echo htmlspecialchars(addslashes(qName($row)), ENT_QUOTES); ?>')"
                                 title="Click to record payment">
                             <span class="pay-badge pay-remaining">Due</span>
                         </button>
-                    <?php endif; ?>
-                    <?php if ($payAmt > 0): ?>
-                        <div style="font-size:11px;color:#6b7280;margin-top:2px;">&#8377;<?php echo number_format($payAmt); ?></div>
+                    <?php else: ?>
+                        <span class="pay-badge pay-remaining">Due</span>
                     <?php endif; ?>
                 <?php else: ?>
                     <span style="color:#d1d5db;font-size:12px;">—</span>
                 <?php endif; ?>
             </td>
-            <?php endif; ?>
 
             <td class="status-btns">
 
