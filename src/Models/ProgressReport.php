@@ -29,6 +29,23 @@ class ProgressReport extends BaseModel {
     }
 
     /**
+     * Get today's (most recent) report for a patient, if any.
+     * Used to surface an in-progress visit (e.g. brief notes saved by the
+     * Asst. Doctor) on the visit form so the Doctor can continue the same
+     * visit instead of starting a new one.
+     */
+    public function getTodayForPatient($patientId) {
+        $sql = "SELECT id, p_id, date, medicins, notes, reports_notes, amt, payment_type, payment_status
+                FROM {$this->table}
+                WHERE p_id = ? AND DATE(date) = CURDATE()
+                ORDER BY id DESC
+                LIMIT 1";
+        $stmt = $this->query($sql, [$patientId]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        return $row ?: null;
+    }
+
+    /**
      * Get count of reports for a patient
      */
     public function getPatientReportCount($patientId) {

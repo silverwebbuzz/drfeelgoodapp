@@ -32,6 +32,7 @@ function fmtName($f, $l) {
     $p = $response['patient'];
     $reports = $response['progress_reports'] ?? [];
     $totalReports = $response['total_reports'] ?? count($reports);
+    $todayReport = $response['today_report'] ?? null; // in-progress visit started earlier today
     $pid = $p['id'];
     // Define role/permission here so it's available throughout the whole view
     $viewerRole = $_SESSION['role'] ?? 'doctor';
@@ -512,15 +513,25 @@ $apptId    = (int)($_GET['appt'] ?? 0);
     <?php if ($canVisit): ?>
     <div class="card report-form-card">
         <div class="card-header">
+            <?php if ($todayReport): ?>
+            <i class="fas fa-pen-to-square"></i> Continue Today's Visit
+            <?php else: ?>
             <i class="fas fa-plus-circle"></i> Add Today's Visit
+            <?php endif; ?>
         </div>
         <div class="card-body" style="padding:14px;">
+
+            <?php if ($todayReport): ?>
+            <div style="background:#fffbeb;border:1px solid #fcd34d;border-radius:8px;padding:9px 12px;margin-bottom:12px;font-size:12px;color:#92400e;">
+                <i class="fas fa-circle-info"></i> A visit was already started today. The details below are loaded — review or update and save to continue the same visit.
+            </div>
+            <?php endif; ?>
 
             <!-- Date row -->
             <div style="margin-bottom:10px;">
                 <label class="info-label" style="display:block;margin-bottom:4px;">Date</label>
                 <input type="date" id="reportDate" class="r-input"
-                    value="<?php echo date('Y-m-d'); ?>" style="height:34px;">
+                    value="<?php echo $todayReport ? date('Y-m-d', strtotime($todayReport['date'])) : date('Y-m-d'); ?>" style="height:34px;">
             </div>
 
             <!-- Medicine tag picker -->
@@ -553,14 +564,14 @@ $apptId    = (int)($_GET['appt'] ?? 0);
                         Notes
                         <span style="font-weight:400;color:var(--gray-400);">— follow-up, observations</span>
                     </label>
-                    <textarea id="reportNotes" class="r-input" placeholder="e.g. Follow-up in 2 weeks, improvement noted..." rows="3"></textarea>
+                    <textarea id="reportNotes" class="r-input" placeholder="e.g. Follow-up in 2 weeks, improvement noted..." rows="3"><?php echo $todayReport ? htmlspecialchars($todayReport['notes'] ?? '') : ''; ?></textarea>
                 </div>
                 <div>
                     <label class="info-label" style="display:block;margin-bottom:4px;">
                         Reports - Notes
                         <span style="font-weight:400;color:var(--gray-400);">— lab / investigation findings</span>
                     </label>
-                    <textarea id="reportReportsNotes" class="r-input" placeholder="e.g. CBC normal, Vit-D low, X-ray clear..." rows="3"></textarea>
+                    <textarea id="reportReportsNotes" class="r-input" placeholder="e.g. CBC normal, Vit-D low, X-ray clear..." rows="3"><?php echo $todayReport ? htmlspecialchars($todayReport['reports_notes'] ?? '') : ''; ?></textarea>
                 </div>
             </div>
 
@@ -572,20 +583,22 @@ $apptId    = (int)($_GET['appt'] ?? 0);
                 <div class="visit-pay-grid" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;">
                     <div>
                         <label class="info-label" style="display:block;margin-bottom:4px;">Amount (₹)</label>
-                        <input type="number" id="reportAmt" class="r-input" placeholder="0" min="0">
+                        <input type="number" id="reportAmt" class="r-input" placeholder="0" min="0" value="<?php echo $todayReport && (int)$todayReport['amt'] > 0 ? (int)$todayReport['amt'] : ''; ?>">
                     </div>
                     <div>
                         <label class="info-label" style="display:block;margin-bottom:4px;">Payment Type</label>
+                        <?php $tPayType = $todayReport['payment_type'] ?? ''; ?>
                         <select id="reportPaymentType" class="r-input">
-                            <option value="cash">Cash</option>
-                            <option value="online">Online</option>
+                            <option value="cash" <?php echo $tPayType === 'cash' ? 'selected' : ''; ?>>Cash</option>
+                            <option value="online" <?php echo $tPayType === 'online' ? 'selected' : ''; ?>>Online</option>
                         </select>
                     </div>
                     <div>
                         <label class="info-label" style="display:block;margin-bottom:4px;">Payment Status</label>
+                        <?php $tPayStatus = $todayReport['payment_status'] ?? ''; ?>
                         <select id="reportPaymentStatus" class="r-input">
-                            <option value="paid">Paid</option>
-                            <option value="remaining">Due</option>
+                            <option value="paid" <?php echo $tPayStatus === 'paid' ? 'selected' : ''; ?>>Paid</option>
+                            <option value="remaining" <?php echo $tPayStatus === 'remaining' ? 'selected' : ''; ?>>Due</option>
                         </select>
                     </div>
                 </div>
@@ -594,8 +607,11 @@ $apptId    = (int)($_GET['appt'] ?? 0);
             <!-- Hidden textarea for medicines only (submitted separately) -->
             <textarea id="reportMedicins" style="display:none;"></textarea>
 
+            <!-- When set, Save updates this already-started visit instead of creating a new one -->
+            <input type="hidden" id="editingReportId" value="<?php echo $todayReport ? (int)$todayReport['id'] : ''; ?>">
+
             <button class="save-btn" id="saveReportBtn" onclick="saveReport(<?php echo $pid; ?>)">
-                <i class="fas fa-save"></i> Save Visit
+                <i class="fas fa-save"></i> <?php echo $todayReport ? 'Update Visit' : 'Save Visit'; ?>
             </button>
             <div class="save-ok" id="saveOk">
                 <i class="fas fa-check-circle"></i> Visit saved!
@@ -858,11 +874,28 @@ const MedPicker = {
         document.getElementById('medSearch').value = '';
         document.getElementById('reportMedicins').value = '';
         document.getElementById('medDropdown').style.display = 'none';
+    },
+
+    // Pre-load existing tags (e.g. an in-progress visit) without stealing focus
+    seed(names) {
+        (names || []).forEach(n => {
+            n = String(n).trim();
+            if (n && !this.selected.find(s => s.name.toLowerCase() === n.toLowerCase())) {
+                this.selected.push({ name: n });
+            }
+        });
+        this.renderTags();
+        this.syncTextarea();
     }
 };
 
 // Init on load
 MedPicker.init();
+<?php if ($todayReport): ?>
+MedPicker.seed(<?php echo json_encode(array_values(array_filter(array_map('trim', explode(',', $todayReport['medicins'] ?? ''))))); ?>);
+<?php endif; ?>
+// Report id of an already-started visit today (empty = create a new visit)
+let editingReportId = document.getElementById('editingReportId') ? document.getElementById('editingReportId').value : '';
 
 // ── Info panel toggle ──
 function toggleInfo() {
@@ -979,6 +1012,28 @@ function saveReport(patientId) {
     fd.append('payment_type', payType);
     fd.append('payment_status', payStat);
 
+    // Continuing a visit already started today → update it in place (no duplicate)
+    if (editingReportId) {
+        fetch('/api/report/' + editingReportId + '/update', { method: 'POST', body: fd })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                // Reload so the form + history stay consistent with the saved visit
+                location.reload();
+            } else {
+                alert('Error: ' + (data.message || ''));
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-save"></i> Update Visit';
+            }
+        })
+        .catch(() => {
+            alert('Network error');
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-save"></i> Update Visit';
+        });
+        return;
+    }
+
     fetch('/api/patient/' + patientId + '/report', { method: 'POST', body: fd })
     .then(r => r.json())
     .then(data => {
@@ -1029,13 +1084,12 @@ function saveReport(patientId) {
             const badge = document.getElementById('visitBadge');
             badge.textContent = ((parseInt(badge.textContent) || 0) + 1) + ' total';
 
-            MedPicker.clear();
-            document.getElementById('reportAmt').value  = '';
-            document.getElementById('reportNotes').value = '';
-            document.getElementById('reportReportsNotes').value = '';
-            document.getElementById('reportPaymentType').value   = 'cash';
-            document.getElementById('reportPaymentStatus').value = 'paid';
-            document.getElementById('reportDate').value = new Date().toISOString().split('T')[0];
+            // This visit is now today's in-progress report — keep editing it
+            // (a further save updates the same row instead of duplicating).
+            editingReportId = String(rId);
+            const editIdInput = document.getElementById('editingReportId');
+            if (editIdInput) editIdInput.value = editingReportId;
+
             ok.style.display = 'block';
             setTimeout(() => ok.style.display = 'none', 3000);
             // Reveal the finish button so the doctor can complete the visit
@@ -1046,7 +1100,7 @@ function saveReport(patientId) {
         }
     })
     .catch(() => alert('Network error'))
-    .finally(() => { btn.disabled = false; btn.innerHTML = '<i class="fas fa-save"></i> Save Visit'; });
+    .finally(() => { btn.disabled = false; btn.innerHTML = '<i class="fas fa-save"></i> ' + (editingReportId ? 'Update Visit' : 'Save Visit'); });
 }
 
 // ── History edit ──

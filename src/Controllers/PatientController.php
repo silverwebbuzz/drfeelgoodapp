@@ -100,6 +100,10 @@ class PatientController {
             $reports = $this->progressReportModel->getByPatientId($patientId, 20);
             $reportCount = $this->progressReportModel->getPatientReportCount($patientId);
 
+            // Today's in-progress visit (if one was already started today) so the
+            // visit form can continue it instead of creating a duplicate.
+            $todayReport = $this->progressReportModel->getTodayForPatient($patientId);
+
             return [
                 'success' => true,
                 'patient' => $patient,
@@ -108,7 +112,8 @@ class PatientController {
                 'family_history' => $familyHistory,
                 'medical_history' => $medicalHistory,
                 'progress_reports' => $reports,
-                'total_reports' => $reportCount
+                'total_reports' => $reportCount,
+                'today_report' => $todayReport,
             ];
         } catch (\Exception $e) {
             return [
@@ -266,6 +271,11 @@ class PatientController {
             }
 
             $this->progressReportModel->updateReport($reportId, $clean);
+
+            // Auto-grow master medicines list from what was typed
+            if (!empty($clean['medicins'])) {
+                $this->medicineModel->upsertFromString($clean['medicins']);
+            }
 
             return ['success' => true, 'message' => 'Report updated'];
         } catch (\Exception $e) {
