@@ -298,7 +298,10 @@ $multiDay = ($view !== 'today');
                         $amt = (int)($row['report_amt'] ?? 0);
                         $ptLbl = $pt === 'online' ? 'Online' : 'Cash';
                         $psLbl = $ps === 'remaining' ? 'Due' : 'Paid';
-                        echo '<span class="pay-badge pay-' . htmlspecialchars($pt) . '">' . $ptLbl . '</span> ';
+                        // Payment method only matters once paid — hide it while Due
+                        if ($ps !== 'remaining') {
+                            echo '<span class="pay-badge pay-' . htmlspecialchars($pt) . '">' . $ptLbl . '</span> ';
+                        }
                         echo '<span class="pay-badge pay-' . htmlspecialchars($ps) . '">' . $psLbl . '</span>';
                         if ($amt > 0) {
                             echo '<div style="font-size:11px;color:#6b7280;margin-top:2px;">&#8377;' . number_format($amt) . '</div>';

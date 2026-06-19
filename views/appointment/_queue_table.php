@@ -149,17 +149,20 @@ $nowDate     = date('Y-m-d');
                         $payType   = $row['payment_type']   ?? 'cash';
                         $payAmt    = (int)($row['report_amt'] ?? 0);
                         $rptId     = (int)$row['report_id'];
+                        $ptLbl     = $payType === 'online' ? 'Online' : 'Cash';
                     ?>
                     <?php if ($payStatus === 'paid'): ?>
-                        <span class="badge bg-success" style="font-size:11px;">
-                            <i class="fas fa-check-circle"></i> Paid
-                        </span>
+                        <span class="pay-badge pay-<?php echo htmlspecialchars($payType); ?>"><?php echo $ptLbl; ?></span>
+                        <span class="pay-badge pay-paid">Paid</span>
                     <?php else: ?>
-                        <button type="button" class="btn btn-warning btn-sm"
+                        <button type="button" class="pay-badge-btn"
                                 onclick="openPayModal(<?php echo $rptId; ?>, <?php echo $payAmt; ?>, '<?php echo htmlspecialchars($payType); ?>', '<?php echo htmlspecialchars(addslashes(qName($row)), ENT_QUOTES); ?>')"
                                 title="Click to record payment">
-                            <i class="fas fa-clock"></i> Remaining
+                            <span class="pay-badge pay-remaining">Due</span>
                         </button>
+                    <?php endif; ?>
+                    <?php if ($payAmt > 0): ?>
+                        <div style="font-size:11px;color:#6b7280;margin-top:2px;">&#8377;<?php echo number_format($payAmt); ?></div>
                     <?php endif; ?>
                 <?php else: ?>
                     <span style="color:#d1d5db;font-size:12px;">—</span>
@@ -292,6 +295,12 @@ if (empty($__queueJsLoaded)):
     text-transform:uppercase; white-space:nowrap;
 }
 .status-btns .btn { padding:3px 8px; font-size:11px; }
+.pay-badge { display:inline-block; font-size:10px; font-weight:700; padding:1px 7px; border-radius:10px; text-transform:uppercase; letter-spacing:.3px; }
+.pay-badge.pay-cash      { background:#ecfdf5; color:#047857; }
+.pay-badge.pay-online    { background:#eff6ff; color:#1d4ed8; }
+.pay-badge.pay-paid      { background:#ecfdf5; color:#047857; }
+.pay-badge.pay-remaining { background:#fef2f2; color:#b91c1c; }
+.pay-badge-btn { background:none; border:none; padding:0; cursor:pointer; }
 .pay-modal-overlay {
     display:none; position:fixed; inset:0; z-index:1000;
     background:rgba(17,24,39,.5); align-items:center; justify-content:center;

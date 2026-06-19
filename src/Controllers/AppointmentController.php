@@ -16,6 +16,20 @@ class AppointmentController {
         $this->patientModel = new Patient($db);
     }
 
+    /**
+     * Normalise a phone number for storage: keep digits only (plus an optional
+     * leading +) and cap the length so it never overflows the phone column.
+     * Strips spaces, dashes and brackets that can push a normal number past the
+     * column limit and trigger "Data too long for column 'patient_phone'".
+     */
+    private static function cleanPhone($phone) {
+        $phone = trim((string)$phone);
+        if ($phone === '') return '';
+        $plus  = ($phone[0] === '+') ? '+' : '';
+        $digits = preg_replace('/\D+/', '', $phone);
+        return substr($plus . $digits, 0, 15);
+    }
+
     /** Appointments page data — supports today / week / month views */
     public function getQueue($date = null, $view = 'today') {
         $today = date('Y-m-d');
@@ -48,12 +62,13 @@ class AppointmentController {
                 $patient = $this->patientModel->getById($data['patient_id']);
                 if (!$patient) return ['success' => false, 'message' => 'Patient not found'];
                 $data['patient_name']  = trim(($patient['fname'] ?? '') . ' ' . ($patient['lname'] ?? ''));
-                $data['patient_phone'] = $patient['contact_no'] ?? '';
+                $data['patient_phone'] = self::cleanPhone($patient['contact_no'] ?? '');
                 $data['is_new_patient'] = 0;
             } else {
                 // New patient — auto-create basic record so doctor can access detail page
                 $name  = trim($data['patient_name'] ?? '');
-                $phone = trim($data['patient_phone'] ?? '');
+                $phone = self::cleanPhone($data['patient_phone'] ?? '');
+                $data['patient_phone'] = $phone;
                 $chief = trim($data['chief_complaint'] ?? '');
                 if ($name) {
                     $newId = $this->patientModel->createQuick($name, $phone, $chief);
@@ -68,6 +83,7 @@ class AppointmentController {
                 $data['chief_complaint'] = null;
             }
 
+            $data['patient_phone'] = self::cleanPhone($data['patient_phone'] ?? '');
             $id   = $this->apptModel->createWalkin($data, $userId);
             $appt = $this->apptModel->getById($id);
             return [
@@ -175,13 +191,14 @@ class AppointmentController {
                 $patient = $this->patientModel->getById($data['patient_id']);
                 if ($patient) {
                     $data['patient_name']   = trim(($patient['fname'] ?? '') . ' ' . ($patient['lname'] ?? ''));
-                    $data['patient_phone']  = $patient['contact_no'] ?? '';
+                    $data['patient_phone']  = self::cleanPhone($patient['contact_no'] ?? '');
                     $data['is_new_patient'] = 0;
                 }
             } else {
                 // New patient — auto-create basic record
                 $name  = trim($data['patient_name'] ?? '');
-                $phone = trim($data['patient_phone'] ?? '');
+                $phone = self::cleanPhone($data['patient_phone'] ?? '');
+                $data['patient_phone'] = $phone;
                 $chief = trim($data['chief_complaint'] ?? '');
                 if ($name) {
                     $newId = $this->patientModel->createQuick($name, $phone, $chief);
@@ -196,6 +213,7 @@ class AppointmentController {
                 $data['chief_complaint'] = null;
             }
 
+            $data['patient_phone'] = self::cleanPhone($data['patient_phone'] ?? '');
             $id   = $this->apptModel->createPrebooked($data);
             $appt = $this->apptModel->getById($id);
             return [
