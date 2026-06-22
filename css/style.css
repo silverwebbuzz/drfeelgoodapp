@@ -78,6 +78,7 @@ body {
     white-space: nowrap;
 }
 .app-brand i { font-size: 1.2rem; }
+.app-brand-logo { height: 28px; width: auto; display: block; }
 
 /* Hamburger — visible only on mobile */
 .sidebar-toggle {
@@ -520,6 +521,7 @@ body {
     /* Header cramped — shrink brand */
     .app-brand span { font-size: 0.95rem; }
     .app-brand i    { font-size: 1.1rem; }
+    .app-brand-logo { height: 24px; }
 }
 
 /* ══════════════════════════════════════════

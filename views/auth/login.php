@@ -6,7 +6,12 @@
     <title>Login - Dr. Feelgood</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <style>
+     <link rel="manifest" href="/manifest.json">
+    <link rel="icon" type="image/png" href="/assets/logo/favicon-32.png">
+    <link rel="apple-touch-icon" href="/assets/logo/apple-touch-icon.png">
+    <meta name="theme-color" content="#0d6efd">
+   
+   <style>
         body {
             background: linear-gradient(135deg, #0F6E56, #1D9E75);
             min-height: 100vh;
@@ -31,9 +36,12 @@
         }
 
         .login-header .logo {
-            font-size: 48px;
-            color: #0F6E56;
             margin-bottom: 10px;
+        }
+
+        .login-header .logo img {
+            height: 96px;
+            width: auto;
         }
 
         .login-header h1 {
@@ -133,7 +141,7 @@
     <div class="login-container">
         <div class="login-header">
             <div class="logo">
-                <i class="fas fa-heartbeat"></i>
+                <img src="/assets/logo/app-logo.png" alt="Dr. Feelgood">
             </div>
             <h1>Dr. Feelgood</h1>
             <p>Clinic Management System</p>
@@ -215,6 +223,13 @@
             });
         });
     </script>
+<script>
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function () {
+        navigator.serviceWorker.register('/service-worker.js');
+    });
+}
+</script>
 <button id="installBtn" style="display:none;">
 Install App
 </button>

@@ -9,6 +9,8 @@
     <link href="/css/style.css?v=<?php echo @filemtime(dirname(__DIR__).'/css/style.css') ?: time(); ?>" rel="stylesheet">
     <link href="/css/datatable.css" rel="stylesheet">
     <link rel="manifest" href="/manifest.json">
+    <link rel="icon" type="image/png" href="/assets/logo/favicon-32.png">
+    <link rel="apple-touch-icon" href="/assets/logo/apple-touch-icon.png">
 <meta name="theme-color" content="#0d6efd">
 </head>
 <body>
@@ -29,7 +31,7 @@
                     <i class="fas fa-bars"></i>
                 </button>
                 <a href="<?php echo $isAsstDoctor ? '/queue' : '/dashboard'; ?>" class="app-brand">
-                    <i class="fas fa-heart"></i>
+                    <img src="/assets/logo/app-logo.png" alt="Dr. Feelgood" class="app-brand-logo">
                     <span>Dr. Feelgood</span>
                 </a>
             </div>
