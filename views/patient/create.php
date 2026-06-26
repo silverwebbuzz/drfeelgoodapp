@@ -35,8 +35,8 @@ $page_title = 'Add Patient - Dr. Feelgood';
                             <input type="text" class="form-control" name="contact_no" required>
                         </div>
                         <div class="col-md-6 mb-3">
-                            <label class="form-label">Date of Birth *</label>
-                            <input type="date" class="form-control" name="dob" required>
+                            <label class="form-label">Date of Birth</label>
+                            <input type="date" class="form-control" name="dob">
                         </div>
                     </div>
 
@@ -68,14 +68,14 @@ $page_title = 'Add Patient - Dr. Feelgood';
                         </div>
                         <div class="col-md-6 mb-3">
                             <label class="form-label">City</label>
-                            <input type="text" class="form-control" name="city">
+                            <input type="text" class="form-control" name="city" value="Ahmedabad">
                         </div>
                     </div>
 
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <label class="form-label">State</label>
-                            <input type="text" class="form-control" name="state">
+                            <input type="text" class="form-control" name="state" value="Gujarat">
                         </div>
                         <div class="col-md-6 mb-3">
                             <label class="form-label">ZIP Code</label>

@@ -171,7 +171,7 @@ class Patient extends BaseModel {
     }
 
     public function create($data) {
-        $requiredFields = ['fname', 'lname', 'contact_no', 'dob'];
+        $requiredFields = ['fname', 'contact_no'];
 
         foreach ($requiredFields as $field) {
             if (empty($data[$field] ?? null)) {
@@ -180,16 +180,35 @@ class Patient extends BaseModel {
         }
 
         // Set default values
-        $data['dor'] = $data['dor'] ?? date('Y-m-d');
-        $data['patient_id'] = $data['patient_id'] ?? time(); // Fallback to timestamp
+        $data['dor'] = !empty($data['dor']) ? $data['dor'] : date('Y-m-d');
+
+        // Convert empty date/numeric fields to NULL so MySQL doesn't get ''
+        foreach (['dob', 'age'] as $field) {
+            if (isset($data[$field]) && trim((string)$data[$field]) === '') {
+                $data[$field] = null;
+            }
+        }
+
+        // patient_id is an integer column — leave it out of the INSERT and set it
+        // to match the auto-increment id afterwards (guaranteed unique, no '' error).
+        // Honour a manually entered patient_id only if it's a real number.
+        $manualId = isset($data['patient_id']) && trim((string)$data['patient_id']) !== ''
+            ? (int)$data['patient_id'] : null;
 
         // Whitelist to real table columns so stray POST keys can't break the INSERT
-        $allowed = ['patient_id','dor','fname','lname','address','city','state','zip',
+        $allowed = ['dor','fname','lname','address','city','state','zip',
                     'contact_no','dob','age','gender','mrg_status','veg','religion',
                     'education','occupation','refered_by','chief'];
         $data = array_intersect_key($data, array_flip($allowed));
 
-        return $this->insert($data);
+        $id = $this->insert($data);
+
+        $this->query(
+            "UPDATE {$this->table} SET patient_id = ? WHERE id = ?",
+            [$manualId ?? $id, $id]
+        );
+
+        return $id;
     }
 
     /**
