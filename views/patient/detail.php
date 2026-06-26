@@ -538,6 +538,15 @@ $finishApptId = $apptId ?: (int)($activeAppt['id'] ?? 0);
                     value="<?php echo $todayReport ? date('Y-m-d', strtotime($todayReport['date'])) : date('Y-m-d'); ?>" style="height:34px;">
             </div>
 
+            <!-- Chief Complaint / Case Notes — prefilled from the patient record, editable during the visit -->
+            <div style="margin-bottom:12px;">
+                <label class="info-label" style="display:block;margin-bottom:4px;">
+                    Chief Complaint / Case Notes
+                    <span style="font-weight:400;color:var(--gray-400);">— update if it has changed</span>
+                </label>
+                <textarea id="reportChief" class="r-input" rows="5" placeholder="Main reason for visit / case notes..."><?php echo htmlspecialchars($p['chief'] ?? ''); ?></textarea>
+            </div>
+
             <!-- Medicine tag picker -->
             <div style="margin-bottom:12px;">
                 <label class="info-label" style="display:block;margin-bottom:4px;">
@@ -981,9 +990,39 @@ function saveInfo(patientId) {
     });
 }
 
+// Original chief complaint, so we only push an update to the patient record when it actually changes
+let originalChief = document.getElementById('reportChief') ? document.getElementById('reportChief').value : '';
+
+// Persist an edited Chief Complaint / Case Notes back to the patient record
+function syncChiefComplaint(patientId) {
+    const el = document.getElementById('reportChief');
+    if (!el) return;
+    const chief = el.value;
+    if (chief === originalChief) return; // unchanged — nothing to do
+
+    const fd = new FormData();
+    fd.append('chief', chief);
+    fetch('/api/patient/' + patientId + '/update', { method: 'POST', body: fd })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            originalChief = chief;
+            // Keep the Patient Information panel in sync if it's on the page
+            const disp = document.getElementById('disp_chief');
+            if (disp) disp.textContent = chief.trim() !== '' ? chief : 'N/A';
+            const ta = document.querySelector('#infoGrid textarea[name="chief"]');
+            if (ta) ta.value = chief;
+        }
+    })
+    .catch(() => {});
+}
+
 // ── Save new report ──
 function saveReport(patientId) {
     MedPicker.syncTextarea();
+
+    // Save any change to the chief complaint alongside the visit
+    syncChiefComplaint(patientId);
 
     const date      = document.getElementById('reportDate').value;
     const medicins  = document.getElementById('reportMedicins').value.trim();
