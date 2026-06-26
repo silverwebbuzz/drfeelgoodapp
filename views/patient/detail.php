@@ -629,12 +629,18 @@ $finishApptId = $apptId ?: (int)($activeAppt['id'] ?? 0);
             <div class="save-ok" id="saveOk">
                 <i class="fas fa-check-circle"></i> Visit saved!
             </div>
-            <?php if ($finishApptId): ?>
-            <button class="btn btn-success" id="finishConsultBtn" style="width:100%;margin-top:10px;padding:11px;font-size:15px;font-weight:600;"
+            <?php
+                // Completion button: when this patient has a live queue appointment it
+                // finishes the consultation and returns to the queue; otherwise it just
+                // returns to the patient list. Shown on load if a visit already exists
+                // today, and revealed by JS right after a new visit is saved.
+                $showFinishOnLoad = $finishApptId || $todayReport;
+            ?>
+            <button class="btn btn-success" id="finishConsultBtn"
+                    style="width:100%;margin-top:10px;padding:11px;font-size:15px;font-weight:600;<?php echo $showFinishOnLoad ? '' : 'display:none;'; ?>"
                     onclick="finishConsult(<?php echo $finishApptId; ?>)">
-                <i class="fas fa-check"></i> Finish &amp; Back to Queue
+                <i class="fas fa-check"></i> <?php echo $finishApptId ? 'Finish &amp; Back to Queue' : 'Complete Visit'; ?>
             </button>
-            <?php endif; ?>
         </div>
     </div>
     <?php endif; // canVisit ?>
@@ -1185,8 +1191,11 @@ function escHtml(str) {
     const d = document.createElement('div'); d.textContent = String(str); return d.innerHTML;
 }
 
-// Finish consultation — mark completed and go back to queue
+// Finish consultation — mark the queue appointment completed and go back to queue.
+// When the patient was opened directly (no live queue appointment), there's nothing
+// to mark in the queue — just return to the patient list.
 function finishConsult(apptId) {
+    if (!apptId) { window.location.href = '/patients'; return; }
     fetch('/api/appointment/' + apptId + '/status', {
         method: 'POST',
         headers: {'Content-Type':'application/x-www-form-urlencoded'},

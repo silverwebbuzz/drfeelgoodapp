@@ -22,6 +22,20 @@ $mrgMap = ['S'=>'Single','M'=>'Married','D'=>'Divorced','W'=>'Widowed'];
     </h1>
 </div>
 
+<?php if (($_GET['created'] ?? '') === '1'): ?>
+<div id="patientCreatedBanner" style="display:flex;align-items:center;gap:10px;background:#dcfce7;color:#166534;border:1px solid #86efac;border-radius:8px;padding:12px 16px;margin-bottom:16px;font-size:0.95rem;">
+    <i class="fas fa-check-circle"></i>
+    <span style="flex:1;">Patient created successfully.</span>
+    <span onclick="document.getElementById('patientCreatedBanner').remove()" style="cursor:pointer;font-size:1.1rem;line-height:1;opacity:0.7;">&times;</span>
+</div>
+<script>
+    // Clean the ?created=1 from the URL so a refresh doesn't re-show the banner
+    if (window.history.replaceState) {
+        window.history.replaceState({}, document.title, '/patients');
+    }
+</script>
+<?php endif; ?>
+
 <!-- DATATABLE SECTION -->
 <div class="datatable-container">
 

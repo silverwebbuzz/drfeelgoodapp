@@ -10,6 +10,13 @@ $page_title = 'Add Patient - Dr. Feelgood';
     </h1>
 </div>
 
+<!-- Inline error banner (hidden until a create attempt fails) -->
+<div id="createPatientError" style="display:none;align-items:center;gap:10px;background:#fef2f2;color:#b91c1c;border:1px solid #fca5a5;border-radius:8px;padding:12px 16px;margin-bottom:16px;font-size:0.95rem;">
+    <i class="fas fa-exclamation-circle"></i>
+    <span id="createPatientErrorMsg" style="flex:1;"></span>
+    <span onclick="document.getElementById('createPatientError').style.display='none'" style="cursor:pointer;font-size:1.1rem;line-height:1;opacity:0.7;">&times;</span>
+</div>
+
 <div class="row">
     <div class="col-lg-8 offset-lg-2">
         <div class="card">
@@ -110,6 +117,15 @@ document.getElementById('createPatientForm').addEventListener('submit', async fu
     const formData = new FormData(this);
     const data = new URLSearchParams(formData);
 
+    const errorBox = document.getElementById('createPatientError');
+    const errorMsg = document.getElementById('createPatientErrorMsg');
+    function showError(msg) {
+        errorMsg.textContent = msg;
+        errorBox.style.display = 'flex';
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+    errorBox.style.display = 'none';
+
     try {
         const response = await fetch('/patient/create', {
             method: 'POST',
@@ -119,14 +135,14 @@ document.getElementById('createPatientForm').addEventListener('submit', async fu
         const result = await response.json();
 
         if (result.success) {
-            alert('Patient created successfully!');
-            window.location.href = '/patient/' + result.patient_id;
+            // Redirect to the patient list; the banner there confirms creation
+            window.location.href = '/patients?created=1';
         } else {
-            alert('Error: ' + (result.message || 'Failed to create patient'));
+            showError(result.message || 'Failed to create patient');
         }
     } catch (error) {
         console.error('Error:', error);
-        alert('An error occurred while creating the patient');
+        showError('An error occurred while creating the patient');
     } finally {
         submitBtn.disabled = false;
         submitBtn.innerHTML = '<i class="fas fa-save"></i> Create Patient';
