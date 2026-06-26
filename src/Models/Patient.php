@@ -201,12 +201,19 @@ class Patient extends BaseModel {
                     'education','occupation','refered_by','chief'];
         $data = array_intersect_key($data, array_flip($allowed));
 
+        // patient_id is NOT NULL with no default — insert a placeholder of 0, then
+        // update it to match the auto-increment id (guaranteed unique, no '' error).
+        $data['patient_id'] = $manualId ?? 0;
+
         $id = $this->insert($data);
 
-        $this->query(
-            "UPDATE {$this->table} SET patient_id = ? WHERE id = ?",
-            [$manualId ?? $id, $id]
-        );
+        // No manual id supplied → make patient_id match the row id.
+        if ($manualId === null) {
+            $this->query(
+                "UPDATE {$this->table} SET patient_id = ? WHERE id = ?",
+                [$id, $id]
+            );
+        }
 
         return $id;
     }
