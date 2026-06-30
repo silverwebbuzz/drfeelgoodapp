@@ -272,6 +272,9 @@ class PatientController {
     public function updateReport($reportId, $data) {
         try {
             $allowed = ['date', 'medicins', 'notes', 'reports_notes', 'amt', 'payment_type', 'payment_status'];
+            if ($this->progressReportModel->hasMedicineDetails()) {
+                $allowed[] = 'medicine_details';
+            }
             $clean = array_intersect_key($data, array_flip($allowed));
 
             if (empty($clean)) {

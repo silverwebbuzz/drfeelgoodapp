@@ -11,6 +11,30 @@ use PDO;
 class ProgressReport extends BaseModel {
     protected $table = 'progress_report';
 
+    /** Cached check for the optional medicine_details column (added 2026-06-30). */
+    private static $hasDetailsCol = null;
+
+    /**
+     * Whether the per-medicine breakdown column exists. Lets the app keep
+     * working on databases where the migration hasn't been applied yet.
+     */
+    public function hasMedicineDetails(): bool {
+        if (self::$hasDetailsCol === null) {
+            try {
+                $stmt = $this->query("SHOW COLUMNS FROM {$this->table} LIKE 'medicine_details'");
+                self::$hasDetailsCol = $stmt->fetch(PDO::FETCH_ASSOC) ? true : false;
+            } catch (\Exception $e) {
+                self::$hasDetailsCol = false;
+            }
+        }
+        return self::$hasDetailsCol;
+    }
+
+    /** Column list for SELECTs, including medicine_details only when present. */
+    private function detailsSelect(): string {
+        return $this->hasMedicineDetails() ? ', medicine_details' : '';
+    }
+
     /**
      * Get all progress reports for a patient
      */
@@ -18,7 +42,7 @@ class ProgressReport extends BaseModel {
         $limit = (int)$limit;
         $offset = (int)$offset;
 
-        $sql = "SELECT id, p_id, date, medicins, notes, reports_notes, amt, payment_type, payment_status
+        $sql = "SELECT id, p_id, date, medicins, notes, reports_notes, amt, payment_type, payment_status{$this->detailsSelect()}
                 FROM {$this->table}
                 WHERE p_id = ?
                 ORDER BY date DESC
@@ -29,13 +53,29 @@ class ProgressReport extends BaseModel {
     }
 
     /**
+     * Patients who have a visit/progress report saved today, most recent first.
+     * Powers the "Today Visited Patients" dashboard section.
+     */
+    public function getVisitedToday() {
+        $sql = "SELECT pr.id, pr.p_id, pr.date, pr.medicins, pr.amt,
+                    pr.payment_type, pr.payment_status,
+                    p.fname, p.lname, p.patient_id, p.contact_no, p.gender, p.age
+                FROM {$this->table} pr
+                JOIN patient p ON pr.p_id = p.id
+                WHERE DATE(pr.date) = CURDATE()
+                ORDER BY pr.id DESC";
+        $stmt = $this->query($sql);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    /**
      * Get today's (most recent) report for a patient, if any.
      * Used to surface an in-progress visit (e.g. brief notes saved by the
      * Asst. Doctor) on the visit form so the Doctor can continue the same
      * visit instead of starting a new one.
      */
     public function getTodayForPatient($patientId) {
-        $sql = "SELECT id, p_id, date, medicins, notes, reports_notes, amt, payment_type, payment_status
+        $sql = "SELECT id, p_id, date, medicins, notes, reports_notes, amt, payment_type, payment_status{$this->detailsSelect()}
                 FROM {$this->table}
                 WHERE p_id = ? AND DATE(date) = CURDATE()
                 ORDER BY id DESC
@@ -76,6 +116,10 @@ class ProgressReport extends BaseModel {
             'payment_type'   => in_array($data['payment_type'] ?? '', ['cash', 'online']) ? $data['payment_type'] : 'cash',
             'payment_status' => in_array($data['payment_status'] ?? '', ['paid', 'remaining']) ? $data['payment_status'] : 'paid',
         ];
+
+        if ($this->hasMedicineDetails() && isset($data['medicine_details'])) {
+            $reportData['medicine_details'] = $data['medicine_details'];
+        }
 
         return $this->insert($reportData);
     }

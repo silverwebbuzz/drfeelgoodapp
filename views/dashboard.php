@@ -156,6 +156,87 @@ $tableId     = 'dashQueueTable';
     <?php endif; ?>
 </div>
 
+<!-- TODAY VISITED PATIENTS -->
+<?php
+$visited     = $visitedToday ?? [];
+$visitedSum  = 0;
+foreach ($visited as $vRow) { $visitedSum += (int)($vRow['amt'] ?? 0); }
+?>
+<div class="card" style="margin-bottom:20px;">
+    <div class="card-header" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+        <span>
+            <i class="fas fa-user-check"></i> Today Visited Patients
+            <span style="font-size:11px;color:#9ca3af;margin-left:6px;"><?php echo date('d M Y'); ?></span>
+        </span>
+        <span style="font-size:12px;color:#6b7280;white-space:nowrap;">
+            <span style="color:#16a34a;font-weight:700;"><?php echo count($visited); ?></span> visited &nbsp;
+            <span style="color:#2563eb;font-weight:700;">₹<?php echo number_format($visitedSum); ?></span> collected
+        </span>
+    </div>
+    <div class="card-body" style="padding:0;">
+        <?php if (!empty($visited)): ?>
+        <div class="table-responsive">
+            <table class="table" style="margin:0;">
+                <thead>
+                    <tr>
+                        <th>Patient</th>
+                        <th>Contact</th>
+                        <th>Medicines</th>
+                        <th>Amount</th>
+                        <th>Time</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                <?php foreach ($visited as $v): ?>
+                <tr>
+                    <td>
+                        <strong><?php echo htmlspecialchars(dashFmtName($v['fname'] ?? '', $v['lname'] ?? '')); ?></strong>
+                        <div style="font-size:10px;color:#9ca3af;">ID: <?php echo $v['patient_id'] ?? $v['p_id']; ?></div>
+                    </td>
+                    <td style="font-size:13px;"><?php echo htmlspecialchars(dashFmt($v['contact_no'] ?? null)); ?></td>
+                    <td style="font-size:12px;color:#6b7280;max-width:220px;">
+                        <?php
+                        $meds = trim($v['medicins'] ?? '');
+                        echo $meds === '' ? '<span style="color:#d1d5db;">—</span>' : htmlspecialchars(mb_strimwidth($meds, 0, 55, '…'));
+                        ?>
+                    </td>
+                    <td style="font-size:13px;white-space:nowrap;">
+                        <?php if (!empty($v['amt']) && (int)$v['amt'] > 0): ?>
+                            ₹<?php echo number_format((int)$v['amt']); ?>
+                            <?php $due = ($v['payment_status'] ?? 'paid') === 'remaining'; ?>
+                            <span style="font-size:9px;font-weight:700;padding:1px 6px;border-radius:10px;<?php echo $due ? 'background:#fef2f2;color:#dc2626;' : 'background:#f0fdf4;color:#16a34a;'; ?>">
+                                <?php echo $due ? 'Due' : 'Paid'; ?>
+                            </span>
+                        <?php else: ?>
+                            <span style="color:#d1d5db;">—</span>
+                        <?php endif; ?>
+                    </td>
+                    <td style="font-size:12px;color:#9ca3af;white-space:nowrap;">
+                        <?php
+                        $vd = $v['date'] ?? '';
+                        echo ($vd && strtotime($vd)) ? date('h:i A', strtotime($vd)) : '—';
+                        ?>
+                    </td>
+                    <td>
+                        <a href="/patient/<?php echo $v['p_id']; ?>" class="btn btn-primary btn-sm">
+                            <i class="fas fa-eye"></i>
+                        </a>
+                    </td>
+                </tr>
+                <?php endforeach; ?>
+                </tbody>
+            </table>
+        </div>
+        <?php else: ?>
+        <div style="text-align:center;padding:40px 20px;color:#9ca3af;">
+            <i class="fas fa-user-clock" style="font-size:2.5rem;margin-bottom:12px;display:block;"></i>
+            No patients visited yet today
+        </div>
+        <?php endif; ?>
+    </div>
+</div>
+
 <!-- QUICK ACTIONS -->
 <div class="card" style="margin-bottom:20px;">
     <div class="card-header"><i class="fas fa-bolt"></i> Quick Actions</div>

@@ -300,6 +300,39 @@ textarea.r-input { resize:vertical; }
 .med-drop-empty {
     padding:12px; text-align:center; font-size:11px; color:var(--gray-400);
 }
+
+/* ── Medicine Rows (name + amount per line) ── */
+.med-row { display:flex; align-items:center; gap:8px; margin-bottom:7px; }
+.med-row-name { position:relative; flex:1; min-width:0; }
+.med-row-name .r-input { width:100%; }
+.med-row-amt { width:110px; flex-shrink:0; }
+.med-row-del {
+    flex-shrink:0; width:32px; height:34px; border:1px solid var(--gray-300);
+    background:#fff; color:#ef4444; border-radius:6px; cursor:pointer;
+    font-size:15px; line-height:1; display:flex; align-items:center; justify-content:center;
+}
+.med-row-del:hover { background:#fef2f2; border-color:#fca5a5; }
+.med-row-drop {
+    display:none; position:absolute; top:calc(100% + 2px); left:0; right:0; z-index:500;
+    background:#fff; border:1.5px solid var(--gray-300); border-radius:6px;
+    max-height:200px; overflow-y:auto; box-shadow:0 4px 16px rgba(0,0,0,.12);
+}
+.med-add-row-btn {
+    display:inline-flex; align-items:center; gap:6px; margin-top:2px;
+    padding:6px 12px; font-size:12px; font-weight:600;
+    border:1.5px dashed var(--primary); color:var(--primary);
+    background:#fff; border-radius:6px; cursor:pointer;
+}
+.med-add-row-btn:hover { background:var(--primary-light); }
+.med-rows-total {
+    margin-top:8px; font-size:12px; font-weight:600; color:var(--gray-600); text-align:right;
+}
+.med-rows-total strong { color:var(--primary); font-size:14px; }
+.med-row-head { display:flex; gap:8px; font-size:10px; font-weight:700; letter-spacing:.04em;
+    text-transform:uppercase; color:var(--gray-400); margin-bottom:4px; }
+.med-row-head .h-name { flex:1; }
+.med-row-head .h-amt { width:110px; }
+.med-row-head .h-sp  { width:32px; }
 </style>
 
 <?php
@@ -547,27 +580,25 @@ $finishApptId = $apptId ?: (int)($activeAppt['id'] ?? 0);
                 <textarea id="reportChief" class="r-input" rows="5" placeholder="Main reason for visit / case notes..."><?php echo htmlspecialchars($p['chief'] ?? ''); ?></textarea>
             </div>
 
-            <!-- Medicine tag picker -->
+            <!-- Medicine rows: each medicine with its own amount -->
             <div style="margin-bottom:12px;">
                 <label class="info-label" style="display:block;margin-bottom:4px;">
                     Medicines
-                    <span style="font-weight:400;color:var(--gray-400);margin-left:6px;">— search or type, press Enter to add</span>
+                    <span style="font-weight:400;color:var(--gray-400);margin-left:6px;">— add medicine &amp; amount, click "Add New" for more</span>
                 </label>
 
-                <!-- Tag input area -->
-                <div id="medPickerWrap" style="position:relative;">
-                    <div id="tagInputArea" style="display:flex;align-items:center;gap:5px;border:1.5px solid var(--gray-300);border-radius:6px;padding:5px 8px;background:#fff;flex-wrap:wrap;cursor:text;min-height:38px;" onclick="document.getElementById('medSearch').focus()">
-                        <input type="text" id="medSearch"
-                            placeholder="Type medicine name..."
-                            autocomplete="off"
-                            style="border:none;outline:none;font-size:13px;min-width:140px;flex:1;padding:2px 0;background:transparent;">
-                    </div>
-                    <!-- Dropdown -->
-                    <div id="medDropdown" style="display:none;position:absolute;top:calc(100% + 2px);left:0;right:0;z-index:500;background:#fff;border:1.5px solid var(--gray-300);border-radius:6px;max-height:200px;overflow-y:auto;box-shadow:0 4px 16px rgba(0,0,0,.12);"></div>
+                <div class="med-row-head">
+                    <span class="h-name">Medicine</span>
+                    <span class="h-amt">Amount (₹)</span>
+                    <span class="h-sp"></span>
                 </div>
-
-                <!-- Selected tags below the input -->
-                <div id="selectedTags" style="display:flex;flex-wrap:wrap;gap:5px;margin-top:6px;min-height:0;"></div>
+                <div id="medRows"></div>
+                <button type="button" class="med-add-row-btn" onclick="MedRows.addRow()">
+                    <i class="fas fa-plus"></i> Add New
+                </button>
+                <div class="med-rows-total">
+                    Total: <strong>₹<span id="medRowsTotal">0</span></strong>
+                </div>
             </div>
 
             <!-- Notes + Reports Notes side by side (50 / 50) -->
@@ -595,7 +626,9 @@ $finishApptId = $apptId ?: (int)($activeAppt['id'] ?? 0);
                 </div>
                 <div class="visit-pay-grid" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;">
                     <div>
-                        <label class="info-label" style="display:block;margin-bottom:4px;">Amount (₹)</label>
+                        <label class="info-label" style="display:block;margin-bottom:4px;">Amount (₹)
+                            <span style="font-weight:400;color:var(--gray-400);">— auto total, editable</span>
+                        </label>
                         <input type="number" id="reportAmt" class="r-input" placeholder="0" min="0" value="<?php echo $todayReport && (int)$todayReport['amt'] > 0 ? (int)$todayReport['amt'] : ''; ?>">
                     </div>
                     <div>
@@ -617,8 +650,30 @@ $finishApptId = $apptId ?: (int)($activeAppt['id'] ?? 0);
                 </div>
             </div>
 
-            <!-- Hidden textarea for medicines only (submitted separately) -->
+            <!-- Hidden fields: clean medicine names + structured name/amount rows -->
             <textarea id="reportMedicins" style="display:none;"></textarea>
+            <input type="hidden" id="reportMedicineDetails" value="">
+            <?php
+                // Seed data for the medicine rows: prefer the structured breakdown,
+                // fall back to the comma-separated names when details aren't stored yet.
+                $seedRows = [];
+                if ($todayReport) {
+                    $raw = $todayReport['medicine_details'] ?? '';
+                    $decoded = $raw !== '' ? json_decode($raw, true) : null;
+                    if (is_array($decoded)) {
+                        foreach ($decoded as $d) {
+                            $nm = trim($d['name'] ?? '');
+                            if ($nm === '') continue;
+                            $seedRows[] = ['name' => $nm, 'amount' => (float)($d['amount'] ?? 0)];
+                        }
+                    }
+                    if (!$seedRows && trim($todayReport['medicins'] ?? '') !== '') {
+                        foreach (array_filter(array_map('trim', explode(',', $todayReport['medicins']))) as $nm) {
+                            $seedRows[] = ['name' => $nm, 'amount' => 0];
+                        }
+                    }
+                }
+            ?>
 
             <!-- When set, Save updates this already-started visit instead of creating a new one -->
             <input type="hidden" id="editingReportId" value="<?php echo $todayReport ? (int)$todayReport['id'] : ''; ?>">
@@ -767,152 +822,144 @@ function deletePatient(id, name) {
 }
 
 // ════════════════════════════════════════
-// MEDICINE TAG PICKER
+// MEDICINE ROWS — one medicine + its amount per line, with live total
 // ════════════════════════════════════════
-const MedPicker = {
-    selected: [],
-    debounceTimer: null,
-    _dropdownOpen: false,
+const MedRows = {
+    debounceTimers: new WeakMap(),
 
     init() {
-        const input    = document.getElementById('medSearch');
-        const dropdown = document.getElementById('medDropdown');
-        const wrap     = document.getElementById('medPickerWrap');
-
-        // Show top medicines on focus
-        input.addEventListener('focus', () => {
-            this.fetchMeds(input.value.trim());
-        });
-
-        // Search on type with debounce
-        input.addEventListener('input', () => {
-            clearTimeout(this.debounceTimer);
-            this.debounceTimer = setTimeout(() => {
-                this.fetchMeds(input.value.trim());
-            }, 180);
-        });
-
-        // Close dropdown when clicking outside — use mousedown so it fires
-        // before the input loses focus, which prevents the dropdown from
-        // disappearing before the item click registers
+        // Close any open row dropdown when clicking outside a name field
         document.addEventListener('mousedown', (e) => {
-            if (!wrap.contains(e.target)) {
-                dropdown.style.display = 'none';
-            }
-        });
-
-        // Keyboard: Enter / comma to add; Escape to close
-        input.addEventListener('keydown', (e) => {
-            if ((e.key === 'Enter' || e.key === ',') && input.value.trim() !== '') {
-                e.preventDefault();
-                this.addTag(input.value.replace(/,/g, '').trim());
-                input.value = '';
-                dropdown.style.display = 'none';
-            }
-            if (e.key === 'Escape') {
-                dropdown.style.display = 'none';
-                input.blur();
+            if (!e.target.closest('.med-row-name')) {
+                document.querySelectorAll('.med-row-drop').forEach(d => d.style.display = 'none');
             }
         });
     },
 
-    fetchMeds(query) {
+    // Build one row node. data = { name, amount }
+    buildRow(data) {
+        data = data || {};
+        const row = document.createElement('div');
+        row.className = 'med-row';
+        row.innerHTML =
+            '<div class="med-row-name">' +
+                '<input type="text" class="r-input med-name" autocomplete="off" placeholder="Type medicine name...">' +
+                '<div class="med-row-drop"></div>' +
+            '</div>' +
+            '<input type="number" class="r-input med-row-amt med-amt" min="0" placeholder="0">' +
+            '<button type="button" class="med-row-del" title="Remove">×</button>';
+
+        const nameInput = row.querySelector('.med-name');
+        const amtInput  = row.querySelector('.med-amt');
+        const drop      = row.querySelector('.med-row-drop');
+        const delBtn    = row.querySelector('.med-row-del');
+
+        nameInput.value = data.name || '';
+        amtInput.value  = (data.amount && parseFloat(data.amount) > 0) ? data.amount : '';
+
+        nameInput.addEventListener('focus', () => this.search(nameInput, drop));
+        nameInput.addEventListener('input', () => {
+            clearTimeout(this.debounceTimers.get(nameInput));
+            this.debounceTimers.set(nameInput, setTimeout(() => this.search(nameInput, drop), 180));
+            this.sync();
+        });
+        nameInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') { e.preventDefault(); drop.style.display = 'none'; amtInput.focus(); }
+            if (e.key === 'Escape') { drop.style.display = 'none'; }
+        });
+        amtInput.addEventListener('input', () => this.sync());
+        delBtn.addEventListener('click', () => { row.remove(); this.ensureOne(); this.sync(); });
+
+        return row;
+    },
+
+    addRow(data, focus) {
+        const node = this.buildRow(data);
+        document.getElementById('medRows').appendChild(node);
+        if (focus !== false) node.querySelector('.med-name').focus();
+        this.sync();
+        return node;
+    },
+
+    // Always keep at least one (empty) row on screen
+    ensureOne() {
+        const wrap = document.getElementById('medRows');
+        if (!wrap.querySelector('.med-row')) this.addRow(null, false);
+    },
+
+    search(input, drop) {
+        const query = input.value.trim();
         const url = '/api/medicines' + (query ? '?q=' + encodeURIComponent(query) : '');
         fetch(url)
             .then(r => r.json())
-            .then(data => { if (data.success) this.renderDropdown(data.data, query); })
+            .then(data => { if (data.success) this.renderDrop(input, drop, data.data, query); })
             .catch(() => {});
     },
 
-    renderDropdown(items, query) {
-        const dropdown = document.getElementById('medDropdown');
-        const selectedNames = this.selected.map(s => s.name.toLowerCase());
-        const filtered = items.filter(i => !selectedNames.includes(i.name.toLowerCase()));
+    renderDrop(input, drop, items, query) {
         let html = '';
-
-        if (filtered.length === 0 && !query) {
-            html = '<div class="med-drop-empty">Start typing to search medicines</div>';
-        } else {
-            filtered.forEach(item => {
-                const count = item.usage_count > 0 ? `<span class="med-count">×${item.usage_count}</span>` : '';
-                // Use mousedown so the click registers before blur closes dropdown
-                html += `<div class="med-drop-item" onmousedown="event.preventDefault();MedPicker.addTag('${escHtml(item.name)}')">
-                    <span>${escHtml(item.name)}</span>${count}
-                </div>`;
+        (items || []).forEach(item => {
+            const count = item.usage_count > 0 ? `<span class="med-count">×${item.usage_count}</span>` : '';
+            html += `<div class="med-drop-item" data-name="${escHtml(item.name)}">
+                <span>${escHtml(item.name)}</span>${count}</div>`;
+        });
+        if (!html && !query) html = '<div class="med-drop-empty">Start typing to search medicines</div>';
+        drop.innerHTML = html;
+        // mousedown so the pick registers before the input blurs
+        drop.querySelectorAll('.med-drop-item').forEach(el => {
+            el.addEventListener('mousedown', (e) => {
+                e.preventDefault();
+                input.value = el.getAttribute('data-name');
+                drop.style.display = 'none';
+                this.sync();
+                input.closest('.med-row').querySelector('.med-amt').focus();
             });
-        }
-
-        if (query && !items.find(i => i.name.toLowerCase() === query.toLowerCase())) {
-            html += `<div class="med-drop-add" onmousedown="event.preventDefault();MedPicker.addTag('${escHtml(query)}');document.getElementById('medSearch').value='';">
-                <i class="fas fa-plus-circle"></i> Add "<strong>${escHtml(query)}</strong>"
-            </div>`;
-        }
-
-        dropdown.innerHTML = html;
-        dropdown.style.display = (html && filtered.length > 0 || query) ? 'block' : 'none';
+        });
+        drop.style.display = html ? 'block' : 'none';
     },
 
-    addTag(name) {
-        name = name.trim();
-        if (!name) return;
-        // Prevent duplicate
-        if (this.selected.find(s => s.name.toLowerCase() === name.toLowerCase())) return;
-
-        this.selected.push({ name });
-        this.renderTags();
-        this.syncTextarea();
-        document.getElementById('medDropdown').style.display = 'none';
-        document.getElementById('medSearch').value = '';
-        document.getElementById('medSearch').focus();
+    rows() {
+        return Array.from(document.querySelectorAll('#medRows .med-row')).map(r => ({
+            name:   r.querySelector('.med-name').value.trim(),
+            amount: parseFloat(r.querySelector('.med-amt').value) || 0,
+        }));
     },
 
-    removeTag(name) {
-        this.selected = this.selected.filter(s => s.name !== name);
-        this.renderTags();
-        this.syncTextarea();
+    // Push clean names + structured rows into hidden fields and auto-total the amount.
+    sync() {
+        const rows = this.rows().filter(r => r.name !== '');
+        document.getElementById('reportMedicins').value = rows.map(r => r.name).join(', ');
+        document.getElementById('reportMedicineDetails').value = JSON.stringify(rows);
+
+        const total = rows.reduce((s, r) => s + (r.amount || 0), 0);
+        document.getElementById('medRowsTotal').textContent =
+            total ? (Number.isInteger(total) ? total : total.toFixed(2)) : '0';
+
+        // Auto-fill the payment Amount with the medicine total (still editable).
+        // Only when there is a total, so legacy visits without per-medicine
+        // amounts keep their saved amount.
+        const amtField = document.getElementById('reportAmt');
+        if (amtField && total > 0) amtField.value = total;
     },
 
-    renderTags() {
-        const container = document.getElementById('selectedTags');
-        container.innerHTML = this.selected.map(s =>
-            `<span class="med-tag">
-                ${escHtml(s.name)}
-                <span class="med-tag-x" onclick="MedPicker.removeTag('${escHtml(s.name)}')">×</span>
-            </span>`
-        ).join('');
-    },
-
-    syncTextarea() {
-        // Medicines only — notes are a completely separate field
-        document.getElementById('reportMedicins').value = this.selected.map(s => s.name).join(', ');
+    seed(list) {
+        const wrap = document.getElementById('medRows');
+        wrap.innerHTML = '';
+        (list || []).forEach(d => this.addRow({ name: d.name, amount: d.amount }, false));
+        this.ensureOne();
+        this.sync();
     },
 
     clear() {
-        this.selected = [];
-        this.renderTags();
-        document.getElementById('medSearch').value = '';
-        document.getElementById('reportMedicins').value = '';
-        document.getElementById('medDropdown').style.display = 'none';
-    },
-
-    // Pre-load existing tags (e.g. an in-progress visit) without stealing focus
-    seed(names) {
-        (names || []).forEach(n => {
-            n = String(n).trim();
-            if (n && !this.selected.find(s => s.name.toLowerCase() === n.toLowerCase())) {
-                this.selected.push({ name: n });
-            }
-        });
-        this.renderTags();
-        this.syncTextarea();
+        document.getElementById('medRows').innerHTML = '';
+        this.ensureOne();
+        this.sync();
     }
 };
 
-// Init on load
-MedPicker.init();
-<?php if ($todayReport): ?>
-MedPicker.seed(<?php echo json_encode(array_values(array_filter(array_map('trim', explode(',', $todayReport['medicins'] ?? ''))))); ?>);
-<?php endif; ?>
+// Init on load — seed from the in-progress visit (structured rows or names)
+MedRows.init();
+MedRows.seed(<?php echo json_encode($seedRows); ?>);
 // Report id of an already-started visit today (empty = create a new visit)
 let editingReportId = document.getElementById('editingReportId') ? document.getElementById('editingReportId').value : '';
 
@@ -1025,13 +1072,14 @@ function syncChiefComplaint(patientId) {
 
 // ── Save new report ──
 function saveReport(patientId) {
-    MedPicker.syncTextarea();
+    MedRows.sync();
 
     // Save any change to the chief complaint alongside the visit
     syncChiefComplaint(patientId);
 
     const date      = document.getElementById('reportDate').value;
     const medicins  = document.getElementById('reportMedicins').value.trim();
+    const medDetails = document.getElementById('reportMedicineDetails').value;
     const notes     = document.getElementById('reportNotes').value.trim();
     const repNotes  = document.getElementById('reportReportsNotes').value.trim();
     const amt       = document.getElementById('reportAmt').value || 0;
@@ -1042,10 +1090,12 @@ function saveReport(patientId) {
 
     // Require at least medicines OR notes OR reports-notes
     if (!medicins && !notes && !repNotes) {
-        const wrap = document.getElementById('tagInputArea');
-        wrap.style.borderColor = '#ef4444';
-        document.getElementById('medSearch').focus();
-        setTimeout(() => wrap.style.borderColor = '', 2000);
+        const firstName = document.querySelector('#medRows .med-name');
+        if (firstName) {
+            firstName.style.borderColor = '#ef4444';
+            firstName.focus();
+            setTimeout(() => firstName.style.borderColor = '', 2000);
+        }
         return;
     }
 
@@ -1055,6 +1105,7 @@ function saveReport(patientId) {
     const fd = new FormData();
     fd.append('date', date);
     fd.append('medicins', medicins);
+    fd.append('medicine_details', medDetails);
     fd.append('notes', notes);
     fd.append('reports_notes', repNotes);
     fd.append('amt', amt);

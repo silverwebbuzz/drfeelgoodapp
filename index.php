@@ -354,6 +354,7 @@ switch ($route) {
         $reportModel        = new App\Models\Report($db);
         $recentPatients     = $patientController->getRecent(10);
         $todayQueueData     = $apptController->getQueue(date('Y-m-d'));
+        $visitedToday       = (new App\Models\ProgressReport($db))->getVisitedToday();
         $dashStats = [
             'total_patients'   => (int)(new App\Models\Patient($db))->getTotalCount(),
             'total_reports'    => (int)$reportModel->count(),
