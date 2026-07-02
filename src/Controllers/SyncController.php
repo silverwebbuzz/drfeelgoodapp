@@ -39,15 +39,36 @@ class SyncController {
     }
 
     /**
-     * Create a patient visit / progress report. Idempotent on client_uuid.
+     * Create OR update a patient visit / progress report.
+     * Creates are idempotent on client_uuid; updates (when a report_id is present)
+     * are last-write-wins, so replaying a queued edit is always safe.
      */
     private function syncReport(string $uuid, array $data): array {
+        $reportId  = $data['report_id'] ?? null;
         $patientId = $data['p_id'] ?? null;
-        if (empty($patientId)) {
-            return ['success' => false, 'message' => 'Missing patient id', 'http' => 400];
-        }
 
         try {
+            $patientController = new PatientController($this->db);
+
+            // Edit of an existing visit — apply the update. Idempotent by nature,
+            // so a retried edit simply re-writes the same fields.
+            if (!empty($reportId)) {
+                $result = $patientController->updateReport((int)$reportId, $data);
+                if (!empty($result['success'])) {
+                    $result['report_id'] = (int)$reportId;
+                    $result['server_id'] = (int)$reportId;
+                    $result['http'] = 200;
+                    return $result;
+                }
+                // Validation / business-rule rejection — permanent, don't retry.
+                $result['http'] = 422;
+                return $result;
+            }
+
+            if (empty($patientId)) {
+                return ['success' => false, 'message' => 'Missing patient id', 'http' => 400];
+            }
+
             // Already stored under this UUID? Report success without duplicating.
             $reportModel = new ProgressReport($this->db);
             $existingId  = $reportModel->findByClientUuid($uuid);
@@ -58,7 +79,6 @@ class SyncController {
 
             // Reuse the normal create path (handles medicine master upsert too).
             $data['client_uuid'] = $uuid;
-            $patientController = new PatientController($this->db);
             $result = $patientController->addReport($patientId, $data);
 
             if (!empty($result['success'])) {

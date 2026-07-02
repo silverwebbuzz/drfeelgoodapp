@@ -747,15 +747,45 @@ $finishApptId = $apptId ?: (int)($activeAppt['id'] ?? 0);
                                         echo ($rd&&$rd!=='0000-00-00')?htmlspecialchars($rd):'';
                                     ?>">
                                 <input type="number" class="h-edit-input" id="he-amt-<?php echo $r['id']; ?>"
-                                    placeholder="₹ Amount"
+                                    placeholder="₹ Amount (auto total)" min="0"
                                     value="<?php echo htmlspecialchars($r['amt']??0); ?>">
                             </div>
-                            <textarea class="h-edit-input" id="he-meds-<?php echo $r['id']; ?>"
-                                rows="2" placeholder="Medicines..." style="margin-bottom:5px;"><?php echo htmlspecialchars($r['medicins']??''); ?></textarea>
+
+                            <!-- Per-medicine rows with their own live total -->
+                            <div class="med-row-head" style="margin-top:6px;">
+                                <span class="h-name">Medicine</span>
+                                <span class="h-amt">Amount (₹)</span>
+                                <span class="h-sp"></span>
+                            </div>
+                            <div id="medRows-<?php echo $r['id']; ?>"></div>
+                            <button type="button" class="med-add-row-btn" onclick="histMed(<?php echo $r['id']; ?>).addRow()">
+                                <i class="fas fa-plus"></i> Add New
+                            </button>
+                            <div class="med-rows-total">
+                                Total: <strong>₹<span id="medRowsTotal-<?php echo $r['id']; ?>">0</span></strong>
+                            </div>
+
                             <textarea class="h-edit-input" id="he-notes-<?php echo $r['id']; ?>"
-                                rows="2" placeholder="Notes (optional)..." style="margin-bottom:5px;"><?php echo htmlspecialchars($r['notes']??''); ?></textarea>
+                                rows="2" placeholder="Notes (optional)..." style="margin:6px 0 5px;"><?php echo htmlspecialchars($r['notes']??''); ?></textarea>
                             <textarea class="h-edit-input" id="he-repnotes-<?php echo $r['id']; ?>"
                                 rows="2" placeholder="Reports - Notes (optional)..." style="margin-bottom:6px;"><?php echo htmlspecialchars($r['reports_notes']??''); ?></textarea>
+
+                            <div class="h-edit-row">
+                                <?php $hpt=$r['payment_type']??'cash'; $hps=$r['payment_status']??'paid'; ?>
+                                <select class="h-edit-input" id="he-paytype-<?php echo $r['id']; ?>">
+                                    <option value="cash" <?php echo $hpt==='cash'?'selected':''; ?>>Cash</option>
+                                    <option value="online" <?php echo $hpt==='online'?'selected':''; ?>>Online</option>
+                                </select>
+                                <select class="h-edit-input" id="he-paystatus-<?php echo $r['id']; ?>">
+                                    <option value="paid" <?php echo $hps==='paid'?'selected':''; ?>>Paid</option>
+                                    <option value="remaining" <?php echo $hps==='remaining'?'selected':''; ?>>Due</option>
+                                </select>
+                            </div>
+
+                            <!-- Hidden structured fields, filled by the medicine rows on save -->
+                            <input type="hidden" id="he-meds-<?php echo $r['id']; ?>">
+                            <input type="hidden" id="he-medsdetails-<?php echo $r['id']; ?>">
+
                             <div class="h-edit-actions">
                                 <button class="h-save-btn" onclick="saveHistEdit(<?php echo $r['id']; ?>)">
                                     <i class="fas fa-save"></i> Save
@@ -822,144 +852,191 @@ function deletePatient(id, name) {
 }
 
 // ════════════════════════════════════════
-// MEDICINE ROWS — one medicine + its amount per line, with live total
+// MEDICINE ROWS — reusable controller: one medicine + its amount per line, live total.
+// Each instance owns its own container so the main visit form AND every
+// History → Edit form total independently (no cross-visit amount bleed).
 // ════════════════════════════════════════
-const MedRows = {
-    debounceTimers: new WeakMap(),
+function createMedRows(cfg) {
+    const el = (v) => typeof v === 'string' ? document.getElementById(v) : v;
+    const rowsEl    = el(cfg.rowsEl);
+    const totalEl   = el(cfg.totalEl);
+    const namesEl   = el(cfg.namesEl);
+    const detailsEl = el(cfg.detailsEl);
+    const amtEl     = el(cfg.amtEl);
 
-    init() {
-        // Close any open row dropdown when clicking outside a name field
-        document.addEventListener('mousedown', (e) => {
-            if (!e.target.closest('.med-row-name')) {
-                document.querySelectorAll('.med-row-drop').forEach(d => d.style.display = 'none');
-            }
-        });
-    },
+    const ctrl = {
+        debounceTimers: new WeakMap(),
 
-    // Build one row node. data = { name, amount }
-    buildRow(data) {
-        data = data || {};
-        const row = document.createElement('div');
-        row.className = 'med-row';
-        row.innerHTML =
-            '<div class="med-row-name">' +
-                '<input type="text" class="r-input med-name" autocomplete="off" placeholder="Type medicine name...">' +
-                '<div class="med-row-drop"></div>' +
-            '</div>' +
-            '<input type="number" class="r-input med-row-amt med-amt" min="0" placeholder="0">' +
-            '<button type="button" class="med-row-del" title="Remove">×</button>';
+        // Build one row node. data = { name, amount }
+        buildRow(data) {
+            data = data || {};
+            const row = document.createElement('div');
+            row.className = 'med-row';
+            row.innerHTML =
+                '<div class="med-row-name">' +
+                    '<input type="text" class="r-input med-name" autocomplete="off" placeholder="Type medicine name...">' +
+                    '<div class="med-row-drop"></div>' +
+                '</div>' +
+                '<input type="number" class="r-input med-row-amt med-amt" min="0" placeholder="0">' +
+                '<button type="button" class="med-row-del" title="Remove">×</button>';
 
-        const nameInput = row.querySelector('.med-name');
-        const amtInput  = row.querySelector('.med-amt');
-        const drop      = row.querySelector('.med-row-drop');
-        const delBtn    = row.querySelector('.med-row-del');
+            const nameInput = row.querySelector('.med-name');
+            const amtInput  = row.querySelector('.med-amt');
+            const drop      = row.querySelector('.med-row-drop');
+            const delBtn    = row.querySelector('.med-row-del');
 
-        nameInput.value = data.name || '';
-        amtInput.value  = (data.amount && parseFloat(data.amount) > 0) ? data.amount : '';
+            nameInput.value = data.name || '';
+            amtInput.value  = (data.amount && parseFloat(data.amount) > 0) ? data.amount : '';
 
-        nameInput.addEventListener('focus', () => this.search(nameInput, drop));
-        nameInput.addEventListener('input', () => {
-            clearTimeout(this.debounceTimers.get(nameInput));
-            this.debounceTimers.set(nameInput, setTimeout(() => this.search(nameInput, drop), 180));
-            this.sync();
-        });
-        nameInput.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') { e.preventDefault(); drop.style.display = 'none'; amtInput.focus(); }
-            if (e.key === 'Escape') { drop.style.display = 'none'; }
-        });
-        amtInput.addEventListener('input', () => this.sync());
-        delBtn.addEventListener('click', () => { row.remove(); this.ensureOne(); this.sync(); });
-
-        return row;
-    },
-
-    addRow(data, focus) {
-        const node = this.buildRow(data);
-        document.getElementById('medRows').appendChild(node);
-        if (focus !== false) node.querySelector('.med-name').focus();
-        this.sync();
-        return node;
-    },
-
-    // Always keep at least one (empty) row on screen
-    ensureOne() {
-        const wrap = document.getElementById('medRows');
-        if (!wrap.querySelector('.med-row')) this.addRow(null, false);
-    },
-
-    search(input, drop) {
-        const query = input.value.trim();
-        const url = '/api/medicines' + (query ? '?q=' + encodeURIComponent(query) : '');
-        fetch(url)
-            .then(r => r.json())
-            .then(data => { if (data.success) this.renderDrop(input, drop, data.data, query); })
-            .catch(() => {});
-    },
-
-    renderDrop(input, drop, items, query) {
-        let html = '';
-        (items || []).forEach(item => {
-            const count = item.usage_count > 0 ? `<span class="med-count">×${item.usage_count}</span>` : '';
-            html += `<div class="med-drop-item" data-name="${escHtml(item.name)}">
-                <span>${escHtml(item.name)}</span>${count}</div>`;
-        });
-        if (!html && !query) html = '<div class="med-drop-empty">Start typing to search medicines</div>';
-        drop.innerHTML = html;
-        // mousedown so the pick registers before the input blurs
-        drop.querySelectorAll('.med-drop-item').forEach(el => {
-            el.addEventListener('mousedown', (e) => {
-                e.preventDefault();
-                input.value = el.getAttribute('data-name');
-                drop.style.display = 'none';
-                this.sync();
-                input.closest('.med-row').querySelector('.med-amt').focus();
+            nameInput.addEventListener('focus', () => ctrl.search(nameInput, drop));
+            nameInput.addEventListener('input', () => {
+                clearTimeout(ctrl.debounceTimers.get(nameInput));
+                ctrl.debounceTimers.set(nameInput, setTimeout(() => ctrl.search(nameInput, drop), 180));
+                ctrl.sync();
             });
-        });
-        drop.style.display = html ? 'block' : 'none';
-    },
+            nameInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') { e.preventDefault(); drop.style.display = 'none'; amtInput.focus(); }
+                if (e.key === 'Escape') { drop.style.display = 'none'; }
+            });
+            amtInput.addEventListener('input', () => ctrl.sync());
+            delBtn.addEventListener('click', () => { row.remove(); ctrl.ensureOne(); ctrl.sync(); });
 
-    rows() {
-        return Array.from(document.querySelectorAll('#medRows .med-row')).map(r => ({
-            name:   r.querySelector('.med-name').value.trim(),
-            amount: parseFloat(r.querySelector('.med-amt').value) || 0,
-        }));
-    },
+            return row;
+        },
 
-    // Push clean names + structured rows into hidden fields and auto-total the amount.
-    sync() {
-        const rows = this.rows().filter(r => r.name !== '');
-        document.getElementById('reportMedicins').value = rows.map(r => r.name).join(', ');
-        document.getElementById('reportMedicineDetails').value = JSON.stringify(rows);
+        addRow(data, focus) {
+            const node = ctrl.buildRow(data);
+            rowsEl.appendChild(node);
+            if (focus !== false) node.querySelector('.med-name').focus();
+            ctrl.sync();
+            return node;
+        },
 
-        const total = rows.reduce((s, r) => s + (r.amount || 0), 0);
-        document.getElementById('medRowsTotal').textContent =
-            total ? (Number.isInteger(total) ? total : total.toFixed(2)) : '0';
+        // Always keep at least one (empty) row on screen
+        ensureOne() {
+            if (!rowsEl.querySelector('.med-row')) ctrl.addRow(null, false);
+        },
 
-        // Auto-fill the payment Amount with the medicine total (still editable).
-        // Only when there is a total, so legacy visits without per-medicine
-        // amounts keep their saved amount.
-        const amtField = document.getElementById('reportAmt');
-        if (amtField && total > 0) amtField.value = total;
-    },
+        search(input, drop) {
+            const query = input.value.trim();
+            const url = '/api/medicines' + (query ? '?q=' + encodeURIComponent(query) : '');
+            fetch(url)
+                .then(r => r.json())
+                .then(data => { if (data.success) ctrl.renderDrop(input, drop, data.data, query); })
+                .catch(() => {});
+        },
 
-    seed(list) {
-        const wrap = document.getElementById('medRows');
-        wrap.innerHTML = '';
-        (list || []).forEach(d => this.addRow({ name: d.name, amount: d.amount }, false));
-        this.ensureOne();
-        this.sync();
-    },
+        renderDrop(input, drop, items, query) {
+            let html = '';
+            (items || []).forEach(item => {
+                const count = item.usage_count > 0 ? `<span class="med-count">×${item.usage_count}</span>` : '';
+                html += `<div class="med-drop-item" data-name="${escHtml(item.name)}">
+                    <span>${escHtml(item.name)}</span>${count}</div>`;
+            });
+            if (!html && !query) html = '<div class="med-drop-empty">Start typing to search medicines</div>';
+            drop.innerHTML = html;
+            // mousedown so the pick registers before the input blurs
+            drop.querySelectorAll('.med-drop-item').forEach(el => {
+                el.addEventListener('mousedown', (e) => {
+                    e.preventDefault();
+                    input.value = el.getAttribute('data-name');
+                    drop.style.display = 'none';
+                    ctrl.sync();
+                    input.closest('.med-row').querySelector('.med-amt').focus();
+                });
+            });
+            drop.style.display = html ? 'block' : 'none';
+        },
 
-    clear() {
-        document.getElementById('medRows').innerHTML = '';
-        this.ensureOne();
-        this.sync();
+        rows() {
+            return Array.from(rowsEl.querySelectorAll('.med-row')).map(r => ({
+                name:   r.querySelector('.med-name').value.trim(),
+                amount: parseFloat(r.querySelector('.med-amt').value) || 0,
+            }));
+        },
+
+        // Push clean names + structured rows into hidden fields and auto-total the amount.
+        sync() {
+            const rows = ctrl.rows().filter(r => r.name !== '');
+            if (namesEl)   namesEl.value   = rows.map(r => r.name).join(', ');
+            if (detailsEl) detailsEl.value = JSON.stringify(rows);
+
+            const total = rows.reduce((s, r) => s + (r.amount || 0), 0);
+            if (totalEl) totalEl.textContent =
+                total ? (Number.isInteger(total) ? total : total.toFixed(2)) : '0';
+
+            // Auto-fill the payment Amount with the medicine total (still editable).
+            // Only when there is a total, so legacy visits without per-medicine
+            // amounts keep their saved amount.
+            if (amtEl && total > 0) amtEl.value = total;
+        },
+
+        seed(list) {
+            rowsEl.innerHTML = '';
+            (list || []).forEach(d => ctrl.addRow({ name: d.name, amount: d.amount }, false));
+            ctrl.ensureOne();
+            ctrl.sync();
+        },
+
+        clear() {
+            rowsEl.innerHTML = '';
+            ctrl.ensureOne();
+            ctrl.sync();
+        }
+    };
+    return ctrl;
+}
+
+// Close any open row dropdown when clicking outside a name field (global, once).
+document.addEventListener('mousedown', (e) => {
+    if (!e.target.closest('.med-row-name')) {
+        document.querySelectorAll('.med-row-drop').forEach(d => d.style.display = 'none');
     }
-};
+});
 
-// Init on load — seed from the in-progress visit (structured rows or names)
-MedRows.init();
+// Main visit form — seed from the in-progress visit (structured rows or names).
+const MedRows = createMedRows({
+    rowsEl: 'medRows', totalEl: 'medRowsTotal',
+    namesEl: 'reportMedicins', detailsEl: 'reportMedicineDetails', amtEl: 'reportAmt'
+});
 MedRows.seed(<?php echo json_encode($seedRows); ?>);
+
+// Per-history-item medicine controllers, seeded lazily from each visit's saved rows.
+<?php
+    // Seed rows for each past visit's edit form: prefer the structured breakdown,
+    // fall back to comma-separated names (mirrors the main form's seed logic).
+    $histSeed = [];
+    foreach ($reports as $hr) {
+        $rows = [];
+        $raw = $hr['medicine_details'] ?? '';
+        $decoded = $raw !== '' ? json_decode($raw, true) : null;
+        if (is_array($decoded)) {
+            foreach ($decoded as $d) {
+                $nm = trim($d['name'] ?? '');
+                if ($nm === '') continue;
+                $rows[] = ['name' => $nm, 'amount' => (float)($d['amount'] ?? 0)];
+            }
+        }
+        if (!$rows && trim($hr['medicins'] ?? '') !== '') {
+            foreach (array_filter(array_map('trim', explode(',', $hr['medicins']))) as $nm) {
+                $rows[] = ['name' => $nm, 'amount' => 0];
+            }
+        }
+        $histSeed[$hr['id']] = $rows;
+    }
+?>
+const HIST_SEED = <?php echo json_encode((object)$histSeed); ?>;
+const histMedRows = {};
+function histMed(id) {
+    if (!histMedRows[id]) {
+        histMedRows[id] = createMedRows({
+            rowsEl: 'medRows-' + id, totalEl: 'medRowsTotal-' + id,
+            namesEl: 'he-meds-' + id, detailsEl: 'he-medsdetails-' + id, amtEl: 'he-amt-' + id
+        });
+        histMedRows[id].seed(HIST_SEED[id] || []);
+    }
+    return histMedRows[id];
+}
 // Report id of an already-started visit today (empty = create a new visit)
 let editingReportId = document.getElementById('editingReportId') ? document.getElementById('editingReportId').value : '';
 
@@ -1185,20 +1262,18 @@ async function saveReport(patientId) {
     btn.disabled = true;
     btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
 
-    // Continuing a visit already persisted on the server (has a real id) →
-    // normal online update. (Editing a server record offline is out of scope
-    // for this first cut — the form data is preserved so the user can retry.)
+    // Continuing a visit already persisted on the server (has a real id).
+    // Route through the offline outbox too (with report_id → server updates
+    // instead of creating), so a flaky network queues + retries instead of
+    // failing with a "network error".
     if (editingReportId) {
-        const fd = new FormData();
-        Object.keys(d).forEach(k => { if (k !== 'p_id') fd.append(k, d[k]); });
-        try {
-            const r = await fetch('/api/report/' + editingReportId + '/update',
-                                  { method: 'POST', body: fd });
-            const data = await r.json();
-            if (data.success) { location.reload(); return; }
-            alert('Error: ' + (data.message || ''));
-        } catch (e) {
-            Offline.showToast('You appear to be offline. Your changes are kept in the form — reconnect and save again.', 'warning');
+        const upd = Object.assign({}, d, { report_id: editingReportId });
+        const res = await Offline.saveOffline('report', '/api/sync', upd);
+        if (res.synced) { location.reload(); return; }
+        if (res.queued) {
+            Offline.showToast('Saved locally — changes will sync automatically when back online.', 'info');
+        } else {
+            alert('Error: ' + (res.error || 'Could not update visit'));
         }
         btn.disabled = false;
         btn.innerHTML = '<i class="fas fa-save"></i> Update Visit';
@@ -1258,31 +1333,37 @@ window.addEventListener('outbox:synced', function (e) {
 // ── History edit ──
 function toggleHistEdit(id) {
     const form = document.getElementById('hedit-' + id);
+    const opening = !form.classList.contains('open');
     form.classList.toggle('open');
+    // Build + seed this visit's medicine rows the first time its form opens.
+    if (opening) histMed(id);
 }
-function saveHistEdit(id) {
-    const date     = document.getElementById('he-date-'     + id).value;
-    const medicins = document.getElementById('he-meds-'     + id).value.trim();
-    const notes    = document.getElementById('he-notes-'    + id)?.value.trim() || '';
-    const repNotes = document.getElementById('he-repnotes-' + id)?.value.trim() || '';
-    const amt      = document.getElementById('he-amt-'      + id).value || 0;
+async function saveHistEdit(id) {
+    histMed(id).sync();
 
-    const fd = new FormData();
-    fd.append('date', date);
-    fd.append('medicins', medicins);
-    fd.append('notes', notes);
-    fd.append('reports_notes', repNotes);
-    fd.append('amt', amt);
+    const upd = {
+        report_id:      id,
+        p_id:           PID,
+        date:           document.getElementById('he-date-'     + id).value,
+        medicins:       document.getElementById('he-meds-'     + id).value.trim(),
+        medicine_details: document.getElementById('he-medsdetails-' + id).value,
+        notes:          document.getElementById('he-notes-'    + id)?.value.trim() || '',
+        reports_notes:  document.getElementById('he-repnotes-' + id)?.value.trim() || '',
+        amt:            document.getElementById('he-amt-'      + id).value || 0,
+        payment_type:   document.getElementById('he-paytype-'   + id)?.value || 'cash',
+        payment_status: document.getElementById('he-paystatus-' + id)?.value || 'paid',
+    };
 
-    fetch('/api/report/' + id + '/update', { method: 'POST', body: fd })
-    .then(r => r.json())
-    .then(data => {
-        if (data.success) {
-            // Reload so both Notes + Reports-Notes and amount/badges re-render cleanly
-            location.reload();
-        } else { alert('Save failed: ' + (data.message || '')); }
-    })
-    .catch(() => alert('Network error'));
+    // Offline-capable: queues + retries on a flaky network instead of erroring.
+    const res = await Offline.saveOffline('report', '/api/sync', upd);
+    if (res.synced) {
+        // Reload so notes + amount/badges re-render cleanly
+        location.reload();
+    } else if (res.queued) {
+        Offline.showToast('Saved locally — changes will sync automatically when back online.', 'info');
+    } else {
+        alert('Save failed: ' + (res.error || ''));
+    }
 }
 
 function fmtDateJS(v) {
