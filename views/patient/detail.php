@@ -333,6 +333,25 @@ textarea.r-input { resize:vertical; }
 .med-row-head .h-name { flex:1; }
 .med-row-head .h-amt { width:110px; }
 .med-row-head .h-sp  { width:32px; }
+
+/* Previous-visit medicines: locked reference block (not saved, not totaled) */
+.med-prev-ref {
+    background:var(--gray-50); border:1px dashed var(--gray-300);
+    border-radius:8px; padding:8px 10px 4px; margin-bottom:10px;
+}
+.med-prev-label {
+    font-size:10px; font-weight:700; letter-spacing:.04em; text-transform:uppercase;
+    color:var(--gray-400); margin-bottom:6px;
+}
+.med-prev-label i { color:var(--gray-400); }
+.med-row-ro .r-input {
+    background:var(--gray-100); color:var(--gray-500); cursor:default;
+    border-color:var(--gray-200);
+}
+.med-row-lock {
+    flex-shrink:0; width:32px; height:34px; color:var(--gray-400);
+    display:flex; align-items:center; justify-content:center; font-size:12px;
+}
 </style>
 
 <?php
@@ -587,6 +606,24 @@ $finishApptId = $apptId ?: (int)($activeAppt['id'] ?? 0);
                     <span style="font-weight:400;color:var(--gray-400);margin-left:6px;">— add medicine &amp; amount, click "Add New" for more</span>
                 </label>
 
+                <?php if (!empty($prevRows)): ?>
+                <!-- Previous visit's medicines: locked reference, not saved or counted -->
+                <div class="med-prev-ref">
+                    <div class="med-prev-label">
+                        <i class="fas fa-lock"></i> Previous visit — for reference only
+                    </div>
+                    <?php foreach ($prevRows as $pr): ?>
+                    <div class="med-row med-row-ro">
+                        <div class="med-row-name">
+                            <input type="text" class="r-input med-name" value="<?php echo htmlspecialchars($pr['name']); ?>" readonly tabindex="-1">
+                        </div>
+                        <input type="number" class="r-input med-row-amt med-amt" value="<?php echo $pr['amount'] > 0 ? htmlspecialchars($pr['amount']) : ''; ?>" placeholder="0" readonly tabindex="-1">
+                        <span class="med-row-lock" title="From the previous visit"><i class="fas fa-lock"></i></span>
+                    </div>
+                    <?php endforeach; ?>
+                </div>
+                <?php endif; ?>
+
                 <div class="med-row-head">
                     <span class="h-name">Medicine</span>
                     <span class="h-amt">Amount (₹)</span>
@@ -598,6 +635,7 @@ $finishApptId = $apptId ?: (int)($activeAppt['id'] ?? 0);
                 </button>
                 <div class="med-rows-total">
                     Total: <strong>₹<span id="medRowsTotal">0</span></strong>
+                    <span style="font-weight:400;color:var(--gray-400);font-size:11px;margin-left:4px;">— new medicines only</span>
                 </div>
             </div>
 
@@ -654,25 +692,41 @@ $finishApptId = $apptId ?: (int)($activeAppt['id'] ?? 0);
             <textarea id="reportMedicins" style="display:none;"></textarea>
             <input type="hidden" id="reportMedicineDetails" value="">
             <?php
-                // Seed data for the medicine rows: prefer the structured breakdown,
-                // fall back to the comma-separated names when details aren't stored yet.
-                $seedRows = [];
-                if ($todayReport) {
-                    $raw = $todayReport['medicine_details'] ?? '';
+                // Decode a report's medicines into [{name, amount}] rows: prefer the
+                // structured breakdown, fall back to comma-separated names.
+                $decodeMedRows = function ($report) {
+                    $rows = [];
+                    if (!$report) return $rows;
+                    $raw = $report['medicine_details'] ?? '';
                     $decoded = $raw !== '' ? json_decode($raw, true) : null;
                     if (is_array($decoded)) {
                         foreach ($decoded as $d) {
                             $nm = trim($d['name'] ?? '');
                             if ($nm === '') continue;
-                            $seedRows[] = ['name' => $nm, 'amount' => (float)($d['amount'] ?? 0)];
+                            $rows[] = ['name' => $nm, 'amount' => (float)($d['amount'] ?? 0)];
                         }
                     }
-                    if (!$seedRows && trim($todayReport['medicins'] ?? '') !== '') {
-                        foreach (array_filter(array_map('trim', explode(',', $todayReport['medicins']))) as $nm) {
-                            $seedRows[] = ['name' => $nm, 'amount' => 0];
+                    if (!$rows && trim($report['medicins'] ?? '') !== '') {
+                        foreach (array_filter(array_map('trim', explode(',', $report['medicins']))) as $nm) {
+                            $rows[] = ['name' => $nm, 'amount' => 0];
                         }
                     }
+                    return $rows;
+                };
+
+                // Editable rows = today's in-progress visit (when continuing one).
+                $seedRows = $decodeMedRows($todayReport);
+
+                // Read-only reference = the most recent PREVIOUS visit (the latest
+                // history entry that isn't the in-progress one). Shown locked so the
+                // doctor can see what was prescribed; not saved or counted again.
+                $prevReport = null;
+                foreach ($reports as $r) {
+                    if ($todayReport && (int)$r['id'] === (int)$todayReport['id']) continue;
+                    $prevReport = $r;
+                    break;
                 }
+                $prevRows = $decodeMedRows($prevReport);
             ?>
 
             <!-- When set, Save updates this already-started visit instead of creating a new one -->
