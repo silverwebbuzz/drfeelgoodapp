@@ -37,6 +37,12 @@
             </div>
 
             <div class="header-user">
+                <!-- Offline sync status: hidden until there is something queued -->
+                <button type="button" id="syncBadge" class="btn btn-sm" style="display:none;margin-right:8px;"
+                        title="Records waiting to sync" data-bs-toggle="modal" data-bs-target="#syncModal">
+                    <i class="fas fa-cloud-upload-alt"></i>
+                    <span id="syncBadgeText">0</span>
+                </button>
                 <div class="header-name">
                     <span class="full-name"><?php echo htmlspecialchars($_SESSION['fullname'] ?? $_SESSION['username'] ?? 'User'); ?></span>
                     <span class="role-pill"><?php echo htmlspecialchars(\App\Models\User::roleLabel($layoutRole)); ?></span>
@@ -173,6 +179,126 @@
         el.closest('.has-submenu').classList.toggle('open');
     }
     </script>
+    <!-- Offline-first: IndexedDB outbox + sync client (load before SW registration) -->
+    <script src="/assets/js/offline/idb-core.js"></script>
+    <script src="/assets/js/offline/offline-client.js"></script>
+
+    <!-- ── Offline sync review modal ─────────────────────────── -->
+    <div class="modal fade" id="syncModal" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-scrollable">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title"><i class="fas fa-cloud-upload-alt"></i> Offline sync queue</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <div id="syncQueueList" class="d-flex flex-column gap-2"></div>
+            <p id="syncQueueEmpty" class="text-muted text-center my-3" style="display:none;">
+              <i class="fas fa-check-circle text-success"></i> Everything is synced.
+            </p>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-primary btn-sm" id="syncRetryAllBtn">
+              <i class="fas fa-sync"></i> Retry all
+            </button>
+            <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Close</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+    (function () {
+        if (!window.Offline) return;
+        const badge = document.getElementById('syncBadge');
+        const badgeText = document.getElementById('syncBadgeText');
+        const listEl = document.getElementById('syncQueueList');
+        const emptyEl = document.getElementById('syncQueueEmpty');
+
+        function esc(s) { const d = document.createElement('div'); d.textContent = String(s == null ? '' : s); return d.innerHTML; }
+
+        // One-line summary of what a queued record represents.
+        function summarize(rec) {
+            const d = rec.payload || {};
+            if (rec.entity === 'report') {
+                const meds = d.medicins ? d.medicins : (d.notes || d.reports_notes || 'Visit');
+                return 'Visit — ' + esc(meds.slice(0, 60));
+            }
+            return esc(rec.entity);
+        }
+
+        function statusPill(rec) {
+            const map = {
+                pending: ['#0d6efd', 'Pending'],
+                failed:  ['#dc3545', 'Failed'],
+                synced:  ['#198754', 'Synced'],
+            };
+            const s = map[rec.status] || ['#6c757d', rec.status];
+            return '<span style="background:' + s[0] + ';color:#fff;font-size:.68rem;font-weight:700;'
+                 + 'padding:2px 8px;border-radius:10px;text-transform:uppercase;">' + s[1] + '</span>';
+        }
+
+        async function refresh() {
+            const queue = await Offline.getQueue();
+            const active = queue.filter(function (r) { return r.status !== 'synced'; });
+            const failed = active.filter(function (r) { return r.status === 'failed'; });
+
+            // Header badge
+            if (active.length > 0) {
+                badge.style.display = '';
+                badgeText.textContent = active.length;
+                // Amber when anything failed, otherwise blue.
+                badge.className = 'btn btn-sm ' + (failed.length ? 'btn-warning' : 'btn-outline-primary');
+            } else {
+                badge.style.display = 'none';
+            }
+
+            // Modal list
+            listEl.innerHTML = '';
+            if (!active.length) { emptyEl.style.display = ''; return; }
+            emptyEl.style.display = 'none';
+
+            active.forEach(function (rec) {
+                const when = new Date(rec.createdAt).toLocaleString('en-IN',
+                    { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
+                const errHtml = rec.lastError
+                    ? '<div class="small text-danger mt-1">' + esc(rec.lastError)
+                      + (rec.attempts ? ' (attempt ' + rec.attempts + ')' : '') + '</div>' : '';
+                const row = document.createElement('div');
+                row.className = 'border rounded p-2';
+                row.innerHTML =
+                    '<div class="d-flex justify-content-between align-items-start">'
+                  +   '<div><div class="fw-semibold">' + summarize(rec) + '</div>'
+                  +     '<div class="small text-muted">' + esc(when) + '</div>' + errHtml + '</div>'
+                  +   '<div class="text-end">' + statusPill(rec) + '</div>'
+                  + '</div>'
+                  + '<div class="d-flex gap-2 mt-2">'
+                  +   '<button class="btn btn-sm btn-primary js-retry"><i class="fas fa-sync"></i> Retry</button>'
+                  +   '<button class="btn btn-sm btn-outline-danger js-discard"><i class="fas fa-trash"></i> Discard</button>'
+                  + '</div>';
+                row.querySelector('.js-retry').addEventListener('click', function () {
+                    this.disabled = true; Offline.retry(rec.uuid);
+                });
+                row.querySelector('.js-discard').addEventListener('click', function () {
+                    if (confirm('Discard this record? It will NOT be saved to the server.')) Offline.remove(rec.uuid);
+                });
+                listEl.appendChild(row);
+            });
+        }
+
+        document.getElementById('syncRetryAllBtn').addEventListener('click', async function () {
+            this.disabled = true;
+            const queue = await Offline.getQueue();
+            for (const r of queue) { if (r.status !== 'synced') await Offline.retry(r.uuid); }
+            this.disabled = false;
+        });
+
+        window.addEventListener('outbox:changed', refresh);
+        window.addEventListener('outbox:synced', refresh);
+        window.addEventListener('load', refresh);
+    })();
+    </script>
+
     <script>
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', function () {

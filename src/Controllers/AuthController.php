@@ -120,6 +120,7 @@ class AuthController {
             '#^api/medicines$#',               // Medicine search in visit report
             '#^api/patient/search$#',          // Patient lookup in walk-in form
             '#^api/patient/\d+/report$#',      // Save visit report
+            '#^api/sync$#',                    // Offline sync replay (visit reports)
             '#^api/patient/\d+/update$#',      // Edit patient demographics
             '#^api/report/\d+/update$#',       // Edit visit report
             '#^api/report/\d+/payment$#',      // Record payment

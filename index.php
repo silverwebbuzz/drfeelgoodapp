@@ -273,6 +273,24 @@ switch ($route) {
         echo json_encode($response);
         exit;
 
+    // Offline sync endpoint — replays records queued in the browser (IndexedDB
+    // outbox) by the service worker / offline client. Idempotent per client_uuid.
+    case 'api/sync':
+        AuthController::requireRole('doctor', 'asst_doctor');
+        header('Content-Type: application/json');
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            http_response_code(405);
+            echo json_encode(['success' => false, 'message' => 'POST required']);
+            exit;
+        }
+        $body = json_decode(file_get_contents('php://input'), true) ?: [];
+        $syncController = new \App\Controllers\SyncController($db);
+        $response = $syncController->handle($body);
+        http_response_code($response['http'] ?? 200);
+        unset($response['http']);
+        echo json_encode($response);
+        exit;
+
     case (preg_match('/^api\/patient\/(\d+)\/update$/', $route, $matches) ? true : false):
         AuthController::requireLogin();
         header('Content-Type: application/json');

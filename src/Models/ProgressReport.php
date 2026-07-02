@@ -14,6 +14,36 @@ class ProgressReport extends BaseModel {
     /** Cached check for the optional medicine_details column (added 2026-06-30). */
     private static $hasDetailsCol = null;
 
+    /** Cached check for the optional client_uuid column (added 2026-07-01). */
+    private static $hasUuidCol = null;
+
+    /**
+     * Whether the offline-sync idempotency column exists. Lets the app keep
+     * working on databases where the migration hasn't been applied yet.
+     */
+    public function hasClientUuid(): bool {
+        if (self::$hasUuidCol === null) {
+            try {
+                $stmt = $this->query("SHOW COLUMNS FROM {$this->table} LIKE 'client_uuid'");
+                self::$hasUuidCol = $stmt->fetch(PDO::FETCH_ASSOC) ? true : false;
+            } catch (\Exception $e) {
+                self::$hasUuidCol = false;
+            }
+        }
+        return self::$hasUuidCol;
+    }
+
+    /**
+     * Look up an existing report by its client-generated UUID. Returns the row
+     * id (or null). Used by the sync endpoint to deduplicate resubmissions.
+     */
+    public function findByClientUuid(string $uuid) {
+        if (!$this->hasClientUuid()) return null;
+        $stmt = $this->query("SELECT id FROM {$this->table} WHERE client_uuid = ? LIMIT 1", [$uuid]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        return $row ? $row['id'] : null;
+    }
+
     /**
      * Whether the per-medicine breakdown column exists. Lets the app keep
      * working on databases where the migration hasn't been applied yet.
@@ -119,6 +149,11 @@ class ProgressReport extends BaseModel {
 
         if ($this->hasMedicineDetails() && isset($data['medicine_details'])) {
             $reportData['medicine_details'] = $data['medicine_details'];
+        }
+
+        // Idempotency key for records created offline and synced later.
+        if ($this->hasClientUuid() && !empty($data['client_uuid'])) {
+            $reportData['client_uuid'] = $data['client_uuid'];
         }
 
         return $this->insert($reportData);

@@ -1070,26 +1070,109 @@ function syncChiefComplaint(patientId) {
     .catch(() => {});
 }
 
-// ── Save new report ──
-function saveReport(patientId) {
+// Outbox UUID of a visit queued offline this session but not yet synced.
+// Lets a repeat "Save" (still offline) update the same queued record instead
+// of creating a duplicate visit.
+let pendingVisitUuid = null;
+
+// Gather the visit form into a plain object for the sync payload.
+function collectReportData(patientId) {
+    return {
+        p_id:           patientId,
+        date:           document.getElementById('reportDate').value,
+        medicins:       document.getElementById('reportMedicins').value.trim(),
+        medicine_details: document.getElementById('reportMedicineDetails').value,
+        notes:          document.getElementById('reportNotes').value.trim(),
+        reports_notes:  document.getElementById('reportReportsNotes').value.trim(),
+        amt:            document.getElementById('reportAmt').value || 0,
+        payment_type:   document.getElementById('reportPaymentType').value,
+        payment_status: document.getElementById('reportPaymentStatus').value,
+    };
+}
+
+// Render (or update) a visit row in the history list.
+// `key` is the server report id when synced, or the outbox UUID when pending.
+function renderVisitItem(key, d, pending) {
+    const list  = document.getElementById('historyList');
+    const noMsg = document.getElementById('noVisitsMsg');
+    if (noMsg) noMsg.remove();
+
+    const dateStr   = new Date(d.date).toLocaleDateString('en-IN', {day:'2-digit', month:'short', year:'numeric'});
+    const payBadges = `<span class="pay-badge pay-${d.payment_type}">${d.payment_type==='online'?'Online':'Cash'}</span>`
+                    + `<span class="pay-badge pay-${d.payment_status}">${d.payment_status==='remaining'?'Due':'Paid'}</span>`;
+    const amtHtml   = d.amt > 0        ? `<div class="h-amt">₹${escHtml(String(d.amt))} ${payBadges}</div>` : '';
+    const notesHtml = d.notes          ? `<div class="h-notes"><i class="fas fa-sticky-note"></i> ${escHtml(d.notes)}</div>` : '';
+    const repHtml   = d.reports_notes  ? `<div class="h-notes"><i class="fas fa-flask"></i> ${escHtml(d.reports_notes)}</div>` : '';
+    const medsDisp  = d.medicins       ? escHtml(d.medicins) : '—';
+
+    let html;
+    if (pending) {
+        // No invoice/edit buttons until the server assigns a real id.
+        html = `
+            <div class="h-num" style="color:#fd7e14"><i class="fas fa-clock"></i> Pending sync</div>
+            <div class="h-date"><i class="fas fa-calendar-day"></i> ${dateStr}</div>
+            <div class="h-meds">${medsDisp}</div>
+            ${notesHtml}
+            ${repHtml}
+            ${amtHtml}`;
+    } else {
+        const rId = key;
+        html = `
+            <div class="h-num">#${rId}</div>
+            <div class="h-date"><i class="fas fa-calendar-day"></i> ${dateStr}</div>
+            <div class="h-meds">${medsDisp}</div>
+            ${notesHtml}
+            ${repHtml}
+            ${amtHtml}
+            <div class="h-action-btns">
+                <a href="/invoice/${rId}" target="_blank" class="h-inv-btn"><i class="fas fa-file-invoice"></i> Invoice</a>
+                <button class="h-edit-btn" onclick="toggleHistEdit(${rId})"><i class="fas fa-pen"></i> Edit</button>
+            </div>
+            <div class="h-edit-form" id="hedit-${rId}">
+                <div class="h-edit-row">
+                    <input type="date" class="h-edit-input" id="he-date-${rId}" value="${escHtml(d.date)}">
+                    <input type="number" class="h-edit-input" id="he-amt-${rId}" placeholder="₹ Amount" value="${escHtml(String(d.amt))}">
+                </div>
+                <textarea class="h-edit-input" id="he-meds-${rId}" rows="2" placeholder="Medicines..." style="margin-bottom:5px;">${escHtml(d.medicins)}</textarea>
+                <textarea class="h-edit-input" id="he-notes-${rId}" rows="2" placeholder="Notes (optional)..." style="margin-bottom:5px;">${escHtml(d.notes)}</textarea>
+                <textarea class="h-edit-input" id="he-repnotes-${rId}" rows="2" placeholder="Reports - Notes (optional)..." style="margin-bottom:6px;">${escHtml(d.reports_notes)}</textarea>
+                <div class="h-edit-actions">
+                    <button class="h-save-btn" onclick="saveHistEdit(${rId})"><i class="fas fa-save"></i> Save</button>
+                    <button class="h-cancel-btn" onclick="toggleHistEdit(${rId})">Cancel</button>
+                </div>
+            </div>`;
+    }
+
+    const domId = pending ? ('hitem-pending-' + key) : ('hitem-' + key);
+    const existing = document.getElementById(domId);
+    if (existing) {
+        existing.innerHTML = html;           // re-saved offline → refresh in place
+        return;
+    }
+    const el = document.createElement('div');
+    el.className = 'h-item new-entry';
+    el.id = domId;
+    el.innerHTML = html;
+    list.querySelectorAll('.new-entry').forEach(e => e.classList.remove('new-entry'));
+    list.prepend(el);
+
+    const badge = document.getElementById('visitBadge');
+    if (badge) badge.textContent = ((parseInt(badge.textContent) || 0) + 1) + ' total';
+}
+
+// ── Save new report (offline-capable) ──
+async function saveReport(patientId) {
     MedRows.sync();
 
     // Save any change to the chief complaint alongside the visit
     syncChiefComplaint(patientId);
 
-    const date      = document.getElementById('reportDate').value;
-    const medicins  = document.getElementById('reportMedicins').value.trim();
-    const medDetails = document.getElementById('reportMedicineDetails').value;
-    const notes     = document.getElementById('reportNotes').value.trim();
-    const repNotes  = document.getElementById('reportReportsNotes').value.trim();
-    const amt       = document.getElementById('reportAmt').value || 0;
-    const payType   = document.getElementById('reportPaymentType').value;
-    const payStat   = document.getElementById('reportPaymentStatus').value;
-    const btn       = document.getElementById('saveReportBtn');
-    const ok        = document.getElementById('saveOk');
+    const d   = collectReportData(patientId);
+    const btn = document.getElementById('saveReportBtn');
+    const ok  = document.getElementById('saveOk');
 
     // Require at least medicines OR notes OR reports-notes
-    if (!medicins && !notes && !repNotes) {
+    if (!d.medicins && !d.notes && !d.reports_notes) {
         const firstName = document.querySelector('#medRows .med-name');
         if (firstName) {
             firstName.style.borderColor = '#ef4444';
@@ -1102,106 +1185,75 @@ function saveReport(patientId) {
     btn.disabled = true;
     btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
 
-    const fd = new FormData();
-    fd.append('date', date);
-    fd.append('medicins', medicins);
-    fd.append('medicine_details', medDetails);
-    fd.append('notes', notes);
-    fd.append('reports_notes', repNotes);
-    fd.append('amt', amt);
-    fd.append('payment_type', payType);
-    fd.append('payment_status', payStat);
-
-    // Continuing a visit already started today → update it in place (no duplicate)
+    // Continuing a visit already persisted on the server (has a real id) →
+    // normal online update. (Editing a server record offline is out of scope
+    // for this first cut — the form data is preserved so the user can retry.)
     if (editingReportId) {
-        fetch('/api/report/' + editingReportId + '/update', { method: 'POST', body: fd })
-        .then(r => r.json())
-        .then(data => {
-            if (data.success) {
-                // Reload so the form + history stay consistent with the saved visit
-                location.reload();
-            } else {
-                alert('Error: ' + (data.message || ''));
-                btn.disabled = false;
-                btn.innerHTML = '<i class="fas fa-save"></i> Update Visit';
-            }
-        })
-        .catch(() => {
-            alert('Network error');
-            btn.disabled = false;
-            btn.innerHTML = '<i class="fas fa-save"></i> Update Visit';
-        });
+        const fd = new FormData();
+        Object.keys(d).forEach(k => { if (k !== 'p_id') fd.append(k, d[k]); });
+        try {
+            const r = await fetch('/api/report/' + editingReportId + '/update',
+                                  { method: 'POST', body: fd });
+            const data = await r.json();
+            if (data.success) { location.reload(); return; }
+            alert('Error: ' + (data.message || ''));
+        } catch (e) {
+            Offline.showToast('You appear to be offline. Your changes are kept in the form — reconnect and save again.', 'warning');
+        }
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-save"></i> Update Visit';
         return;
     }
 
-    fetch('/api/patient/' + patientId + '/report', { method: 'POST', body: fd })
-    .then(r => r.json())
-    .then(data => {
-        if (data.success) {
-            const list  = document.getElementById('historyList');
-            const noMsg = document.getElementById('noVisitsMsg');
-            if (noMsg) noMsg.remove();
-            list.querySelectorAll('.new-entry').forEach(e => e.classList.remove('new-entry'));
+    // New visit → store locally first, sync when possible.
+    let res;
+    if (pendingVisitUuid) {
+        res = await Offline.updatePending(pendingVisitUuid, 'report', '/api/sync', d);
+    } else {
+        res = await Offline.saveOffline('report', '/api/sync', d);
+    }
 
-            const rId    = data.report_id || '';
-            const dateStr = new Date(date).toLocaleDateString('en-IN', {day:'2-digit', month:'short', year:'numeric'});
-            const payBadges = `<span class="pay-badge pay-${payType}">${payType==='online'?'Online':'Cash'}</span>`
-                            + `<span class="pay-badge pay-${payStat}">${payStat==='remaining'?'Due':'Paid'}</span>`;
-            const amtHtml   = amt > 0   ? `<div class="h-amt">₹${escHtml(String(amt))} ${payBadges}</div>` : '';
-            const notesHtml = notes     ? `<div class="h-notes"><i class="fas fa-sticky-note"></i> ${escHtml(notes)}</div>` : '';
-            const repHtml   = repNotes  ? `<div class="h-notes"><i class="fas fa-flask"></i> ${escHtml(repNotes)}</div>` : '';
-            const medsDisp  = medicins  ? escHtml(medicins) : '—';
+    if (res.synced) {
+        pendingVisitUuid = null;
+        const rId = (res.result && (res.result.report_id || res.result.server_id)) || '';
+        // Drop the optimistic "pending" row if there was one.
+        const stale = document.getElementById('hitem-pending-' + res.uuid);
+        if (stale) stale.remove();
+        renderVisitItem(rId, d, false);
 
-            const el = document.createElement('div');
-            el.className = 'h-item new-entry';
-            el.id = 'hitem-' + rId;
-            el.innerHTML = `
-                <div class="h-num">#${rId}</div>
-                <div class="h-date"><i class="fas fa-calendar-day"></i> ${dateStr}</div>
-                <div class="h-meds">${medsDisp}</div>
-                ${notesHtml}
-                ${repHtml}
-                ${amtHtml}
-                <div class="h-action-btns">
-                    <a href="/invoice/${rId}" target="_blank" class="h-inv-btn"><i class="fas fa-file-invoice"></i> Invoice</a>
-                    <button class="h-edit-btn" onclick="toggleHistEdit(${rId})"><i class="fas fa-pen"></i> Edit</button>
-                </div>
-                <div class="h-edit-form" id="hedit-${rId}">
-                    <div class="h-edit-row">
-                        <input type="date" class="h-edit-input" id="he-date-${rId}" value="${escHtml(date)}">
-                        <input type="number" class="h-edit-input" id="he-amt-${rId}" placeholder="₹ Amount" value="${escHtml(String(amt))}">
-                    </div>
-                    <textarea class="h-edit-input" id="he-meds-${rId}" rows="2" placeholder="Medicines..." style="margin-bottom:5px;">${escHtml(medicins)}</textarea>
-                    <textarea class="h-edit-input" id="he-notes-${rId}" rows="2" placeholder="Notes (optional)..." style="margin-bottom:5px;">${escHtml(notes)}</textarea>
-                    <textarea class="h-edit-input" id="he-repnotes-${rId}" rows="2" placeholder="Reports - Notes (optional)..." style="margin-bottom:6px;">${escHtml(repNotes)}</textarea>
-                    <div class="h-edit-actions">
-                        <button class="h-save-btn" onclick="saveHistEdit(${rId})"><i class="fas fa-save"></i> Save</button>
-                        <button class="h-cancel-btn" onclick="toggleHistEdit(${rId})">Cancel</button>
-                    </div>
-                </div>`;
-            list.prepend(el);
+        // This visit is now today's in-progress report — keep editing it.
+        editingReportId = String(rId);
+        const editIdInput = document.getElementById('editingReportId');
+        if (editIdInput) editIdInput.value = editingReportId;
 
-            const badge = document.getElementById('visitBadge');
-            badge.textContent = ((parseInt(badge.textContent) || 0) + 1) + ' total';
+        ok.style.display = 'block';
+        setTimeout(() => ok.style.display = 'none', 3000);
+        const finishBtn = document.getElementById('finishConsultBtn');
+        if (finishBtn) finishBtn.style.display = 'block';
+    } else if (res.queued) {
+        pendingVisitUuid = res.uuid;
+        renderVisitItem(res.uuid, d, true);
+        Offline.showToast('Data saved locally and will sync automatically when online.', 'info');
+        const finishBtn = document.getElementById('finishConsultBtn');
+        if (finishBtn) finishBtn.style.display = 'block';
+    } else {
+        alert('Error: ' + (res.error || 'Could not save visit'));
+    }
 
-            // This visit is now today's in-progress report — keep editing it
-            // (a further save updates the same row instead of duplicating).
-            editingReportId = String(rId);
-            const editIdInput = document.getElementById('editingReportId');
-            if (editIdInput) editIdInput.value = editingReportId;
-
-            ok.style.display = 'block';
-            setTimeout(() => ok.style.display = 'none', 3000);
-            // Reveal the finish button so the doctor can complete the visit
-            const finishBtn = document.getElementById('finishConsultBtn');
-            if (finishBtn) finishBtn.style.display = 'block';
-        } else {
-            alert('Error: ' + (data.message || ''));
-        }
-    })
-    .catch(() => alert('Network error'))
-    .finally(() => { btn.disabled = false; btn.innerHTML = '<i class="fas fa-save"></i> ' + (editingReportId ? 'Update Visit' : 'Save Visit'); });
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fas fa-save"></i> ' + (editingReportId ? 'Update Visit' : 'Save Visit');
 }
+
+// Background sync finished while this page is open → mark any pending rows synced.
+window.addEventListener('outbox:synced', function (e) {
+    if (!e.detail || !e.detail.synced) return;
+    document.querySelectorAll('[id^="hitem-pending-"]').forEach(function (el) {
+        const num = el.querySelector('.h-num');
+        if (num) { num.style.color = '#198754'; num.innerHTML = '<i class="fas fa-check"></i> Synced'; }
+    });
+    pendingVisitUuid = null;
+    Offline.showToast('Saved visit synced to server.', 'success');
+});
 
 // ── History edit ──
 function toggleHistEdit(id) {
