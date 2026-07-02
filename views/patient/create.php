@@ -49,21 +49,71 @@ $page_title = 'Add Patient - Dr. Feelgood';
 
                     <div class="row">
                         <div class="col-md-6 mb-3">
+                            <label class="form-label">Age</label>
+                            <input type="number" class="form-control" name="age" min="0" max="150">
+                        </div>
+                        <div class="col-md-6 mb-3">
                             <label class="form-label">Gender</label>
                             <select class="form-select" name="gender">
                                 <option value="">Select Gender</option>
                                 <option value="M">Male</option>
                                 <option value="F">Female</option>
-                                <option value="O">Other</option>
                             </select>
                         </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Marital Status</label>
+                            <select class="form-select" name="mrg_status">
+                                <option value="">-- Select --</option>
+                                <option value="S">Single</option>
+                                <option value="M">Married</option>
+                                <option value="D">Divorced</option>
+                                <option value="W">Widowed</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Diet</label>
+                            <select class="form-select" name="veg">
+                                <option value="">-- Select --</option>
+                                <option value="V">Vegetarian</option>
+                                <option value="NV">Non-Vegetarian</option>
+                                <option value="EV">Eggetarian</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Religion</label>
+                            <input type="text" class="form-control" name="religion">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Referred By</label>
+                            <input type="text" class="form-control" name="refered_by">
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Occupation</label>
+                            <input type="text" class="form-control" name="occupation">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Education</label>
+                            <input type="text" class="form-control" name="education">
+                        </div>
+                    </div>
+
+                    <div class="row">
                         <div class="col-md-6 mb-3">
                             <label class="form-label">Patient ID</label>
                             <input type="text" class="form-control" name="patient_id" placeholder="Auto-generated if left empty">
                         </div>
                     </div>
 
-                    <div class mb-3">
+                    <div class="mb-3">
                         <label class="form-label">Chief Complaint</label>
                         <textarea class="form-control" name="chief" rows="3" placeholder="Main reason for visit..."></textarea>
                     </div>

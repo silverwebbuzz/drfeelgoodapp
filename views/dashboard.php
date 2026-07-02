@@ -135,6 +135,7 @@ $tableId     = 'dashQueueTable';
             </span>
             <a href="/queue" class="btn btn-secondary btn-sm"><i class="fas fa-expand-alt"></i> All Appointments</a>
             <a href="/walkin" class="btn btn-primary btn-sm"><i class="fas fa-plus"></i> Walk-in</a>
+            <a href="/patient/create" class="btn btn-success btn-sm"><i class="fas fa-user-plus"></i> New Patient</a>
         </div>
     </div>
     <div class="card-body" style="padding:0;">

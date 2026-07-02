@@ -59,19 +59,10 @@ ob_start();
         </div>
     </div>
 
-    <!-- Date + Follow-up -->
-    <div class="walkin-2col mb-3">
-        <div>
-            <label class="form-label">Date</label>
-            <input type="date" name="appt_date" id="apptDate" class="form-control" value="<?php echo date('Y-m-d'); ?>">
-        </div>
-        <div>
-            <label class="form-label">Visit Type</label>
-            <select name="is_followup" class="form-control">
-                <option value="0">New Patient / New Case</option>
-                <option value="1">Follow-up</option>
-            </select>
-        </div>
+    <!-- Date -->
+    <div class="mb-3">
+        <label class="form-label">Date</label>
+        <input type="date" name="appt_date" id="apptDate" class="form-control" value="<?php echo date('Y-m-d'); ?>">
     </div>
 
     <!-- Slot picker -->

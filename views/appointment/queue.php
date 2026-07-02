@@ -115,6 +115,7 @@ $multiDay = ($view !== 'today');
         <?php endif; ?>
 
         <a href="/walkin" class="btn btn-primary btn-sm"><i class="fas fa-plus"></i> Walk-in</a>
+        <a href="/patient/create" class="btn btn-success btn-sm"><i class="fas fa-user-plus"></i> New Patient</a>
     </div>
 </div>
 
