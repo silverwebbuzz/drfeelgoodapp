@@ -54,35 +54,117 @@ ob_start();
     <div style="background:#f0fdf4;border:1px solid #bbf7d0;color:#15803d;border-radius:6px;padding:8px 12px;font-size:12px;margin-bottom:12px;">
         <i class="fas fa-user-plus"></i> Registering a <strong>new patient</strong> and booking their appointment together.
     </div>
-    <?php endif; ?>
 
-    <!-- Name + Phone for unregistered -->
+    <!-- ── Full New Patient registration fields ── -->
     <div class="walkin-2col mb-3">
-        <div id="nameRow">
-            <label class="form-label">Patient Name<?php echo $newMode ? ' *' : ''; ?></label>
-            <input type="text" name="patient_name" id="patientNameInput" class="form-control" placeholder="Full name"<?php echo $newMode ? ' required' : ''; ?>>
+        <div>
+            <label class="form-label">First Name *</label>
+            <input type="text" name="fname" class="form-control" placeholder="First name" required>
         </div>
-        <div id="phoneRow">
-            <label class="form-label">Phone<?php echo $newMode ? ' *' : ''; ?></label>
-            <input type="text" name="patient_phone" id="patientPhoneInput" class="form-control" placeholder="Contact number"<?php echo $newMode ? ' required' : ''; ?>>
+        <div>
+            <label class="form-label">Last Name</label>
+            <input type="text" name="lname" class="form-control" placeholder="Last name">
         </div>
     </div>
-
-    <!-- Extra new-patient demographics (optional) -->
-    <div class="walkin-2col mb-3" id="newPatientExtra" style="<?php echo $newMode ? '' : 'display:none;'; ?>">
+    <div class="walkin-2col mb-3">
+        <div id="phoneRow">
+            <label class="form-label">Contact Number *</label>
+            <input type="text" name="patient_phone" id="patientPhoneInput" class="form-control" placeholder="Contact number" required>
+        </div>
+        <div>
+            <label class="form-label">Date of Birth</label>
+            <input type="date" name="dob" class="form-control">
+        </div>
+    </div>
+    <div class="walkin-2col mb-3">
         <div>
             <label class="form-label">Age</label>
-            <input type="number" name="patient_age" id="patientAgeInput" class="form-control" placeholder="Age" min="0" max="150">
+            <input type="number" name="age" id="patientAgeInput" class="form-control" placeholder="Age" min="0" max="150">
         </div>
         <div>
             <label class="form-label">Gender</label>
-            <select name="patient_gender" id="patientGenderInput" class="form-control">
+            <select name="gender" id="patientGenderInput" class="form-control">
                 <option value="">-- Select --</option>
                 <option value="M">Male</option>
                 <option value="F">Female</option>
             </select>
         </div>
     </div>
+    <div class="walkin-2col mb-3">
+        <div>
+            <label class="form-label">Marital Status</label>
+            <select name="mrg_status" class="form-control">
+                <option value="">-- Select --</option>
+                <option value="S">Single</option>
+                <option value="M">Married</option>
+                <option value="D">Divorced</option>
+                <option value="W">Widowed</option>
+            </select>
+        </div>
+        <div>
+            <label class="form-label">Diet</label>
+            <select name="veg" class="form-control">
+                <option value="">-- Select --</option>
+                <option value="V">Vegetarian</option>
+                <option value="NV">Non-Vegetarian</option>
+                <option value="EV">Eggetarian</option>
+            </select>
+        </div>
+    </div>
+    <div class="walkin-2col mb-3">
+        <div>
+            <label class="form-label">Religion</label>
+            <input type="text" name="religion" class="form-control">
+        </div>
+        <div>
+            <label class="form-label">Referred By</label>
+            <input type="text" name="refered_by" class="form-control">
+        </div>
+    </div>
+    <div class="walkin-2col mb-3">
+        <div>
+            <label class="form-label">Occupation</label>
+            <input type="text" name="occupation" class="form-control">
+        </div>
+        <div>
+            <label class="form-label">Education</label>
+            <input type="text" name="education" class="form-control">
+        </div>
+    </div>
+    <div class="walkin-2col mb-3">
+        <div>
+            <label class="form-label">Address</label>
+            <input type="text" name="address" class="form-control">
+        </div>
+        <div>
+            <label class="form-label">City</label>
+            <input type="text" name="city" class="form-control" value="Ahmedabad">
+        </div>
+    </div>
+    <div class="walkin-2col mb-3">
+        <div>
+            <label class="form-label">State</label>
+            <input type="text" name="state" class="form-control" value="Gujarat">
+        </div>
+        <div>
+            <label class="form-label">ZIP Code</label>
+            <input type="text" name="zip" class="form-control">
+        </div>
+    </div>
+
+    <?php else: ?>
+    <!-- Name + Phone for unregistered walk-in -->
+    <div class="walkin-2col mb-3">
+        <div id="nameRow">
+            <label class="form-label">Patient Name</label>
+            <input type="text" name="patient_name" id="patientNameInput" class="form-control" placeholder="Full name">
+        </div>
+        <div id="phoneRow">
+            <label class="form-label">Phone</label>
+            <input type="text" name="patient_phone" id="patientPhoneInput" class="form-control" placeholder="Contact number">
+        </div>
+    </div>
+    <?php endif; ?>
 
     <!-- Date -->
     <div class="mb-3">
@@ -153,13 +235,17 @@ ob_start();
 
 <script>
 // ── Patient search ────────────────────────────────────────────────────────────
+// The search UI is absent in New Patient mode — guard so this script still runs.
 let searchTimeout;
-document.getElementById('searchInput').addEventListener('input', function() {
-    clearTimeout(searchTimeout);
-    const q = this.value.trim();
-    if (q.length < 2) { hideResults(); return; }
-    searchTimeout = setTimeout(() => searchPatients(q), 300);
-});
+const searchInputEl = document.getElementById('searchInput');
+if (searchInputEl) {
+    searchInputEl.addEventListener('input', function() {
+        clearTimeout(searchTimeout);
+        const q = this.value.trim();
+        if (q.length < 2) { hideResults(); return; }
+        searchTimeout = setTimeout(() => searchPatients(q), 300);
+    });
+}
 
 function searchPatients(q) {
     fetch('/api/patient/search?q=' + encodeURIComponent(q))
@@ -191,13 +277,16 @@ function selectPatient(id, name, phone) {
 }
 
 function clearPatient() {
-    document.getElementById('patientId').value = '';
-    document.getElementById('patientNameInput').value = '';
-    document.getElementById('patientPhoneInput').value = '';
-    document.getElementById('selectedPatient').style.display = 'none';
-    document.getElementById('searchInput').value = '';
-    document.getElementById('nameRow').style.opacity = '1';
-    document.getElementById('phoneRow').style.opacity = '1';
+    const set = (id, v) => { const el = document.getElementById(id); if (el) el.value = v; };
+    const show = (id, d) => { const el = document.getElementById(id); if (el) el.style.display = d; };
+    const op = (id, v) => { const el = document.getElementById(id); if (el) el.style.opacity = v; };
+    set('patientId', '');
+    set('patientNameInput', '');
+    set('patientPhoneInput', '');
+    show('selectedPatient', 'none');
+    set('searchInput', '');
+    op('nameRow', '1');
+    op('phoneRow', '1');
     hideResults();
 }
 
@@ -317,7 +406,10 @@ document.getElementById('walkinForm').addEventListener('submit', function(e) {
     .then(data => {
         if (data.success) {
             document.getElementById('walkinForm').style.display = 'none';
-            document.getElementById('tokenName').textContent = fd.get('patient_name') || 'Patient';
+            const shownName = fd.get('patient_name')
+                || ((fd.get('fname') || '') + ' ' + (fd.get('lname') || '')).trim()
+                || 'Patient';
+            document.getElementById('tokenName').textContent = shownName;
             const slot = fd.get('slot_time');
             document.getElementById('tokenSlot').textContent = slot ? 'Slot: ' + to12(slot) : 'Walk-in (no slot)';
             // Show patient link if auto-created

@@ -65,19 +65,33 @@ class AppointmentController {
                 $data['patient_phone'] = self::cleanPhone($patient['contact_no'] ?? '');
                 $data['is_new_patient'] = 0;
             } else {
-                // New patient — auto-create basic record so doctor can access detail page
-                $name  = trim($data['patient_name'] ?? '');
+                // New patient — auto-create a record so the doctor can open the detail page.
                 $phone = self::cleanPhone($data['patient_phone'] ?? '');
                 $data['patient_phone'] = $phone;
                 $chief = trim($data['chief_complaint'] ?? '');
-                if ($name) {
-                    $newId = $this->patientModel->createQuick($name, $phone, $chief, [
-                        'age'    => $data['patient_age']    ?? '',
-                        'gender' => $data['patient_gender'] ?? '',
-                    ]);
+
+                if (!empty(trim($data['fname'] ?? ''))) {
+                    // Full "New Patient" registration — all demographic fields provided.
+                    $pdata = array_intersect_key($data, array_flip([
+                        'fname','lname','dob','age','gender','mrg_status','veg','religion',
+                        'refered_by','occupation','education','address','city','state','zip',
+                    ]));
+                    $pdata['contact_no'] = $phone;
+                    if ($chief !== '') $pdata['chief'] = $chief;
+                    $newId = $this->patientModel->create($pdata);
                     $data['patient_id']     = $newId;
+                    $data['patient_name']   = trim(($pdata['fname'] ?? '') . ' ' . ($pdata['lname'] ?? ''));
                     $data['is_new_patient'] = 1;
                 } else {
+                    // Quick unregistered walk-in — only a name (+ optional age/gender).
+                    $name = trim($data['patient_name'] ?? '');
+                    if ($name) {
+                        $newId = $this->patientModel->createQuick($name, $phone, $chief, [
+                            'age'    => $data['patient_age']    ?? '',
+                            'gender' => $data['patient_gender'] ?? '',
+                        ]);
+                        $data['patient_id']     = $newId;
+                    }
                     $data['is_new_patient'] = 1;
                 }
             }

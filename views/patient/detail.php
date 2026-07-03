@@ -1050,12 +1050,17 @@ document.addEventListener('mousedown', (e) => {
     }
 });
 
+<?php if ($canVisit): ?>
 // Main visit form — seed from the in-progress visit (structured rows or names).
+// Only initialised for roles that see the visit form (doctor / asst_doctor);
+// the target elements don't exist for reception, which would throw and break
+// the rest of this script (including patient-info editing).
 const MedRows = createMedRows({
     rowsEl: 'medRows', totalEl: 'medRowsTotal',
     namesEl: 'reportMedicins', detailsEl: 'reportMedicineDetails', amtEl: 'reportAmt'
 });
-MedRows.seed(<?php echo json_encode($seedRows); ?>);
+MedRows.seed(<?php echo json_encode($seedRows ?? []); ?>);
+<?php endif; ?>
 
 // Per-history-item medicine controllers, seeded lazily from each visit's saved rows.
 <?php

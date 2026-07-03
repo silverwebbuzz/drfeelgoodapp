@@ -143,7 +143,7 @@
             <div class="logo">
                 <img src="/assets/logo/app-logo.png" alt="Dr. Feelgood">
             </div>
-            <h1>Dr. Feelgood</h1>
+            <h1>Dr. Feelgood`s</h1>
             <p>Clinic Management System</p>
         </div>
 
