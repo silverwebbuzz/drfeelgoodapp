@@ -38,6 +38,8 @@ function fmtName($f, $l) {
     // Define role/permission here so it's available throughout the whole view
     $viewerRole = $_SESSION['role'] ?? 'doctor';
     $canVisit   = in_array($viewerRole, ['doctor', 'asst_doctor']);
+    // Reception may edit patient demographics/information, but NOT visits or history.
+    $canEditInfo = in_array($viewerRole, ['doctor', 'asst_doctor', 'reception']);
 ?>
 
 <style>
@@ -408,7 +410,7 @@ $finishApptId = $apptId ?: (int)($activeAppt['id'] ?? 0);
                 <strong>Patient Information</strong>
             </span>
             <div style="display:flex;gap:8px;align-items:center;">
-                <?php if ($canVisit): ?>
+                <?php if ($canEditInfo): ?>
                 <button class="edit-btn-sm" id="infoEditBtn" onclick="event.stopPropagation();toggleInfoEdit()">
                     <i class="fas fa-edit"></i> Edit
                 </button>

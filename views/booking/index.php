@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Book Appointment – Dr. Feelgood</title>
+    <title>Book Appointment – Dr. Feelgood's</title>
     <link rel="icon" type="image/png" href="/assets/logo/favicon-32.png">
     <link rel="apple-touch-icon" href="/assets/logo/apple-touch-icon.png">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -104,7 +104,7 @@
 <div class="booking-card">
     <div class="booking-header">
         <h1><i class="fas fa-calendar-plus"></i> Book Appointment</h1>
-        <p>Dr. Feelgood Clinic &mdash; Online Booking</p>
+        <p>Dr. Feelgood`s Clinic &mdash; Online Booking</p>
     </div>
     <div class="booking-body">
 

@@ -71,7 +71,10 @@ class AppointmentController {
                 $data['patient_phone'] = $phone;
                 $chief = trim($data['chief_complaint'] ?? '');
                 if ($name) {
-                    $newId = $this->patientModel->createQuick($name, $phone, $chief);
+                    $newId = $this->patientModel->createQuick($name, $phone, $chief, [
+                        'age'    => $data['patient_age']    ?? '',
+                        'gender' => $data['patient_gender'] ?? '',
+                    ]);
                     $data['patient_id']     = $newId;
                     $data['is_new_patient'] = 1;
                 } else {

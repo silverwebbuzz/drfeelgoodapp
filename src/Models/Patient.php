@@ -144,7 +144,7 @@ class Patient extends BaseModel {
      * Quick-create a minimal patient record from appointment data (name + phone only)
      * Used when walk-in or booking patient is not in the system yet
      */
-    public function createQuick($name, $phone, $chief = '') {
+    public function createQuick($name, $phone, $chief = '', $extra = []) {
         $parts = explode(' ', trim($name), 2);
         $fname = $parts[0] ?? $name;
         $lname = $parts[1] ?? '';
@@ -158,6 +158,14 @@ class Patient extends BaseModel {
             'dor'        => date('Y-m-d'),
         ];
         if ($chief !== '') $data['chief'] = $chief;
+
+        // Optional demographics captured at booking time (New Patient flow)
+        $allowedExtra = ['age', 'gender', 'dob'];
+        foreach ($allowedExtra as $k) {
+            if (isset($extra[$k]) && trim((string)$extra[$k]) !== '') {
+                $data[$k] = $extra[$k];
+            }
+        }
 
         $id = $this->insert($data); // gets MySQL auto-increment id
 

@@ -20,6 +20,33 @@ if (defined('DEBUG_MODE') && DEBUG_MODE) {
 }
 ini_set('log_errors', 1); // Always log errors
 
+// ── Session hardening ──────────────────────────────────────────────────────
+// Keep users logged in for the full SESSION_TIMEOUT window. On shared hosting
+// the global session GC (and a short session.gc_maxlifetime) can wipe session
+// files after only a few minutes — the usual cause of "logged out automatically
+// after a few minutes". Using a private save path + a matching gc lifetime and
+// cookie lifetime keeps the session alive for the intended duration.
+$sessionLifetime = defined('SESSION_TIMEOUT') ? SESSION_TIMEOUT : 3600;
+$sessionPath = __DIR__ . '/db/sessions';
+if (!is_dir($sessionPath)) {
+    @mkdir($sessionPath, 0700, true);
+    // Block web access to session files if this dir ever sits under the docroot
+    @file_put_contents($sessionPath . '/.htaccess', "Require all denied\nDeny from all\n");
+}
+if (is_dir($sessionPath) && is_writable($sessionPath)) {
+    session_save_path($sessionPath);
+}
+// Extend server-side session lifetime so the session file isn't garbage-collected
+// early. Keep the cookie as a browser-session cookie (lifetime 0) — the sliding
+// SESSION_TIMEOUT check in AuthController handles inactivity logout instead.
+ini_set('session.gc_maxlifetime', (string)$sessionLifetime);
+session_set_cookie_params([
+    'lifetime' => 0,
+    'path'     => '/',
+    'httponly' => true,
+    'samesite' => 'Lax',
+]);
+
 // Start session
 session_start();
 

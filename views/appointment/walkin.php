@@ -1,5 +1,8 @@
 <?php
-$page_title = 'Book Appointment';
+// New Patient mode — reached from the "New Patient" button on Today's Appointments.
+// Captures fuller new-patient details AND books today's appointment in one step.
+$newMode = ($_GET['new'] ?? '') === '1';
+$page_title = $newMode ? 'New Patient — Book Appointment' : 'Book Appointment';
 ob_start();
 ?>
 <style>
@@ -24,7 +27,7 @@ ob_start();
 </style>
 
 <div class="page-header" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
-    <h1 class="page-title" style="margin:0;">Book Appointment</h1>
+    <h1 class="page-title" style="margin:0;"><?php echo $newMode ? '<i class="fas fa-user-plus"></i> New Patient — Book Appointment' : 'Book Appointment'; ?></h1>
     <a href="/queue" class="btn btn-secondary btn-sm"><i class="fas fa-arrow-left"></i> Back to Queue</a>
 </div>
 
@@ -32,30 +35,52 @@ ob_start();
 <div class="card">
 <div class="card-body">
 
-<form id="walkinForm">
+<form id="walkinForm" data-new-mode="<?php echo $newMode ? '1' : '0'; ?>">
 
-    <!-- Patient lookup -->
-    <div class="mb-3">
+    <!-- Patient lookup (hidden in New Patient mode — the patient doesn't exist yet) -->
+    <div class="mb-3" id="searchBlock" style="<?php echo $newMode ? 'display:none;' : ''; ?>">
         <label class="form-label fw-semibold">Patient Search</label>
         <div style="display:flex;gap:8px;margin-bottom:6px;">
             <input type="text" id="searchInput" class="form-control" placeholder="Search by name or phone..." autocomplete="off">
             <button type="button" class="btn btn-secondary btn-sm" onclick="clearPatient()">Clear</button>
         </div>
         <div id="patientResults"></div>
-        <input type="hidden" name="patient_id" id="patientId">
         <div id="selectedPatient" style="display:none;padding:7px 12px;background:#f0f9ff;border:1px solid #bae6fd;border-radius:6px;font-size:12px;margin-top:4px;"></div>
         <div style="font-size:11px;color:#6b7280;margin-top:4px;">Leave empty for new / unregistered patient</div>
     </div>
+    <input type="hidden" name="patient_id" id="patientId">
+
+    <?php if ($newMode): ?>
+    <div style="background:#f0fdf4;border:1px solid #bbf7d0;color:#15803d;border-radius:6px;padding:8px 12px;font-size:12px;margin-bottom:12px;">
+        <i class="fas fa-user-plus"></i> Registering a <strong>new patient</strong> and booking their appointment together.
+    </div>
+    <?php endif; ?>
 
     <!-- Name + Phone for unregistered -->
     <div class="walkin-2col mb-3">
         <div id="nameRow">
-            <label class="form-label">Patient Name</label>
-            <input type="text" name="patient_name" id="patientNameInput" class="form-control" placeholder="Full name">
+            <label class="form-label">Patient Name<?php echo $newMode ? ' *' : ''; ?></label>
+            <input type="text" name="patient_name" id="patientNameInput" class="form-control" placeholder="Full name"<?php echo $newMode ? ' required' : ''; ?>>
         </div>
         <div id="phoneRow">
-            <label class="form-label">Phone</label>
-            <input type="text" name="patient_phone" id="patientPhoneInput" class="form-control" placeholder="Contact number">
+            <label class="form-label">Phone<?php echo $newMode ? ' *' : ''; ?></label>
+            <input type="text" name="patient_phone" id="patientPhoneInput" class="form-control" placeholder="Contact number"<?php echo $newMode ? ' required' : ''; ?>>
+        </div>
+    </div>
+
+    <!-- Extra new-patient demographics (optional) -->
+    <div class="walkin-2col mb-3" id="newPatientExtra" style="<?php echo $newMode ? '' : 'display:none;'; ?>">
+        <div>
+            <label class="form-label">Age</label>
+            <input type="number" name="patient_age" id="patientAgeInput" class="form-control" placeholder="Age" min="0" max="150">
+        </div>
+        <div>
+            <label class="form-label">Gender</label>
+            <select name="patient_gender" id="patientGenderInput" class="form-control">
+                <option value="">-- Select --</option>
+                <option value="M">Male</option>
+                <option value="F">Female</option>
+            </select>
         </div>
     </div>
 
@@ -90,7 +115,7 @@ ob_start();
     <div id="formMsg" style="display:none;padding:8px 12px;border-radius:6px;font-size:12px;margin-bottom:10px;"></div>
 
     <div style="display:flex;gap:8px;">
-        <button type="submit" class="btn btn-primary"><i class="fas fa-calendar-check"></i> Book</button>
+        <button type="submit" class="btn btn-primary"><i class="fas fa-calendar-check"></i> <?php echo $newMode ? 'Register &amp; Book' : 'Book'; ?></button>
         <a href="/queue" class="btn btn-secondary">Cancel</a>
     </div>
 </form>
