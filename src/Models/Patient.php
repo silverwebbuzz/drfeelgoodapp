@@ -249,6 +249,15 @@ class Patient extends BaseModel {
             }
         }
 
+        // Convert empty ENUM fields to NULL — MySQL truncates '' for ENUM columns
+        // ("Data truncated for column 'gender'"), so store NULL when left blank.
+        $enumFields = ['gender', 'mrg_status', 'veg'];
+        foreach ($enumFields as $field) {
+            if (array_key_exists($field, $data) && trim((string)$data[$field]) === '') {
+                $data[$field] = null;
+            }
+        }
+
         $this->update($id, $data);
         return true;
     }
