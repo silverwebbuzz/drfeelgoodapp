@@ -141,6 +141,17 @@ class Patient extends BaseModel {
      * Add new patient
      */
     /**
+     * Next business patient_id = current highest patient_id + 1.
+     * Kept independent of the auto-increment row `id` so it continues the
+     * existing (imported) patient_id sequence, e.g. 15073 → 15074.
+     */
+    public function nextPatientId(): int {
+        $stmt = $this->query("SELECT MAX(patient_id) AS max_pid FROM {$this->table}");
+        $row  = $stmt->fetch(PDO::FETCH_ASSOC);
+        return (int)($row['max_pid'] ?? 0) + 1;
+    }
+
+    /**
      * Quick-create a minimal patient record from appointment data (name + phone only)
      * Used when walk-in or booking patient is not in the system yet
      */
@@ -149,9 +160,9 @@ class Patient extends BaseModel {
         $fname = $parts[0] ?? $name;
         $lname = $parts[1] ?? '';
 
-        // Insert with patient_id = 0 as placeholder, then update to match auto-increment id
+        // Continue the business patient_id sequence (highest + 1)
         $data = [
-            'patient_id' => 0,
+            'patient_id' => $this->nextPatientId(),
             'fname'      => $fname,
             'lname'      => $lname,
             'contact_no' => $phone,
@@ -167,15 +178,7 @@ class Patient extends BaseModel {
             }
         }
 
-        $id = $this->insert($data); // gets MySQL auto-increment id
-
-        // Update patient_id to match the row id — guaranteed unique, no collision
-        $this->query(
-            "UPDATE {$this->table} SET patient_id = ? WHERE id = ?",
-            [$id, $id]
-        );
-
-        return $id;
+        return $this->insert($data); // gets MySQL auto-increment id
     }
 
     public function create($data) {
@@ -197,9 +200,8 @@ class Patient extends BaseModel {
             }
         }
 
-        // patient_id is an integer column — leave it out of the INSERT and set it
-        // to match the auto-increment id afterwards (guaranteed unique, no '' error).
-        // Honour a manually entered patient_id only if it's a real number.
+        // Honour a manually entered patient_id only if it's a real number,
+        // otherwise continue the business patient_id sequence (highest + 1).
         $manualId = isset($data['patient_id']) && trim((string)$data['patient_id']) !== ''
             ? (int)$data['patient_id'] : null;
 
@@ -209,21 +211,9 @@ class Patient extends BaseModel {
                     'education','occupation','refered_by','chief'];
         $data = array_intersect_key($data, array_flip($allowed));
 
-        // patient_id is NOT NULL with no default — insert a placeholder of 0, then
-        // update it to match the auto-increment id (guaranteed unique, no '' error).
-        $data['patient_id'] = $manualId ?? 0;
+        $data['patient_id'] = $manualId ?? $this->nextPatientId();
 
-        $id = $this->insert($data);
-
-        // No manual id supplied → make patient_id match the row id.
-        if ($manualId === null) {
-            $this->query(
-                "UPDATE {$this->table} SET patient_id = ? WHERE id = ?",
-                [$id, $id]
-            );
-        }
-
-        return $id;
+        return $this->insert($data);
     }
 
     /**
