@@ -613,6 +613,44 @@ $finishApptId = $apptId ?: (int)($activeAppt['id'] ?? 0);
                 <textarea id="reportChief" class="r-input" rows="5" placeholder="Main reason for visit / case notes..."><?php echo htmlspecialchars($p['chief'] ?? ''); ?></textarea>
             </div>
 
+            <?php
+                // Decode a report's medicines into [{name, amount}] rows: prefer the
+                // structured breakdown, fall back to comma-separated names.
+                $decodeMedRows = function ($report) {
+                    $rows = [];
+                    if (!$report) return $rows;
+                    $raw = $report['medicine_details'] ?? '';
+                    $decoded = $raw !== '' ? json_decode($raw, true) : null;
+                    if (is_array($decoded)) {
+                        foreach ($decoded as $d) {
+                            $nm = trim($d['name'] ?? '');
+                            if ($nm === '') continue;
+                            $rows[] = ['name' => $nm, 'amount' => (float)($d['amount'] ?? 0)];
+                        }
+                    }
+                    if (!$rows && trim($report['medicins'] ?? '') !== '') {
+                        foreach (array_filter(array_map('trim', explode(',', $report['medicins']))) as $nm) {
+                            $rows[] = ['name' => $nm, 'amount' => 0];
+                        }
+                    }
+                    return $rows;
+                };
+
+                // Editable rows = today's in-progress visit (when continuing one).
+                $seedRows = $decodeMedRows($todayReport);
+
+                // Read-only reference = the most recent PREVIOUS visit (the latest
+                // history entry that isn't the in-progress one). Shown locked so the
+                // doctor can see what was prescribed; not saved or counted again.
+                $prevReport = null;
+                foreach ($reports as $r) {
+                    if ($todayReport && (int)$r['id'] === (int)$todayReport['id']) continue;
+                    $prevReport = $r;
+                    break;
+                }
+                $prevRows = $decodeMedRows($prevReport);
+            ?>
+
             <!-- Medicine rows: each medicine with its own amount -->
             <div style="margin-bottom:12px;">
                 <label class="info-label" style="display:block;margin-bottom:4px;">
@@ -705,43 +743,6 @@ $finishApptId = $apptId ?: (int)($activeAppt['id'] ?? 0);
             <!-- Hidden fields: clean medicine names + structured name/amount rows -->
             <textarea id="reportMedicins" style="display:none;"></textarea>
             <input type="hidden" id="reportMedicineDetails" value="">
-            <?php
-                // Decode a report's medicines into [{name, amount}] rows: prefer the
-                // structured breakdown, fall back to comma-separated names.
-                $decodeMedRows = function ($report) {
-                    $rows = [];
-                    if (!$report) return $rows;
-                    $raw = $report['medicine_details'] ?? '';
-                    $decoded = $raw !== '' ? json_decode($raw, true) : null;
-                    if (is_array($decoded)) {
-                        foreach ($decoded as $d) {
-                            $nm = trim($d['name'] ?? '');
-                            if ($nm === '') continue;
-                            $rows[] = ['name' => $nm, 'amount' => (float)($d['amount'] ?? 0)];
-                        }
-                    }
-                    if (!$rows && trim($report['medicins'] ?? '') !== '') {
-                        foreach (array_filter(array_map('trim', explode(',', $report['medicins']))) as $nm) {
-                            $rows[] = ['name' => $nm, 'amount' => 0];
-                        }
-                    }
-                    return $rows;
-                };
-
-                // Editable rows = today's in-progress visit (when continuing one).
-                $seedRows = $decodeMedRows($todayReport);
-
-                // Read-only reference = the most recent PREVIOUS visit (the latest
-                // history entry that isn't the in-progress one). Shown locked so the
-                // doctor can see what was prescribed; not saved or counted again.
-                $prevReport = null;
-                foreach ($reports as $r) {
-                    if ($todayReport && (int)$r['id'] === (int)$todayReport['id']) continue;
-                    $prevReport = $r;
-                    break;
-                }
-                $prevRows = $decodeMedRows($prevReport);
-            ?>
 
             <!-- When set, Save updates this already-started visit instead of creating a new one -->
             <input type="hidden" id="editingReportId" value="<?php echo $todayReport ? (int)$todayReport['id'] : ''; ?>">
