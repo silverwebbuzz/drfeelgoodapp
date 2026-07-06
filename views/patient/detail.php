@@ -340,12 +340,19 @@ textarea.r-input { resize:vertical; }
 .med-prev-ref {
     background:var(--gray-50); border:1px dashed var(--gray-300);
     border-radius:8px; padding:8px 10px 4px; margin-bottom:10px;
+    max-height:260px; overflow-y:auto;
 }
 .med-prev-label {
     font-size:10px; font-weight:700; letter-spacing:.04em; text-transform:uppercase;
     color:var(--gray-400); margin-bottom:6px;
 }
 .med-prev-label i { color:var(--gray-400); }
+.med-prev-date {
+    font-size:11px; font-weight:700; color:var(--primary);
+    margin:8px 0 4px;
+}
+.med-prev-date:first-of-type { margin-top:2px; }
+.med-prev-date i { margin-right:4px; }
 .med-row-ro .r-input {
     background:var(--gray-100); color:var(--gray-500); cursor:default;
     border-color:var(--gray-200);
@@ -639,16 +646,16 @@ $finishApptId = $apptId ?: (int)($activeAppt['id'] ?? 0);
                 // Editable rows = today's in-progress visit (when continuing one).
                 $seedRows = $decodeMedRows($todayReport);
 
-                // Read-only reference = the most recent PREVIOUS visit (the latest
-                // history entry that isn't the in-progress one). Shown locked so the
-                // doctor can see what was prescribed; not saved or counted again.
-                $prevReport = null;
+                // Read-only reference = EVERY previous visit's medicines, grouped by
+                // visit date. Shown locked so the doctor can see the full prescribing
+                // history; not saved or counted again.
+                $prevGroups = [];
                 foreach ($reports as $r) {
                     if ($todayReport && (int)$r['id'] === (int)$todayReport['id']) continue;
-                    $prevReport = $r;
-                    break;
+                    $rows = $decodeMedRows($r);
+                    if (!$rows) continue;
+                    $prevGroups[] = ['date' => $r['date'] ?? '', 'rows' => $rows];
                 }
-                $prevRows = $decodeMedRows($prevReport);
             ?>
 
             <!-- Medicine rows: each medicine with its own amount -->
@@ -658,20 +665,23 @@ $finishApptId = $apptId ?: (int)($activeAppt['id'] ?? 0);
                     <span style="font-weight:400;color:var(--gray-400);margin-left:6px;">— add medicine &amp; amount, click "Add New" for more</span>
                 </label>
 
-                <?php if (!empty($prevRows)): ?>
-                <!-- Previous visit's medicines: locked reference, not saved or counted -->
+                <?php if (!empty($prevGroups)): ?>
+                <!-- Previous visits' medicines: locked reference, not saved or counted -->
                 <div class="med-prev-ref">
                     <div class="med-prev-label">
-                        <i class="fas fa-lock"></i> Previous visit — for reference only
+                        <i class="fas fa-lock"></i> Previous visits — for reference only
                     </div>
-                    <?php foreach ($prevRows as $pr): ?>
+                    <?php foreach ($prevGroups as $g): ?>
+                    <div class="med-prev-date"><i class="fas fa-calendar-day"></i> <?php echo htmlspecialchars(fmtDate($g['date'])); ?></div>
+                    <?php foreach ($g['rows'] as $pr): ?>
                     <div class="med-row med-row-ro">
                         <div class="med-row-name">
                             <input type="text" class="r-input med-name" value="<?php echo htmlspecialchars($pr['name']); ?>" readonly tabindex="-1">
                         </div>
                         <input type="number" class="r-input med-row-amt med-amt" value="<?php echo $pr['amount'] > 0 ? htmlspecialchars($pr['amount']) : ''; ?>" placeholder="0" readonly tabindex="-1">
-                        <span class="med-row-lock" title="From the previous visit"><i class="fas fa-lock"></i></span>
+                        <span class="med-row-lock" title="From a previous visit"><i class="fas fa-lock"></i></span>
                     </div>
+                    <?php endforeach; ?>
                     <?php endforeach; ?>
                 </div>
                 <?php endif; ?>

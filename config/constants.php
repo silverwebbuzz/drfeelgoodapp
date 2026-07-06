@@ -17,7 +17,7 @@ define('PUBLIC_PATH', APP_PATH . '/public');
 define('STORAGE_PATH', APP_PATH . '/storage');
 
 // Session Settings
-define('SESSION_TIMEOUT', 3600); // 1 hour in seconds
+define('SESSION_TIMEOUT', 86400); // 24 hours (full day) in seconds
 
 // Pagination
 define('ITEMS_PER_PAGE', 10);

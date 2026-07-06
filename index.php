@@ -37,11 +37,12 @@ if (is_dir($sessionPath) && is_writable($sessionPath)) {
     session_save_path($sessionPath);
 }
 // Extend server-side session lifetime so the session file isn't garbage-collected
-// early. Keep the cookie as a browser-session cookie (lifetime 0) — the sliding
-// SESSION_TIMEOUT check in AuthController handles inactivity logout instead.
+// early. Give the cookie the same lifetime so the login survives browser restarts
+// for the full day; the sliding SESSION_TIMEOUT check in AuthController still
+// handles inactivity logout.
 ini_set('session.gc_maxlifetime', (string)$sessionLifetime);
 session_set_cookie_params([
-    'lifetime' => 0,
+    'lifetime' => $sessionLifetime,
     'path'     => '/',
     'httponly' => true,
     'samesite' => 'Lax',
@@ -123,9 +124,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     error_log("POST data received: " . json_encode($_POST));
 }
 
-// Set default route
+// Set default route — logged-in users land on the dashboard, others on login
 if (empty($route)) {
-    $route = 'login';
+    $route = AuthController::isLoggedIn() ? 'dashboard' : 'login';
 }
 
 // Asst. Doctor is locked to the Appointments + consultation workflow
@@ -157,6 +158,11 @@ switch ($route) {
                 echo json_encode(['success' => false, 'message' => 'Login error: ' . $e->getMessage()]);
                 exit;
             }
+        }
+        // Already logged in? Skip the login form and go straight to the dashboard.
+        if (AuthController::isLoggedIn()) {
+            header('Location: /dashboard');
+            exit;
         }
         require __DIR__ . '/views/auth/login.php';
         break;

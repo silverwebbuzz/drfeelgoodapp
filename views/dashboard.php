@@ -134,7 +134,7 @@ $tableId     = 'dashQueueTable';
                 <span style="color:#9ca3af;font-weight:700;"><?php echo (int)($todayStats['completed'] ?? 0); ?></span> done
             </span>
             <a href="/queue" class="btn btn-secondary btn-sm"><i class="fas fa-expand-alt"></i> All Appointments</a>
-            <a href="/walkin" class="btn btn-primary btn-sm"><i class="fas fa-plus"></i> Walk-in</a>
+            <a href="/walkin" class="btn btn-primary btn-sm"><i class="fas fa-plus"></i> Walk-in / Old Case</a>
             <a href="/walkin?new=1" class="btn btn-success btn-sm"><i class="fas fa-user-plus"></i> New Patient</a>
         </div>
     </div>
