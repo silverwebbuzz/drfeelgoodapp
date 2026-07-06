@@ -153,17 +153,9 @@ ob_start();
     </div>
 
     <?php else: ?>
-    <!-- Name + Phone for unregistered walk-in -->
-    <div class="walkin-2col mb-3">
-        <div id="nameRow">
-            <label class="form-label">Patient Name</label>
-            <input type="text" name="patient_name" id="patientNameInput" class="form-control" placeholder="Full name">
-        </div>
-        <div id="phoneRow">
-            <label class="form-label">Phone</label>
-            <input type="text" name="patient_phone" id="patientPhoneInput" class="form-control" placeholder="Contact number">
-        </div>
-    </div>
+    <!-- Search-only walk-in: name & phone come from the selected patient, not manual entry -->
+    <input type="hidden" name="patient_name" id="patientNameInput">
+    <input type="hidden" name="patient_phone" id="patientPhoneInput">
     <?php endif; ?>
 
     <!-- Date -->
@@ -272,8 +264,6 @@ function selectPatient(id, name, phone) {
     document.getElementById('selectedPatient').style.display = 'block';
     document.getElementById('searchInput').value = name;
     hideResults();
-    document.getElementById('nameRow').style.opacity = '0.5';
-    document.getElementById('phoneRow').style.opacity = '0.5';
 }
 
 function clearPatient() {
@@ -400,6 +390,11 @@ function selectSlot(el, time) {
 // ── Form submit ───────────────────────────────────────────────────────────────
 document.getElementById('walkinForm').addEventListener('submit', function(e) {
     e.preventDefault();
+    // Search-only mode: a registered patient must be selected — no manual new patient here.
+    if (this.dataset.newMode !== '1' && !document.getElementById('patientId').value) {
+        showMsg('Please search and select a patient before booking.', 'danger');
+        return;
+    }
     const fd = new FormData(this);
     fetch('/api/appointment/walkin', { method:'POST', body: fd })
     .then(r => r.json())
