@@ -153,9 +153,21 @@ ob_start();
     </div>
 
     <?php else: ?>
-    <!-- Search-only walk-in: name & phone come from the selected patient, not manual entry -->
-    <input type="hidden" name="patient_name" id="patientNameInput">
-    <input type="hidden" name="patient_phone" id="patientPhoneInput">
+    <!-- Search-only walk-in: name, phone & ID come from the selected patient (read-only) -->
+    <div class="walkin-2col mb-3">
+        <div>
+            <label class="form-label">Patient Name</label>
+            <input type="text" name="patient_name" id="patientNameInput" class="form-control" placeholder="Select a patient above" readonly>
+        </div>
+        <div>
+            <label class="form-label">Phone</label>
+            <input type="text" name="patient_phone" id="patientPhoneInput" class="form-control" placeholder="—" readonly>
+        </div>
+    </div>
+    <div class="mb-3">
+        <label class="form-label">Patient ID</label>
+        <input type="text" id="patientCodeInput" class="form-control" placeholder="—" readonly>
+    </div>
     <?php endif; ?>
 
     <!-- Date -->
@@ -247,7 +259,8 @@ function searchPatients(q) {
         if (!data.success || !data.data.length) { el.style.display='none'; return; }
         el.innerHTML = data.data.slice(0,8).map(p => {
             const name = ((p.fname||'') + ' ' + (p.lname||'')).trim() || 'Unknown';
-            return `<div class="search-result-item" onclick="selectPatient(${p.id},'${name.replace(/'/g,"\\'")}','${(p.contact_no||'').replace(/'/g,"\\'")}')">
+            const pcode = (p.patient_id || p.id || '').toString().replace(/'/g,"\\'");
+            return `<div class="search-result-item" onclick="selectPatient(${p.id},'${name.replace(/'/g,"\\'")}','${(p.contact_no||'').replace(/'/g,"\\'")}','${pcode}')">
                 <strong>${name}</strong> <span style="color:#6b7280;">${p.contact_no||''}</span>
                 <span style="float:right;color:#9ca3af;">ID: ${p.patient_id||p.id}</span>
             </div>`;
@@ -256,11 +269,13 @@ function searchPatients(q) {
     });
 }
 
-function selectPatient(id, name, phone) {
+function selectPatient(id, name, phone, pcode) {
     document.getElementById('patientId').value = id;
     document.getElementById('patientNameInput').value = name;
     document.getElementById('patientPhoneInput').value = phone;
-    document.getElementById('selectedPatient').innerHTML = `<i class="fas fa-user-check" style="color:#16a34a;"></i> <strong>${name}</strong> &nbsp; ${phone}`;
+    const codeEl = document.getElementById('patientCodeInput');
+    if (codeEl) codeEl.value = pcode || '';
+    document.getElementById('selectedPatient').innerHTML = `<i class="fas fa-user-check" style="color:#16a34a;"></i> <strong>${name}</strong> &nbsp; ${phone}${pcode ? ' &nbsp; <span style="color:#6b7280;">ID: '+pcode+'</span>' : ''}`;
     document.getElementById('selectedPatient').style.display = 'block';
     document.getElementById('searchInput').value = name;
     hideResults();
@@ -273,10 +288,9 @@ function clearPatient() {
     set('patientId', '');
     set('patientNameInput', '');
     set('patientPhoneInput', '');
+    set('patientCodeInput', '');
     show('selectedPatient', 'none');
     set('searchInput', '');
-    op('nameRow', '1');
-    op('phoneRow', '1');
     hideResults();
 }
 

@@ -376,7 +376,7 @@ $finishApptId = $apptId ?: (int)($activeAppt['id'] ?? 0);
 <div class="pt-header">
     <div class="pt-avatar"><?php echo strtoupper(substr($p['fname']??'P',0,1)); ?></div>
     <div class="pt-header-info">
-        <h2><?php echo htmlspecialchars(fmtName($p['fname']??'',$p['lname']??'')); ?></h2>
+        <h2 id="ptHeaderName"><?php echo htmlspecialchars(fmtName($p['fname']??'',$p['lname']??'')); ?></h2>
         <div class="pt-meta">
             <span><i class="fas fa-id-badge"></i> ID: <?php echo htmlspecialchars($p['patient_id']??$p['id']); ?></span>
             <?php if(!empty($p['age'])&&$p['age']>0): ?>
@@ -428,6 +428,18 @@ $finishApptId = $apptId ?: (int)($activeAppt['id'] ?? 0);
             <!-- ══ CONTACT & DEMOGRAPHICS ══ -->
             <div class="info-section"><i class="fas fa-user"></i> Contact &amp; Demographics</div>
 
+            <div class="info-item">
+                <div class="info-label">First Name</div>
+                <div class="info-value" id="disp_fname"><?php echo htmlspecialchars(fmt($p['fname']??null)); ?></div>
+                <input type="text" class="field-edit-input edit-mode" name="fname"
+                    value="<?php echo htmlspecialchars($p['fname']??''); ?>" style="display:none;">
+            </div>
+            <div class="info-item">
+                <div class="info-label">Last Name</div>
+                <div class="info-value" id="disp_lname"><?php echo htmlspecialchars(fmt($p['lname']??null)); ?></div>
+                <input type="text" class="field-edit-input edit-mode" name="lname"
+                    value="<?php echo htmlspecialchars($p['lname']??''); ?>" style="display:none;">
+            </div>
             <div class="info-item">
                 <div class="info-label">Contact No.</div>
                 <div class="info-value" id="disp_contact_no">
@@ -1168,6 +1180,16 @@ function saveInfo(patientId) {
                 const fn = displayMap[el.name];
                 disp.innerHTML = fn ? fn(el.value) : (escHtml(el.value) || 'N/A');
             });
+            // Keep the page header (name + avatar) in sync when the name is edited
+            const fnameInput = document.querySelector('#infoGrid [name="fname"]');
+            const lnameInput = document.querySelector('#infoGrid [name="lname"]');
+            const headerEl = document.getElementById('ptHeaderName');
+            if (headerEl && fnameInput) {
+                const full = ((fnameInput.value || '') + ' ' + (lnameInput ? (lnameInput.value || '') : '')).trim();
+                headerEl.textContent = full || 'Patient';
+                const avatar = document.querySelector('.pt-avatar');
+                if (avatar) avatar.textContent = (fnameInput.value || 'P').charAt(0).toUpperCase();
+            }
             document.getElementById('infoSaveMsg').style.display = 'inline';
             setTimeout(() => { cancelInfoEdit(); }, 1200);
         } else {
