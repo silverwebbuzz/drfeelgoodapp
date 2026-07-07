@@ -162,6 +162,8 @@ $tableId     = 'dashQueueTable';
 $visited     = $visitedToday ?? [];
 $visitedSum  = 0;
 foreach ($visited as $vRow) { $visitedSum += (int)($vRow['amt'] ?? 0); }
+// Roles allowed to record a payment (mirrors /api/report/{id}/payment auth)
+$canRecordPay = in_array($_SESSION['role'] ?? 'doctor', ['reception', 'doctor', 'asst_doctor']);
 ?>
 <div class="card" style="margin-bottom:20px;">
     <div class="card-header" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
@@ -206,9 +208,18 @@ foreach ($visited as $vRow) { $visitedSum += (int)($vRow['amt'] ?? 0); }
                         <?php if (!empty($v['amt']) && (int)$v['amt'] > 0): ?>
                             ₹<?php echo number_format((int)$v['amt']); ?>
                             <?php $due = ($v['payment_status'] ?? 'paid') === 'remaining'; ?>
-                            <span style="font-size:9px;font-weight:700;padding:1px 6px;border-radius:10px;<?php echo $due ? 'background:#fef2f2;color:#dc2626;' : 'background:#f0fdf4;color:#16a34a;'; ?>">
-                                <?php echo $due ? 'Due' : 'Paid'; ?>
-                            </span>
+                            <?php if ($due && $canRecordPay && !empty($v['id'])): ?>
+                                <button type="button"
+                                        style="background:none;border:none;padding:0;cursor:pointer;"
+                                        title="Click to record payment"
+                                        onclick="openPayModal(<?php echo (int)$v['id']; ?>, <?php echo (int)$v['amt']; ?>, '<?php echo htmlspecialchars($v['payment_type'] ?? 'cash', ENT_QUOTES); ?>', '<?php echo htmlspecialchars(addslashes(dashFmtName($v['fname'] ?? '', $v['lname'] ?? '')), ENT_QUOTES); ?>')">
+                                    <span style="font-size:9px;font-weight:700;padding:1px 6px;border-radius:10px;background:#fef2f2;color:#dc2626;">Due</span>
+                                </button>
+                            <?php else: ?>
+                                <span style="font-size:9px;font-weight:700;padding:1px 6px;border-radius:10px;<?php echo $due ? 'background:#fef2f2;color:#dc2626;' : 'background:#f0fdf4;color:#16a34a;'; ?>">
+                                    <?php echo $due ? 'Due' : 'Paid'; ?>
+                                </span>
+                            <?php endif; ?>
                         <?php else: ?>
                             <span style="color:#d1d5db;">—</span>
                         <?php endif; ?>
