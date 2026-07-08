@@ -167,6 +167,11 @@ class Patient extends BaseModel {
             'lname'      => $lname,
             'contact_no' => $phone,
             'dor'        => date('Y-m-d'),
+            // Explicit NULL for ENUM columns so the INSERT never falls back to
+            // the column's invalid '' default ("Data truncated for column 'veg'").
+            'gender'     => null,
+            'mrg_status' => null,
+            'veg'        => null,
         ];
         if ($chief !== '') $data['chief'] = $chief;
 
@@ -195,6 +200,14 @@ class Patient extends BaseModel {
 
         // Convert empty date/numeric fields to NULL so MySQL doesn't get ''
         foreach (['dob', 'age'] as $field) {
+            if (isset($data[$field]) && trim((string)$data[$field]) === '') {
+                $data[$field] = null;
+            }
+        }
+
+        // Convert empty ENUM fields to NULL — MySQL truncates '' for ENUM columns
+        // ("Data truncated for column 'veg'"), so store NULL when left blank.
+        foreach (['gender', 'mrg_status', 'veg'] as $field) {
             if (isset($data[$field]) && trim((string)$data[$field]) === '') {
                 $data[$field] = null;
             }
