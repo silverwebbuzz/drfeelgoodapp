@@ -559,7 +559,8 @@ $finishApptId = $apptId ?: (int)($activeAppt['id'] ?? 0);
                     value="<?php echo htmlspecialchars(trim($p['zip']??'')); ?>" style="display:none;">
             </div>
 
-            <!-- ══ CLINICAL ══ -->
+            <!-- ══ CLINICAL ══ (clinical staff only — reception must not see case notes) -->
+            <?php if ($canVisit): ?>
             <div class="info-section"><i class="fas fa-notes-medical"></i> Clinical</div>
 
             <div class="info-full">
@@ -567,6 +568,7 @@ $finishApptId = $apptId ?: (int)($activeAppt['id'] ?? 0);
                 <div class="info-value normal" id="disp_chief" style="white-space:pre-line;"><?php echo htmlspecialchars(fmt($p['chief']??null)); ?></div>
                 <textarea class="field-edit-input edit-mode" name="chief" rows="5" style="display:none;"><?php echo htmlspecialchars(trim($p['chief']??'')); ?></textarea>
             </div>
+            <?php endif; ?>
 
         </div><!-- /info-grid -->
 

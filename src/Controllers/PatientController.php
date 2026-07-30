@@ -198,6 +198,11 @@ class PatientController {
                         'dor','lname'];
             $data = array_intersect_key($data, array_flip($allowed));
 
+            // Chief complaint / case notes are clinical — reception cannot read or write them
+            if (!in_array($_SESSION['role'] ?? '', ['doctor', 'asst_doctor'])) {
+                unset($data['chief']);
+            }
+
             $this->patientModel->updatePatient($patientId, $data);
 
             return [
